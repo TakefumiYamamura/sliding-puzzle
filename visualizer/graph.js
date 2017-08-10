@@ -14,13 +14,13 @@ function loadCSV(targetFile) {
     // CSVの全行を取得
     var lines = csvData.split("\n");
  
-    for (var i = 0; i < lines.length; i++) {
+    for (var i = 0; i < lines.length - 1; i++) {
         // 1行ごとの処理
  
         var wordSet = lines[i].split(",");
  
         var wordData = {
-            x: i + 1,
+            label: i + 1,
             y: parseFloat(wordSet[0]),
         };
  
@@ -28,39 +28,52 @@ function loadCSV(targetFile) {
     }
     return allData;
 }
- 
 
 
 window.onload = function () {
-
-  var array = loadCSV("../result/korf100_result.csv");
-  console.log(array);
-  var chart = new CanvasJS.Chart("chartContainer",{
-    title: {
-    text: "Result of IDA* in Kolf's 1000 problems"
+  var array1 = loadCSV("../result/korf100_result2.csv");
+  var array2 = loadCSV("../result/korf100_result3.csv");
+  var chart = new CanvasJS.Chart("chartContainer",
+  {
+    title:{
+      text: "Result of IDA* in Kolf's 100 problems"             
+    }, 
+    animationEnabled: true,     
+    axisY:{
+      titleFontFamily: "arial",
+      titleFontSize: 12,
+      includeZero: false
     },
-    axisX: {
-    minimum: 1,
-    maximum: 100
+    toolTip: {
+      shared: true
     },
     data: [
-      {
-        type: "spline",
-        dataPoints: array
+    {        
+      type: "spline",  
+      name: "First Solver",        
+      showInLegend: true,
+      dataPoints: array1
+    }, 
+    {        
+      type: "spline",  
+      name: "Improved Solver",        
+      showInLegend: true,
+      dataPoints: array2
+    }
+     
+    ],
+    legend:{
+      cursor:"pointer",
+      itemclick:function(e){
+        if(typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+          e.dataSeries.visible = false;
+        }
+        else {
+          e.dataSeries.visible = true;            
+        }
+        chart.render();
       }
-    ]
+    }
   });
   chart.render();
-  
-  jQuery(".canvasjs-chart-canvas").last().on("click", 
-    function(e){
-      var parentOffset = $(this).parent().offset();
-      var relX = e.pageX - parentOffset.left;
-      var relY = e.pageY - parentOffset.top
-      var xValue = Math.round(chart.axisX[0].convertPixelToValue(relX));
-      var yValue = Math.round(chart.axisY[0].convertPixelToValue(relY));
-    
-      chart.data[0].addTo("dataPoints", {x: xValue, y: yValue});
-      chart.axisX[0].set("maximum", Math.max(chart.axisX[0].maximum, xValue + 30));
-    });
 }
