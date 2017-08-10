@@ -21,7 +21,8 @@ using namespace std;
 
 static const int dx[4] = {0, -1, 0, 1};
 static const int dy[4] = {1, 0, -1, 0};
-static const char dir[4] = {'r', 'u', 'l', 'd'}; 
+static const char dir[4] = {'r', 'u', 'l', 'd'};
+static const int order[4] = {1, 0, 2, 3};
 
 
 struct Node
@@ -34,7 +35,8 @@ struct Node
 class Npuzzle
 {
 private:
-	Node s_node;
+	Node s_n;
+	Node cur_n;
 	int limit;
 	int md[N2][N2];
 	vector<int> path;
@@ -42,7 +44,7 @@ private:
 	int node_num;
 public:
 	Npuzzle() {
-		s_node = Node();
+		s_n = Node();
 		node_num = 0;
 		int in[N2];
 		for (int i = 0; i < N2; ++i)
@@ -50,12 +52,12 @@ public:
 			int tmp;
 			cin >> tmp;
 			if(tmp == 0) {
-				s_node.space = i;
+				s_n.space = i;
 			}
-			s_node.puzzle[i] = tmp;
+			s_n.puzzle[i] = tmp;
 		}
 		set_md();
-		s_node.md = get_md_sum(s_node.puzzle);
+		s_n.md = get_md_sum(s_n.puzzle);
 	}
 
 	Npuzzle(string input_file) {
@@ -67,12 +69,12 @@ public:
 			int tmp;
 			ifs >> tmp;
 			if(tmp == 0) {
-				s_node.space = i;
+				s_n.space = i;
 			}
-			s_node.puzzle[i] = tmp;
+			s_n.puzzle[i] = tmp;
 		}
 		set_md();
-		s_node.md = get_md_sum(s_node.puzzle);
+		s_n.md = get_md_sum(s_n.puzzle);
 	}
 
 	int get_md_sum(int *puzzle) {
@@ -96,7 +98,7 @@ public:
 		}
 	}
 
-	bool dfs(Node cur_n, int depth, int pre) {
+	bool dfs(int depth, int pre) {
 		if(cur_n.md == 0 ) {
 			ans = depth;
 			return true;
@@ -104,35 +106,38 @@ public:
 		if(depth + cur_n.md > limit) return false;
 		int s_x = cur_n.space / N;
 		int s_y = cur_n.space % N;
-		for (int i = 0; i < 4; ++i)
+		for (int operator_order = 0; operator_order < 4; ++operator_order)
 		{
-			Node new_n = cur_n;
+			int i = order[operator_order];
+			Node tmp_n = cur_n;
 			int new_x = s_x + dx[i];
 			int new_y = s_y + dy[i];
 			if(new_x < 0  || new_y < 0 || new_x >= N || new_y >= N) continue; 
 			if(max(pre, i) - min(pre, i) == 2) continue;
 
 			//incremental manhattan distance
-			new_n.md -= md[new_x * N + new_y][new_n.puzzle[new_x * N + new_y]];
-			new_n.md += md[s_x * N + s_y][new_n.puzzle[new_x * N + new_y]];
+			cur_n.md -= md[new_x * N + new_y][cur_n.puzzle[new_x * N + new_y]];
+			cur_n.md += md[s_x * N + s_y][cur_n.puzzle[new_x * N + new_y]];
 
-			swap(new_n.puzzle[new_x * N + new_y], new_n.puzzle[s_x * N + s_y]);
-			new_n.space = new_x * N + new_y;
-			// assert(get_md_sum(new_n.puzzle) == new_n.md);
-			// return dfs(new_n, depth+1, i);
-			if(dfs(new_n, depth + 1, i)){
+			swap(cur_n.puzzle[new_x * N + new_y], cur_n.puzzle[s_x * N + s_y]);
+			cur_n.space = new_x * N + new_y;
+			// assert(get_md_sum(cur_n.puzzle) == cur_n.md);
+			// return dfs(cur_n, depth+1, i);
+			if(dfs(depth + 1, i)){
 				// path[depth] = i;
 				return true;
 			}
+			cur_n = tmp_n;
 		}
 		return false;
 	}
 
 	void ida_star() {
-		for (limit = s_node.md; limit < 1000; ++limit)
+		for (limit = s_n.md; limit < 1000; ++limit)
 		{
-			path.resize(limit);
-			if(dfs(s_node, 0, -10)) {
+			// path.resize(limit);
+			cur_n = s_n;
+			if(dfs(0, -10)) {
 				// string str = "";
 				// for (int i = 0; i < limit; ++i)
 				// {
@@ -151,7 +156,7 @@ public:
 
 
 int main() {
-	string output_file = "../result/korf100_result.txt";
+	string output_file = "../result/korf100_result3.csv";
 	ofstream writing_file;
 	writing_file.open(output_file, std::ios::out);
 
