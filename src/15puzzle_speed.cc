@@ -43,120 +43,126 @@ private:
 	int ans;
 	int node_num;
 public:
-	Npuzzle() {
-		s_n = Node();
-		node_num = 0;
-		int in[N2];
-		for (int i = 0; i < N2; ++i)
-		{
-			int tmp;
-			cin >> tmp;
-			if(tmp == 0) {
-				s_n.space = i;
-			}
-			s_n.puzzle[i] = tmp;
-		}
-		set_md();
-		s_n.md = get_md_sum(s_n.puzzle);
-	}
+	Npuzzle();
+	Npuzzle(string input_file);
+	int get_md_sum(int *puzzle);
+	void set_md();
+	bool dfs(int depth, int pre);
+	void ida_star();
+};
 
-	Npuzzle(string input_file) {
-		node_num = 0;
-		ifstream ifs(input_file);
-		int in[N2];
-		for (int i = 0; i < N2; ++i)
-		{
-			int tmp;
-			ifs >> tmp;
-			if(tmp == 0) {
-				s_n.space = i;
-			}
-			s_n.puzzle[i] = tmp;
+Npuzzle::Npuzzle() {
+	s_n = Node();
+	node_num = 0;
+	int in[N2];
+	for (int i = 0; i < N2; ++i)
+	{
+		int tmp;
+		cin >> tmp;
+		if(tmp == 0) {
+			s_n.space = i;
 		}
-		set_md();
-		s_n.md = get_md_sum(s_n.puzzle);
+		s_n.puzzle[i] = tmp;
 	}
+	set_md();
+	s_n.md = get_md_sum(s_n.puzzle);
+}
 
-	int get_md_sum(int *puzzle) {
-		int sum = 0;
-		for (int i = 0; i < N2; ++i)
-		{
-			if(puzzle[i] == 0) continue;
-			// cout << md[i][puzzle[i]] << " ";
-			sum += md[i][puzzle[i]];
+Npuzzle::Npuzzle(string input_file) {
+	node_num = 0;
+	ifstream ifs(input_file);
+	int in[N2];
+	for (int i = 0; i < N2; ++i)
+	{
+		int tmp;
+		ifs >> tmp;
+		if(tmp == 0) {
+			s_n.space = i;
 		}
-		return sum;
+		s_n.puzzle[i] = tmp;
 	}
+	set_md();
+	s_n.md = get_md_sum(s_n.puzzle);
+}
 
-	void set_md() {
-		for (int i = 0; i < N2; ++i)
+int Npuzzle::get_md_sum(int *puzzle) {
+	int sum = 0;
+	for (int i = 0; i < N2; ++i)
+	{
+		if(puzzle[i] == 0) continue;
+		// cout << md[i][puzzle[i]] << " ";
+		sum += md[i][puzzle[i]];
+	}
+	return sum;
+}
+
+void Npuzzle::set_md() {
+	for (int i = 0; i < N2; ++i)
+	{
+		for (int j = 0; j < N2; ++j)
 		{
-			for (int j = 0; j < N2; ++j)
-			{
-				md[i][j] = abs(i / N - j / N) + abs(i % N - j % N);
-			}
+			md[i][j] = abs(i / N - j / N) + abs(i % N - j % N);
 		}
 	}
+}
 
-	bool dfs(int depth, int pre) {
-		if(cur_n.md == 0 ) {
-			ans = depth;
+
+bool Npuzzle::dfs(int depth, int pre) {
+	if(cur_n.md == 0 ) {
+		ans = depth;
+		return true;
+	}
+	if(depth + cur_n.md > limit) return false;
+	int s_x = cur_n.space / N;
+	int s_y = cur_n.space % N;
+	for (int operator_order = 0; operator_order < 4; ++operator_order)
+	{
+		int i = order[operator_order];
+		Node tmp_n = cur_n;
+		int new_x = s_x + dx[i];
+		int new_y = s_y + dy[i];
+		if(new_x < 0  || new_y < 0 || new_x >= N || new_y >= N) continue; 
+		if(max(pre, i) - min(pre, i) == 2) continue;
+
+		//incremental manhattan distance
+		cur_n.md -= md[new_x * N + new_y][cur_n.puzzle[new_x * N + new_y]];
+		cur_n.md += md[s_x * N + s_y][cur_n.puzzle[new_x * N + new_y]];
+
+		swap(cur_n.puzzle[new_x * N + new_y], cur_n.puzzle[s_x * N + s_y]);
+		cur_n.space = new_x * N + new_y;
+		// assert(get_md_sum(cur_n.puzzle) == cur_n.md);
+		// return dfs(cur_n, depth+1, i);
+		if(dfs(depth + 1, i)){
+			// path[depth] = i;
 			return true;
 		}
-		if(depth + cur_n.md > limit) return false;
-		int s_x = cur_n.space / N;
-		int s_y = cur_n.space % N;
-		for (int operator_order = 0; operator_order < 4; ++operator_order)
-		{
-			int i = order[operator_order];
-			Node tmp_n = cur_n;
-			int new_x = s_x + dx[i];
-			int new_y = s_y + dy[i];
-			if(new_x < 0  || new_y < 0 || new_x >= N || new_y >= N) continue; 
-			if(max(pre, i) - min(pre, i) == 2) continue;
-
-			//incremental manhattan distance
-			cur_n.md -= md[new_x * N + new_y][cur_n.puzzle[new_x * N + new_y]];
-			cur_n.md += md[s_x * N + s_y][cur_n.puzzle[new_x * N + new_y]];
-
-			swap(cur_n.puzzle[new_x * N + new_y], cur_n.puzzle[s_x * N + s_y]);
-			cur_n.space = new_x * N + new_y;
-			// assert(get_md_sum(cur_n.puzzle) == cur_n.md);
-			// return dfs(cur_n, depth+1, i);
-			if(dfs(depth + 1, i)){
-				// path[depth] = i;
-				return true;
-			}
-			cur_n = tmp_n;
-		}
-		return false;
+		cur_n = tmp_n;
 	}
+	return false;
+}
 
-	void ida_star() {
-		for (limit = s_n.md; limit < 1000; ++limit)
-		{
-			// path.resize(limit);
-			cur_n = s_n;
-			if(dfs(0, -10)) {
-				// string str = "";
-				// for (int i = 0; i < limit; ++i)
-				// {
-				// 	str += dir[path[i]];
-				// }
-				// cout << str << endl;
-				return;
-			}
+void Npuzzle::ida_star() {
+	for (limit = s_n.md; limit < 1000; ++limit, ++limit)
+	{
+		// path.resize(limit);
+		cur_n = s_n;
+		if(dfs(0, -10)) {
+			// string str = "";
+			// for (int i = 0; i < limit; ++i)
+			// {
+			// 	str += dir[path[i]];
+			// }
+			// cout << str << endl;
+			return;
 		}
 	}
+}
 
-	void exec() {
-		ida_star();
-	}
-};
+
 
 
 int main() {
-	string output_file = "../result/korf100_result3.csv";
+	string output_file = "../result/korf100_result9.csv";
 	ofstream writing_file;
 	writing_file.open(output_file, std::ios::out);
 
@@ -172,7 +178,7 @@ int main() {
 		cout << input_file << endl;
 		clock_t start = clock();
 		Npuzzle np = Npuzzle(input_file);
-		np.exec();
+		np.ida_star();
 		clock_t end = clock();
 		writing_file << (double)(end - start) / CLOCKS_PER_SEC << endl;
 	}

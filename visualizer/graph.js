@@ -31,8 +31,8 @@ function loadCSV(targetFile) {
 
 
 window.onload = function () {
-  var array1 = loadCSV("../result/korf100_result2.csv");
-  var array2 = loadCSV("../result/korf100_result3.csv");
+  var array1 = loadCSV("../result/korf100_burns_solver.csv");
+  var array2 = loadCSV("../result/korf100_result8.csv");
   var chart = new CanvasJS.Chart("chartContainer",
   {
     title:{
