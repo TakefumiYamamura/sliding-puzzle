@@ -50,13 +50,13 @@ window.onload = function () {
     data: [
     {        
       type: "spline",  
-      name: "First Solver",        
+      name: "Burns Solver",        
       showInLegend: true,
       dataPoints: array1
     }, 
     {        
       type: "spline",  
-      name: "Improved Solver",        
+      name: "Yamamura Solver",        
       showInLegend: true,
       dataPoints: array2
     }
