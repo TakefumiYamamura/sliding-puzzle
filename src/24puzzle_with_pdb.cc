@@ -25,31 +25,61 @@ static const int dy[4] = {1, 0, -1, 0};
 static const char dir[4] = {'r', 'u', 'l', 'd'};
 static const int order[4] = {1, 0, 2, 3};
 
-unsigned char hash0[PDB_TABLESIZE];
-unsigned char hash1[PDB_TABLESIZE];
+unsigned char h0[PDB_TABLESIZE];
+unsigned char h1[PDB_TABLESIZE];
+
+/* the position of each tile in order, reflected about the main diagonal */
+static const int rf[N2] = {0, 5, 10, 15, 20, 1, 6, 11, 16, 21, 2, 7, 12, 17, 22, 3, 8, 13, 18, 23, 4, 9, 14, 19, 24};
+
+/* rotates the puzzle 90 degrees */
+static const int rot90[N2] = {20, 15, 10, 5, 0, 21, 16, 11, 6, 1, 22, 17, 12, 7, 2, 23, 18, 13, 8, 3, 24, 19, 14, 9, 4};
+
+/* composes the reflection and 90 degree rotation into a single array */
+static const int rot90rf[N2] = {20, 21, 22, 23, 24, 15, 16, 17, 18, 19, 10, 11, 12, 13, 14, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4};
+
+/* rotates the puzzle 180 degrees */
+static const int rot180[N2] = {24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+
+/* composes the reflection and 180 degree rotation into a single array */
+static const int rot180rf[N2] = {24, 19, 14, 9, 4, 23, 18, 13, 8, 3, 22, 17, 12, 7, 2, 21, 16, 11, 6, 1, 20, 15, 10, 5, 0};
 
 
 struct Node
 {
     int puzzle[N2];
+    int inv_puzzle[N2];
     int space;
-    int md;
+    // int md;
+    int h;
 };
 
 class PatternDataBase
 {
+private:
+
+
 public:
     PatternDataBase();
     void input(const char *filename, unsigned char *table);
+    unsigned int hash0(const int *inv);
+    unsigned int hash1(const int *inv);
+    unsigned int hash2(const int *inv);
+    unsigned int hash3(const int *inv);
+    unsigned int hashref0(const int *inv);
+    unsigned int hashref1(const int *inv);
+    unsigned int hashref2(const int *inv);
+    unsigned int hashref3(const int *inv);
+    unsigned int get_hash_value(const int *inv);
+
 };
 
 PatternDataBase::PatternDataBase() {
     const char *c0 = "../pdb/pat24.1256712.tab";
     const char *c1 = "../pdb/pat24.34891314.tab";
     cout << "pattern 1 2 5 6 7 12 read in" << endl;
-    input(c0, hash0);
+    input(c0, h0);
     cout << "pattern 3 4 8 9 13 14 read in" << endl;
-    input(c1, hash1);
+    input(c1, h1);
 }
 
 void PatternDataBase::input(const char *filename, unsigned char *table) {
@@ -77,7 +107,89 @@ void PatternDataBase::input(const char *filename, unsigned char *table) {
         }
     }
     fclose(infile);
-} 
+}
+
+unsigned int PatternDataBase::hash0(const int *inv) {
+    int hashval;
+    hashval = ((((inv[1]*N2+inv[2])*N2+inv[5])*N2+inv[6])*N2+inv[7])*N2+inv[12];
+    return h0[hashval];
+}
+
+unsigned int PatternDataBase::hash1(const int *inv) {
+    int hashval;
+    hashval = ((((inv[3]*N2+inv[4])*N2+inv[8])*N2+inv[9])*N2+inv[13])*N2+inv[14];
+    return (h1[hashval]);
+}
+
+unsigned int PatternDataBase::hash2(const int *inv) {
+    int hashval;
+    hashval = ((((rot180[inv[21]] * N2
+              + rot180[inv[20]]) * N2
+             + rot180[inv[16]]) * N2
+            + rot180[inv[15]]) * N2
+           + rot180[inv[11]]) * N2
+          + rot180[inv[10]];
+    return (h1[hashval]);
+}
+
+unsigned int PatternDataBase::hash3(const int *inv) {
+    int hashval;
+    hashval = ((((rot90[inv[19]] * N2
+              + rot90[inv[24]]) * N2
+             + rot90[inv[18]]) * N2
+            + rot90[inv[23]]) * N2
+           + rot90[inv[17]]) * N2
+          + rot90[inv[22]];
+    return (h1[hashval]);
+}
+
+unsigned int PatternDataBase::hashref0(const int *inv) {
+    int hashval;
+    hashval = (((((rf[inv[5]] * N2
+               + rf[inv[10]]) * N2
+              + rf[inv[1]]) * N2
+             + rf[inv[6]]) * N2
+            + rf[inv[11]]) * N2
+           + rf[inv[12]]);
+    return (h0[hashval]);
+}
+
+unsigned int PatternDataBase::hashref1(const int *inv) {
+    int hashval;
+    hashval = (((((rf[inv[15]] * N2
+               + rf[inv[20]]) * N2
+              + rf[inv[16]]) * N2
+             + rf[inv[21]]) * N2
+            + rf[inv[17]]) * N2
+           + rf[inv[22]]);
+    return (h1[hashval]);
+}
+unsigned int PatternDataBase::hashref2(const int *inv) {
+    int hashval;
+    hashval = (((((rot180rf[inv[9]] * N2
+               + rot180rf[inv[4]]) * N2
+              + rot180rf[inv[8]]) * N2
+             + rot180rf[inv[3]]) * N2
+            + rot180rf[inv[7]]) * N2
+           + rot180rf[inv[2]]);
+    return (h1[hashval]);
+}
+
+unsigned int PatternDataBase::hashref3(const int *inv) {
+    int hashval;
+    hashval = (((((rot90rf[inv[23]] * N2
+               + rot90rf[inv[24]]) * N2
+              + rot90rf[inv[18]]) * N2
+             + rot90rf[inv[19]]) * N2
+            + rot90rf[inv[13]]) * N2
+           + rot90rf[inv[14]]);
+    return (h1[hashval]);
+}
+
+unsigned int PatternDataBase::get_hash_value(const int *inv) {
+    return max( hash0(inv) + hash1(inv) + hash2(inv) + hash3(inv), 
+        hashref0(inv) + hashref1(inv) + hashref2(inv) + hashref3(inv) ); 
+}
 
 class Npuzzle
 {
@@ -85,37 +197,40 @@ private:
     Node s_n;
     Node cur_n;
     int limit;
-    int md[N2][N2];
+    int node_num;
+    // int md[N2][N2];
     vector<int> path;
     int ans;
-    int node_num;
+    // int node_num;
+    PatternDataBase pd;
 public:
-    Npuzzle();
-    Npuzzle(string input_file);
-    int get_md_sum(int *puzzle);
-    void set_md();
+    // Npuzzle();
+    Npuzzle(string input_file, PatternDataBase _pd);
+    // int get_md_sum(int *puzzle);
+    // void set_md();
     bool dfs(int depth, int pre);
     void ida_star();
 };
 
-Npuzzle::Npuzzle() {
-    s_n = Node();
-    node_num = 0;
-    int in[N2];
-    for (int i = 0; i < N2; ++i)
-    {
-        int tmp;
-        cin >> tmp;
-        if(tmp == 0) {
-            s_n.space = i;
-        }
-        s_n.puzzle[i] = tmp;
-    }
-    set_md();
-    s_n.md = get_md_sum(s_n.puzzle);
-}
+// Npuzzle::Npuzzle() {
+//     s_n = Node();
+//     node_num = 0;
+//     int in[N2];
+//     for (int i = 0; i < N2; ++i)
+//     {
+//         int tmp;
+//         cin >> tmp;
+//         if(tmp == 0) {
+//             s_n.space = i;
+//         }
+//         s_n.puzzle[i] = tmp;
+//         s_n.inv_puzzle[tmp] = i;
+//     }
+//     set_md();
+//     s_n.md = get_md_sum(s_n.puzzle);
+// }
 
-Npuzzle::Npuzzle(string input_file) {
+Npuzzle::Npuzzle(string input_file, PatternDataBase _pd) {
     node_num = 0;
     ifstream ifs(input_file);
     int in[N2];
@@ -127,39 +242,40 @@ Npuzzle::Npuzzle(string input_file) {
             s_n.space = i;
         }
         s_n.puzzle[i] = tmp;
+        s_n.inv_puzzle[tmp] = i;
     }
-    set_md();
-    s_n.md = get_md_sum(s_n.puzzle);
+    pd = _pd;
+    s_n.h = pd.get_hash_value(s_n.inv_puzzle);
 }
 
-int Npuzzle::get_md_sum(int *puzzle) {
-    int sum = 0;
-    for (int i = 0; i < N2; ++i)
-    {
-        if(puzzle[i] == 0) continue;
-        // cout << md[i][puzzle[i]] << " ";
-        sum += md[i][puzzle[i]];
-    }
-    return sum;
-}
+// int Npuzzle::get_md_sum(int *puzzle) {
+//     int sum = 0;
+//     for (int i = 0; i < N2; ++i)
+//     {
+//         if(puzzle[i] == 0) continue;
+//         // cout << md[i][puzzle[i]] << " ";
+//         sum += md[i][puzzle[i]];
+//     }
+//     return sum;
+// }
 
-void Npuzzle::set_md() {
-    for (int i = 0; i < N2; ++i)
-    {
-        for (int j = 0; j < N2; ++j)
-        {
-            md[i][j] = abs(i / N - j / N) + abs(i % N - j % N);
-        }
-    }
-}
+// void Npuzzle::set_md() {
+//     for (int i = 0; i < N2; ++i)
+//     {
+//         for (int j = 0; j < N2; ++j)
+//         {
+//             md[i][j] = abs(i / N - j / N) + abs(i % N - j % N);
+//         }
+//     }
+// }
 
 
 bool Npuzzle::dfs(int depth, int pre) {
-    if(cur_n.md == 0 ) {
+    if(cur_n.h == 0 ) {
         ans = depth;
         return true;
     }
-    if(depth + cur_n.md > limit) return false;
+    if(depth + cur_n.h > limit) return false;
     int s_x = cur_n.space / N;
     int s_y = cur_n.space % N;
     for (int operator_order = 0; operator_order < 4; ++operator_order)
@@ -170,12 +286,15 @@ bool Npuzzle::dfs(int depth, int pre) {
         int new_y = s_y + dy[i];
         if(new_x < 0  || new_y < 0 || new_x >= N || new_y >= N) continue; 
         if(max(pre, i) - min(pre, i) == 2) continue;
+        node_num++;
+        // //incremental manhattan distance
+        // cur_n.md -= md[new_x * N + new_y][cur_n.puzzle[new_x * N + new_y]];
+        // cur_n.md += md[s_x * N + s_y][cur_n.puzzle[new_x * N + new_y]];
 
-        //incremental manhattan distance
-        cur_n.md -= md[new_x * N + new_y][cur_n.puzzle[new_x * N + new_y]];
-        cur_n.md += md[s_x * N + s_y][cur_n.puzzle[new_x * N + new_y]];
-
+        swap(cur_n.inv_puzzle[cur_n.puzzle[new_x * N + new_y]], cur_n.inv_puzzle[cur_n.puzzle[s_x * N + s_y]]); 
         swap(cur_n.puzzle[new_x * N + new_y], cur_n.puzzle[s_x * N + s_y]);
+
+        cur_n.h = pd.get_hash_value(cur_n.inv_puzzle);
         cur_n.space = new_x * N + new_y;
         // assert(get_md_sum(cur_n.puzzle) == cur_n.md);
         // return dfs(cur_n, depth+1, i);
@@ -189,10 +308,11 @@ bool Npuzzle::dfs(int depth, int pre) {
 }
 
 void Npuzzle::ida_star() {
-    for (limit = s_n.md; limit < 1000; ++limit, ++limit)
+    for (limit = s_n.h; limit < 1000; ++limit, ++limit)
     {
         // path.resize(limit);
         cur_n = s_n;
+        node_num = 0;
         if(dfs(0, -10)) {
             // string str = "";
             // for (int i = 0; i < limit; ++i)
@@ -200,6 +320,7 @@ void Npuzzle::ida_star() {
             //  str += dir[path[i]];
             // }
             // cout << str << endl;
+            cout << node_num << endl;
             return;
         }
     }
@@ -210,25 +331,25 @@ void Npuzzle::ida_star() {
 
 int main() {
     PatternDataBase pdb = PatternDataBase();
-    // string output_file = "../result/korf50_result.csv";
-    // ofstream writing_file;
-    // writing_file.open(output_file, std::ios::out);
+    string output_file = "../result/korf50_result.csv";
+    ofstream writing_file;
+    writing_file.open(output_file, std::ios::out);
 
-    // for (int i = 1; i <= 50; ++i)
-    // {
-    //  string input_file = "../benchmarks/korf50_24puzzle/";
-    //  if(i < 10) {
-    //      input_file += "00";
-    //  } else if(i < 100) {
-    //      input_file += "0";
-    //  }
-    //  input_file += to_string(i);
-    //  cout << input_file << endl;
-    //  clock_t start = clock();
-    //  Npuzzle np = Npuzzle(input_file);
-    //  np.ida_star();
-    //  clock_t end = clock();
-    //  writing_file << (double)(end - start) / CLOCKS_PER_SEC << endl;
-    // }
+    for (int i = 25; i <= 25; ++i)
+    {
+     string input_file = "../benchmarks/korf50_24puzzle/";
+     if(i < 10) {
+         input_file += "00";
+     } else if(i < 100) {
+         input_file += "0";
+     }
+     input_file += to_string(i);
+     cout << input_file << endl;
+     clock_t start = clock();
+     Npuzzle np = Npuzzle(input_file, pdb);
+     np.ida_star();
+     clock_t end = clock();
+     writing_file << (double)(end - start) / CLOCKS_PER_SEC << endl;
+    }
 }
 
