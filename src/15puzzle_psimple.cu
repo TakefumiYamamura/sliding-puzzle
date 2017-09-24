@@ -20,7 +20,7 @@ template <typename T> std::string tostr(const T& t)
  
 #define N 4
 #define N2 16
-#define STACK_LIMIT 100
+#define STACK_LIMIT 64 * 8
 // #define CORE_NUM 1
 #define CORE_NUM 32
 // 1536
@@ -113,7 +113,7 @@ public:
  
 
 Node s_node;
-int tmp_md[N2*N2][N2];
+int tmp_md[N2*N2];
 __constant__ int md[N2*N2];
 int ans;
 priority_queue<Node, vector<Node>, greater<Node> > pq;
@@ -258,7 +258,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
     //     dev_flag[tid] = true;
     // }
 
-    local_stack<Node, limit * 4> st;
+    local_stack<Node, STACK_LIMIT> st;
     st.push(root_set[tid]);
 
     while(!st.empty()) {
