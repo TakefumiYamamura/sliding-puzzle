@@ -286,7 +286,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
  
             int a = next_n.puzzle[new_x * N + new_y];
             next_n.puzzle[new_x * N + new_y] = next_n.puzzle[s_x * N + s_y];
-            next_n.puzzle[s_x * N + s_y = a;
+            next_n.puzzle[s_x * N + s_y] = a;
 
             next_n.space = new_x * N + new_y;
             // assert(get_md_sum(new_n.puzzle) == new_n.md);
