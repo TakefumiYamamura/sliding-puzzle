@@ -238,7 +238,7 @@ void ida_star() {
     //root_setをGPU側のdev_root_setにコピー
     HANDLE_ERROR(cudaMemcpy(dev_root_set, root_set, pq_size * sizeof(Node), cudaMemcpyHostToDevice) );
 
-    for (int limit = s_node.md; limit < 5; ++limit, ++limit)
+    for (int limit = s_node.md; limit < 100; ++limit, ++limit)
     {
         // path.resize(limit);
         // priority_queue<Node, vector<Node>, greater<Node> > tmp_pq = pq;
