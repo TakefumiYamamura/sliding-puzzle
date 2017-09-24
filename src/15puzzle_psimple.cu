@@ -268,6 +268,7 @@ void ida_star() {
         HANDLE_ERROR(cudaFree(dev_flag) );
     }
     HANDLE_ERROR(cudaFree(dev_root_set));
+    cout << "test" << endl;
 }
 
  
