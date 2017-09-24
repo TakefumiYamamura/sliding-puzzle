@@ -236,7 +236,7 @@ void ida_star() {
     //gpu側のメモリ割当て
     HANDLE_ERROR(cudaMalloc((void**)&dev_root_set, pq_size * sizeof(Node) ) );
     //root_setをGPU側のdev_root_setにコピー
-    HANDLE_ERROR(cudaMemcpy(dev_root_set, root_set, pq_size * sizeof(Node), cudaMemcpyDeviceToHost) );
+    HANDLE_ERROR(cudaMemcpy(dev_root_set, root_set, pq_size * sizeof(Node), cudaMemcpyHostToDevice) );
 
     for (int limit = s_node.md; limit < 5; ++limit, ++limit)
     {
