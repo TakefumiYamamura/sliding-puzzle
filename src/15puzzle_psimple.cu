@@ -230,12 +230,8 @@ bool create_root_set() {
             //incremental manhattan distance
             next_n.md -= md[(new_x * N + new_y) * N2 + next_n.puzzle[new_x * N + new_y]];
             next_n.md += md[(s_x * N + s_y) * N2 + next_n.puzzle[new_x * N + new_y]];
-
-            int a = next_n.puzzle[new_x * N + new_y];
-            int b = next_n.puzzle[s_x * N + s_y];
-            next_n.puzzle[new_x * N + new_y] = b;
-            next_n.puzzle[s_x * N + s_y] = a;
-
+ 
+            swap(next_n.puzzle[new_x * N + new_y], next_n.puzzle[s_x * N + s_y]);
             next_n.space = new_x * N + new_y;
             // assert(get_md_sum(new_n.puzzle) == new_n.md);
             // return dfs(new_n, depth+1, i);
@@ -288,7 +284,10 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
             next_n.md -= md[(new_x * N + new_y) * N2 + next_n.puzzle[new_x * N + new_y]];
             next_n.md += md[(s_x * N + s_y) * N2 + next_n.puzzle[new_x * N + new_y]];
  
-            devise_swap(next_n.puzzle[new_x * N + new_y], next_n.puzzle[s_x * N + s_y]);
+            int a = next_n.puzzle[new_x * N + new_y];
+            next_n.puzzle[new_x * N + new_y] = next_n.puzzle[s_x * N + s_y];
+            next_n.puzzle[s_x * N + s_y = a;
+
             next_n.space = new_x * N + new_y;
             // assert(get_md_sum(new_n.puzzle) == new_n.md);
             // return dfs(new_n, depth+1, i);
