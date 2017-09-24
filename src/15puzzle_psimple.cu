@@ -22,12 +22,12 @@ template <typename T> std::string tostr(const T& t)
 #define N 4
 #define N2 16
 #define STACK_LIMIT 64 * 8
-// #define CORE_NUM 1536
-// #define WARP_SIZE 32
-// #define BLOCK_NUM 48
-#define CORE_NUM 32
-#define WARP_SIZE 16
-#define BLOCK_NUM 2
+#define CORE_NUM 1536
+#define WARP_SIZE 32
+#define BLOCK_NUM 48
+// #define CORE_NUM 32
+// #define WARP_SIZE 16
+// #define BLOCK_NUM 2
 // 1536
 using namespace std;
 
@@ -250,7 +250,7 @@ bool create_root_set() {
 }
 
 __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
-    int tid = blockIdx.x;
+    int idx = blockDim.x * blockIdx.x + threadIdx.x;
 
     local_stack<Node, STACK_LIMIT> st;
     st.push(root_set[tid]);
@@ -264,7 +264,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
         st.pop();
         if(cur_n.md == 0 ) {
             // ans = cur_n.depth;
-            dev_flag[tid] = cur_n.depth;
+            dev_flag[idx] = cur_n.depth;
             return;
         }
         int s_x = cur_n.space / N;
