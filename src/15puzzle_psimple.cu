@@ -12,7 +12,8 @@
 #include <set>
 #include <climits>
 #include <stack>
-#include <sstream>      // std::ostringstream
+#include <sstream>
+
 template <typename T> std::string tostr(const T& t)
 {
     std::ostringstream os; os<<t; return os.str();
@@ -21,13 +22,11 @@ template <typename T> std::string tostr(const T& t)
 #define N 4
 #define N2 16
 #define STACK_LIMIT 64 * 8
-// #define CORE_NUM 1
-#define CORE_NUM 32
+#define CORE_NUM 1536
+#define WARP_SIZE 32
+#define BLOCK_NUM 48
 // 1536
 using namespace std;
- 
-// const int N = 4;
-// const int N2 = 16;
 
 static void HandleError( cudaError_t err,
                          const char *file,
@@ -117,9 +116,6 @@ int tmp_md[N2*N2];
 __constant__ int md[N2*N2];
 int ans;
 priority_queue<Node, vector<Node>, greater<Node> > pq;
-
-// struct node stack_nodes[STACK_LIMIT];
-
 
 int get_md_sum(int *puzzle) {
     int sum = 0;
@@ -252,11 +248,6 @@ bool create_root_set() {
 
 __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
     int tid = blockIdx.x;
-    // if(tid % 3 == 0) {
-    //     dev_flag[tid] = false;
-    // } else {
-    //     dev_flag[tid] = true;
-    // }
 
     local_stack<Node, STACK_LIMIT> st;
     st.push(root_set[tid]);
@@ -344,7 +335,7 @@ void ida_star() {
 
         //gpu側にメモリ割当
         HANDLE_ERROR(cudaMalloc( (void**)&dev_flag, pq_size * sizeof(int) ) );
-        dfs_kernel<<<CORE_NUM, 1>>>(limit, dev_root_set, dev_flag);
+        dfs_kernel<<<BLOCK_NUM, WARP_SIZE>>>(limit, dev_root_set, dev_flag);
         HANDLE_ERROR(cudaMemcpy(flag, dev_flag, CORE_NUM * sizeof(int), cudaMemcpyDeviceToHost));
         for (int i = 0; i < CORE_NUM; ++i)
         {
@@ -353,29 +344,22 @@ void ida_star() {
                 return;
             }
         }
-
-
-        // while(!tmp_pq.empty()) {
-        //     Node n = tmp_pq.top();
-        //     tmp_pq.pop();
-        //     if(dfs(limit, n)) {
-        //         printf("%d\n", limit);
-        //         return;
-        //     }
-        // } 
         HANDLE_ERROR(cudaFree(dev_flag) );
     }
     HANDLE_ERROR(cudaFree(dev_root_set));
-    cout << "test" << endl;
 }
 
  
 int main() {
-    string output_file = "../result/korf100_psimple_result.csv";
+    // string output_file = "../result/korf100_psimple_result.csv";
     // ofstream writing_file;
     // writing_file.open(output_file, std::ios::out);
+    FILE *output_file;
+    output_file = fopen("../result/korf100_psimple_result.csv","w");
+    fscanf(file,"%d",&i);
+
     set_md();
-    for (int i = 0; i < 1; ++i)
+    for (int i = 0; i < 100; ++i)
     {
         string input_file = "../benchmarks/korf100/prob";
         if(i < 10) {
@@ -393,7 +377,9 @@ int main() {
         ida_star();
 
         clock_t end = clock();
+        fprintf(output_file,"%f\n", (double)(end - start) / CLOCKS_PER_SEC);
 
         // writing_file << (double)(end - start) / CLOCKS_PER_SEC << endl;
     }
+    fclose(output_file);
 }
