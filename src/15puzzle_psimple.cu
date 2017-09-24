@@ -113,7 +113,7 @@ public:
  
 
 Node s_node;
-int md[N2][N2];
+__constant__ int md[N2*N2];
 int ans;
 priority_queue<Node, vector<Node>, greater<Node> > pq;
 
@@ -131,13 +131,15 @@ int get_md_sum(int *puzzle) {
 }
 
 void set_md() {
+    int tmp_md[N2*N2][N2];
     for (int i = 0; i < N2; ++i)
     {
         for (int j = 0; j < N2; ++j)
         {
-            md[i][j] = abs(i / N - j / N) + abs(i % N - j % N);
+            tmp_md[i * N2 + j] = abs(i / N - j / N) + abs(i % N - j % N);
         }
     }
+    HANDLE_ERROR(cudaMemcpyToSymbol(md, temp_md, sizeof(int) * N2 * N2))
 }
 
 void input_table(char *input_file) {
@@ -185,8 +187,8 @@ bool dfs(int limit, Node s_n) {
             if(max(cur_n.pre, i) - min(cur_n.pre, i) == 2) continue;
  
             //incremental manhattan distance
-            next_n.md -= md[new_x * N + new_y][next_n.puzzle[new_x * N + new_y]];
-            next_n.md += md[s_x * N + s_y][next_n.puzzle[new_x * N + new_y]];
+            next_n.md -= md[(new_x * N + new_y) * N2 + next_n.puzzle[new_x * N + new_y]];
+            next_n.md += md[(s_x * N + s_y) * N2 + next_n.puzzle[new_x * N + new_y]];
  
             swap(next_n.puzzle[new_x * N + new_y], next_n.puzzle[s_x * N + s_y]);
             next_n.space = new_x * N + new_y;
@@ -226,8 +228,8 @@ bool create_root_set() {
             if(max(cur_n.pre, i) - min(cur_n.pre, i) == 2) continue;
  
             //incremental manhattan distance
-            next_n.md -= md[new_x * N + new_y][next_n.puzzle[new_x * N + new_y]];
-            next_n.md += md[s_x * N + s_y][next_n.puzzle[new_x * N + new_y]];
+            next_n.md -= md[(new_x * N + new_y) * N2 + next_n.puzzle[new_x * N + new_y]];
+            next_n.md += md[(s_x * N + s_y) * N2 + next_n.puzzle[new_x * N + new_y]];
  
             swap(next_n.puzzle[new_x * N + new_y], next_n.puzzle[s_x * N + s_y]);
             next_n.space = new_x * N + new_y;
@@ -279,8 +281,8 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
             if(max(cur_n.pre, i) - min(cur_n.pre, i) == 2) continue;
  
             //incremental manhattan distance
-            next_n.md -= md[new_x * N + new_y][next_n.puzzle[new_x * N + new_y]];
-            next_n.md += md[s_x * N + s_y][next_n.puzzle[new_x * N + new_y]];
+            next_n.md -= md[(new_x * N + new_y) * N2 + next_n.puzzle[new_x * N + new_y]];
+            next_n.md += md[(s_x * N + s_y) * N2 + next_n.puzzle[new_x * N + new_y]];
  
             swap(next_n.puzzle[new_x * N + new_y], next_n.puzzle[s_x * N + s_y]);
             next_n.space = new_x * N + new_y;
@@ -293,7 +295,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
             if(next_n.md == 0) {
                 // ans = next_n.depth;
                 dev_flag[tid] = next_n.depth;
-                return true;
+                return;
             }
         }
     }
@@ -365,6 +367,7 @@ int main() {
     string output_file = "../result/korf100_psimple_result.csv";
     // ofstream writing_file;
     // writing_file.open(output_file, std::ios::out);
+    set_md();
     for (int i = 0; i < 1; ++i)
     {
         string input_file = "../benchmarks/korf100/prob";
@@ -375,7 +378,7 @@ int main() {
         }
         input_file += tostr(i);
         cout << input_file << endl;
-        set_md();
+        // set_md();
 
         clock_t start = clock();
 
