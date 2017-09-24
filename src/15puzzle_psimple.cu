@@ -25,9 +25,9 @@ template <typename T> std::string tostr(const T& t)
 // #define CORE_NUM 1536
 // #define WARP_SIZE 32
 // #define BLOCK_NUM 48
-#define CORE_NUM 512
+#define CORE_NUM 64
 #define WARP_SIZE 32
-#define BLOCK_NUM 16
+#define BLOCK_NUM 2
 // 1536
 using namespace std;
 
@@ -361,7 +361,7 @@ int main() {
     output_file = fopen("../result/korf100_psimple_result.csv","w");
 
     set_md();
-    for (int i = 0; i < 30; ++i)
+    for (int i = 0; i < 1; ++i)
     {
         string input_file = "../benchmarks/korf100/prob";
         if(i < 10) {
