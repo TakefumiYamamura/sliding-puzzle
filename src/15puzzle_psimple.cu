@@ -248,13 +248,57 @@ bool create_root_set() {
     return false;
 }
 
-__global__ void dfs_kernel(int limit, Node *root_set, bool *dev_flag) {
+__global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
     int tid = blockIdx.x;
-    if(tid % 3 == 0) {
-        dev_flag[tid] = false;
-    } else {
-        dev_flag[tid] = true;
+    // if(tid % 3 == 0) {
+    //     dev_flag[tid] = false;
+    // } else {
+    //     dev_flag[tid] = true;
+    // }
+
+    local_stack<Node, limit * 4> st;
+    st.push(root_set[tid]);
+
+    while(!st.empty()) {
+        Node cur_n = st.top();
+        st.pop();
+        if(cur_n.md == 0 ) {
+            // ans = cur_n.depth;
+            dev_flag[tid] = cur_n.depth;
+            return;
+        }
+        int s_x = cur_n.space / N;
+        int s_y = cur_n.space % N;
+        for (int operator_order = 0; operator_order < 4; ++operator_order)
+        {
+            int i = order[operator_order];
+            Node next_n = cur_n;
+            int new_x = s_x + dx[i];
+            int new_y = s_y + dy[i];
+            if(new_x < 0  || new_y < 0 || new_x >= N || new_y >= N) continue; 
+            if(max(cur_n.pre, i) - min(cur_n.pre, i) == 2) continue;
+ 
+            //incremental manhattan distance
+            next_n.md -= md[new_x * N + new_y][next_n.puzzle[new_x * N + new_y]];
+            next_n.md += md[s_x * N + s_y][next_n.puzzle[new_x * N + new_y]];
+ 
+            swap(next_n.puzzle[new_x * N + new_y], next_n.puzzle[s_x * N + s_y]);
+            next_n.space = new_x * N + new_y;
+            // assert(get_md_sum(new_n.puzzle) == new_n.md);
+            // return dfs(new_n, depth+1, i);
+            next_n.depth++;
+            if(cur_n.depth + cur_n.md > limit) continue;
+            next_n.pre = i;
+            st.push(next_n);
+            if(next_n.md == 0) {
+                // ans = next_n.depth;
+                dev_flag[tid] = next_n.depth;
+                return true;
+            }
+        }
     }
+    dev_flag[tid] = -1;
+    return;
 
 }
 
@@ -286,18 +330,20 @@ void ida_star() {
         // path.resize(limit);
         // priority_queue<Node, vector<Node>, greater<Node> > tmp_pq = pq;
 
-        bool flag[CORE_NUM];
-        bool *dev_flag;
+        int flag[CORE_NUM];
+        int *dev_flag;
 
         //gpu側にメモリ割当
-        HANDLE_ERROR(cudaMalloc( (void**)&dev_flag, pq_size * sizeof(bool) ) );
+        HANDLE_ERROR(cudaMalloc( (void**)&dev_flag, pq_size * sizeof(int) ) );
         dfs_kernel<<<CORE_NUM, 1>>>(limit, dev_root_set, dev_flag);
-        HANDLE_ERROR(cudaMemcpy(flag, dev_flag, CORE_NUM * sizeof(bool), cudaMemcpyDeviceToHost));
+        HANDLE_ERROR(cudaMemcpy(flag, dev_flag, CORE_NUM * sizeof(int), cudaMemcpyDeviceToHost));
         for (int i = 0; i < CORE_NUM; ++i)
         {
-            cout << flag[i] << " ";
+            if(flag[i] != -1) {
+                cout << flag[i] << endl;
+                return;
+            }
         }
-        cout << endl;
 
 
         // while(!tmp_pq.empty()) {
