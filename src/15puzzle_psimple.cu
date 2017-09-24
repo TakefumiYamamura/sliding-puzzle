@@ -67,11 +67,11 @@ struct Node
     }
 };
 
-template<class T, int N>
+template<class T, int NUM>
 class local_stack
 {
 private:
-    T buf[N];
+    T buf[NUM];
     int tos;
 
 public:
@@ -102,7 +102,7 @@ public:
 
     __device__ bool full()
     {
-        return tos == (N - 1);
+        return tos == (NUM - 1);
     }
 
     __device__ bool empty()
@@ -113,6 +113,7 @@ public:
  
 
 Node s_node;
+int tmp_md[N2*N2][N2];
 __constant__ int md[N2*N2];
 int ans;
 priority_queue<Node, vector<Node>, greater<Node> > pq;
@@ -125,13 +126,12 @@ int get_md_sum(int *puzzle) {
     for (int i = 0; i < N2; ++i)
     {
         if(puzzle[i] == 0) continue;
-        sum += md[i][puzzle[i]];
+        sum += tmp_md[i][puzzle[i]];
     }
     return sum;
 }
 
 void set_md() {
-    int tmp_md[N2*N2][N2];
     for (int i = 0; i < N2; ++i)
     {
         for (int j = 0; j < N2; ++j)
@@ -139,7 +139,7 @@ void set_md() {
             tmp_md[i * N2 + j] = abs(i / N - j / N) + abs(i % N - j % N);
         }
     }
-    HANDLE_ERROR(cudaMemcpyToSymbol(md, temp_md, sizeof(int) * N2 * N2))
+    HANDLE_ERROR(cudaMemcpyToSymbol(md, tmp_md, sizeof(int) * N2 * N2));
 }
 
 void input_table(char *input_file) {
