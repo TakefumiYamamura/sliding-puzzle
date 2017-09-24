@@ -95,7 +95,7 @@ void set_md() {
 void input_table(string input_file) {
     s_node = Node();
     fstream ifs(input_file);
-    int in[N2];
+
     for (int i = 0; i < N2; ++i)
     {
         int tmp;
@@ -203,9 +203,9 @@ bool create_root_set() {
 __global__ void dfs_kernel(int limit, Node *root_set, bool *dev_flag) {
     int tid = blockIdx.x;
     if(tid % 3 == 0) {
-        flag[tid] = false;
+        dev_flag[tid] = false;
     } else {
-        flag[tid] = true;
+        dev_flag[tid] = true;
     }
 
 }
@@ -244,6 +244,7 @@ void ida_star() {
         //gpu側にメモリ割当
         HANDLE_ERROR(cudaMalloc( (void**)&dev_flag, pq_size * sizeof(bool) ) );
         dfs_kernel<<<CORE_NUM, 1>>>(limit, dev_root_set, dev_flag);
+        HANDLE_ERROR(cudaMemcpy(flag, dev_flag, CORE_NUM * sizeof(bool), cudaMemcpyDeviceToHost));
         for (int i = 0; i < CORE_NUM; ++i)
         {
             cout << dev_flag[i] << " ";
@@ -267,8 +268,8 @@ void ida_star() {
  
 int main() {
     string output_file = "../result/korf100_psimple_result.csv";
-    ofstream writing_file;
-    writing_file.open(output_file, std::ios::out);
+    // ofstream writing_file;
+    // writing_file.open(output_file, std::ios::out);
     for (int i = 0; i < 1; ++i)
     {
         string input_file = "../benchmarks/korf100/prob";
@@ -287,6 +288,7 @@ int main() {
         ida_star();
 
         clock_t end = clock();
-        writing_file << (double)(end - start) / CLOCKS_PER_SEC << endl;
+        
+        // writing_file << (double)(end - start) / CLOCKS_PER_SEC << endl;
     }
 }
