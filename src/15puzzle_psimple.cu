@@ -187,8 +187,8 @@ bool dfs(int limit, Node s_n) {
             if(max(cur_n.pre, i) - min(cur_n.pre, i) == 2) continue;
  
             //incremental manhattan distance
-            next_n.md -= md[(new_x * N + new_y) * N2 + next_n.puzzle[new_x * N + new_y]];
-            next_n.md += md[(s_x * N + s_y) * N2 + next_n.puzzle[new_x * N + new_y]];
+            next_n.md -= tmp_md[(new_x * N + new_y) * N2 + next_n.puzzle[new_x * N + new_y]];
+            next_n.md += tmp_md[(s_x * N + s_y) * N2 + next_n.puzzle[new_x * N + new_y]];
  
             swap(next_n.puzzle[new_x * N + new_y], next_n.puzzle[s_x * N + s_y]);
             next_n.space = new_x * N + new_y;
@@ -228,8 +228,8 @@ bool create_root_set() {
             if(max(cur_n.pre, i) - min(cur_n.pre, i) == 2) continue;
  
             //incremental manhattan distance
-            next_n.md -= md[(new_x * N + new_y) * N2 + next_n.puzzle[new_x * N + new_y]];
-            next_n.md += md[(s_x * N + s_y) * N2 + next_n.puzzle[new_x * N + new_y]];
+            next_n.md -= tmp_md[(new_x * N + new_y) * N2 + next_n.puzzle[new_x * N + new_y]];
+            next_n.md += tmp_md[(s_x * N + s_y) * N2 + next_n.puzzle[new_x * N + new_y]];
  
             swap(next_n.puzzle[new_x * N + new_y], next_n.puzzle[s_x * N + s_y]);
             next_n.space = new_x * N + new_y;
