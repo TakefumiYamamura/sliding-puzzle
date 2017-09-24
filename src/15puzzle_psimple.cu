@@ -17,6 +17,14 @@ template <typename T> std::string tostr(const T& t)
 {
     std::ostringstream os; os<<t; return os.str();
 }
+
+template< typename T >
+void swap( T& a, T& b ) {
+    T t = a;
+    a = b;
+    b = t;
+}
+
  
 #define N 4
 #define N2 16
