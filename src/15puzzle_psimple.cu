@@ -12,6 +12,11 @@
 #include <set>
 #include <climits>
 #include <stack>
+#include <sstream>      // std::ostringstream
+template <typename T> std::string tostr(const T& t)
+{
+    std::ostringstream os; os<<t; return os.str();
+}
  
 #define N 4
 #define N2 16
@@ -43,7 +48,7 @@ static void HandleError( cudaError_t err,
  
 static const int dx[4] = {0, -1, 0, 1};
 static const int dy[4] = {1, 0, -1, 0};
-static const char dir[4] = {'r', 'u', 'l', 'd'}; 
+// static const char dir[4] = {'r', 'u', 'l', 'd'}; 
 static const int order[4] = {1, 0, 2, 3}; 
  
 struct Node
@@ -278,7 +283,7 @@ int main() {
         } else if(i < 100) {
             input_file += "0";
         }
-        input_file += to_string(i);
+        input_file += tostr(i);
         cout << input_file << endl;
         set_md();
 
@@ -288,7 +293,7 @@ int main() {
         ida_star();
 
         clock_t end = clock();
-        
+
         // writing_file << (double)(end - start) / CLOCKS_PER_SEC << endl;
     }
 }
