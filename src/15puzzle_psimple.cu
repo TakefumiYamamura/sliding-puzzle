@@ -19,7 +19,7 @@ template <typename T> std::string tostr(const T& t)
 }
 
 template< typename T >
-void devise_swap( T& a, T& b ) {
+__devise__ void devise_swap( T& a, T& b ) {
     T t = a;
     a = b;
     b = t;
