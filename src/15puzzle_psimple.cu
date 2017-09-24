@@ -25,8 +25,8 @@ template <typename T> std::string tostr(const T& t)
 // #define CORE_NUM 1536
 // #define WARP_SIZE 32
 // #define BLOCK_NUM 48
-#define CORE_NUM 1024
-#define WARP_SIZE 32
+#define CORE_NUM 512
+#define WARP_SIZE 16
 #define BLOCK_NUM 32
 // 1536
 using namespace std;
