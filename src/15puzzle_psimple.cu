@@ -253,7 +253,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
 
     local_stack<Node, STACK_LIMIT> st;
-    st.push(root_set[tid]);
+    st.push(root_set[idx]);
 
     int order[4] = {1, 0, 2, 3};
     int dx[4] = {0, -1, 0, 1};
@@ -295,12 +295,12 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
             st.push(next_n);
             if(next_n.md == 0) {
                 // ans = next_n.depth;
-                dev_flag[tid] = next_n.depth;
+                dev_flag[idx] = next_n.depth;
                 return;
             }
         }
     }
-    dev_flag[tid] = -1;
+    dev_flag[idx] = -1;
     return;
 
 }
