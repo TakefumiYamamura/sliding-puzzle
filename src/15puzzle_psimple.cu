@@ -97,7 +97,7 @@ void set_md() {
     }
 }
 
-void input_table(string input_file) {
+void input_table(char *input_file) {
     s_node = Node();
     fstream ifs(input_file);
 
@@ -289,7 +289,7 @@ int main() {
 
         clock_t start = clock();
 
-        input_table(input_file);
+        input_table(const_cast<char*>(input_file.c_str()));
         ida_star();
 
         clock_t end = clock();
