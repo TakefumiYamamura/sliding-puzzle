@@ -356,7 +356,6 @@ int main() {
     // writing_file.open(output_file, std::ios::out);
     FILE *output_file;
     output_file = fopen("../result/korf100_psimple_result.csv","w");
-    fscanf(file,"%d",&i);
 
     set_md();
     for (int i = 0; i < 100; ++i)
