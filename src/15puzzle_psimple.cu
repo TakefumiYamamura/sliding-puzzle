@@ -361,7 +361,7 @@ int main() {
     output_file = fopen("../result/korf100_psimple_result.csv","w");
 
     set_md();
-    for (int i = 0; i < 15; ++i)
+    for (int i = 0; i < 1; ++i)
     {
         string input_file = "../benchmarks/korf100/prob";
         if(i < 10) {
