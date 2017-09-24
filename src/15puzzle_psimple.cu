@@ -252,7 +252,7 @@ void ida_star() {
         HANDLE_ERROR(cudaMemcpy(flag, dev_flag, CORE_NUM * sizeof(bool), cudaMemcpyDeviceToHost));
         for (int i = 0; i < CORE_NUM; ++i)
         {
-            cout << dev_flag[i] << " ";
+            cout << flag[i] << " ";
         }
         cout << endl;
 
