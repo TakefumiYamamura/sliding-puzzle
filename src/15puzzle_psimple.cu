@@ -65,7 +65,50 @@ struct Node
     bool operator > (const Node& n) const {
         return depth + md > n.depth + n.md;
     }
+};
 
+template<class T, int N>
+class local_stack
+{
+private:
+    T buf[N];
+    int tos;
+
+public:
+    __device__ local_stack() :
+    tos(-1)
+    {
+    }
+
+    __device__ T const & top() const
+    {
+        return buf[tos];
+    }
+
+    __device__ T & top()
+    {
+        return buf[tos];
+    }
+
+    __device__ void push(T const & v)
+    {
+        buf[++tos] = v;
+    }
+
+    __device__ T pop()
+    {
+        return buf[tos--];
+    }
+
+    __device__ bool full()
+    {
+        return tos == (N - 1);
+    }
+
+    __device__ bool empty()
+    {
+        return tos == -1;
+    }
 };
  
 
