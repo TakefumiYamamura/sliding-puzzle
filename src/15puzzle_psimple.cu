@@ -126,7 +126,7 @@ int get_md_sum(int *puzzle) {
     for (int i = 0; i < N2; ++i)
     {
         if(puzzle[i] == 0) continue;
-        sum += tmp_md[i][puzzle[i]];
+        sum += tmp_md[i * N2 + puzzle[i]];
     }
     return sum;
 }
