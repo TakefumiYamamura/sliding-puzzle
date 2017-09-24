@@ -17,14 +17,6 @@ template <typename T> std::string tostr(const T& t)
 {
     std::ostringstream os; os<<t; return os.str();
 }
-
-template< typename T >
-__devise__ void devise_swap( T& a, T& b ) {
-    T t = a;
-    a = b;
-    b = t;
-}
-
  
 #define N 4
 #define N2 16
@@ -238,8 +230,12 @@ bool create_root_set() {
             //incremental manhattan distance
             next_n.md -= md[(new_x * N + new_y) * N2 + next_n.puzzle[new_x * N + new_y]];
             next_n.md += md[(s_x * N + s_y) * N2 + next_n.puzzle[new_x * N + new_y]];
- 
-            swap(next_n.puzzle[new_x * N + new_y], next_n.puzzle[s_x * N + s_y]);
+
+            int a = next_n.puzzle[new_x * N + new_y];
+            int b = next_n.puzzle[s_x * N + s_y];
+            next_n.puzzle[new_x * N + new_y] = b;
+            next_n.puzzle[s_x * N + s_y] = a;
+
             next_n.space = new_x * N + new_y;
             // assert(get_md_sum(new_n.puzzle) == new_n.md);
             // return dfs(new_n, depth+1, i);
