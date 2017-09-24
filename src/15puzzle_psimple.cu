@@ -261,6 +261,10 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
     local_stack<Node, STACK_LIMIT> st;
     st.push(root_set[tid]);
 
+    int order[4] = {1, 0, 2, 3};
+    int dx[4] = {0, -1, 0, 1};
+    int dy[4] = {1, 0, -1, 0};
+
     while(!st.empty()) {
         Node cur_n = st.top();
         st.pop();
