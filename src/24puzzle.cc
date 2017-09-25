@@ -147,6 +147,7 @@ void Npuzzle::ida_star() {
 		// path.resize(limit);
 		cur_n = s_n;
 		if(dfs(0, -10)) {
+			cout << ans << endl;
 			// string str = "";
 			// for (int i = 0; i < limit; ++i)
 			// {
@@ -162,13 +163,15 @@ void Npuzzle::ida_star() {
 
 
 int main() {
-	string output_file = "../result/korf50_result.csv";
+	// string output_file = "../result/korf50_result.csv";
+	string output_file = "../result/yama24_result.csv";
 	ofstream writing_file;
 	writing_file.open(output_file, std::ios::out);
 
-	for (int i = 1; i <= 50; ++i)
+	for (int i = 0; i < 50; ++i)
 	{
-		string input_file = "../benchmarks/korf50_24puzzle/";
+		// string input_file = "../benchmarks/korf50_24puzzle/";
+		string input_file = "../benchmarks/yama24_50/prob";
 		if(i < 10) {
 			input_file += "00";
 		} else if(i < 100) {
