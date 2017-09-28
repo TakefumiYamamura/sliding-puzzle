@@ -114,29 +114,33 @@ public:
     }
 };
 
+Node s_node;
+int ans;
+priority_queue<Node, vector<Node>, greater<Node> > pq;
+local_pdb  *dev_pd;
+PatternDataBase pd;
+
 class PatternDataBase
 {
 private:
     unsigned char h0[PDB_TABLESIZE];
     unsigned char h1[PDB_TABLESIZE];
-    int order[4] = {1, 0, 2, 3};
+
 
     /* the position of each tile in order, reflected about the main diagonal */
-    int rf[N2] = {0, 5, 10, 15, 20, 1, 6, 11, 16, 21, 2, 7, 12, 17, 22, 3, 8, 13, 18, 23, 4, 9, 14, 19, 24};
+    int rf[N2];
 
     /* rotates the puzzle 90 degrees */
-    int rot90[N2] = {20, 15, 10, 5, 0, 21, 16, 11, 6, 1, 22, 17, 12, 7, 2, 23, 18, 13, 8, 3, 24, 19, 14, 9, 4};
+    int rot90[N2];
 
     /* composes the reflection and 90 degree rotation into a single array */
-    int rot90rf[N2] = {20, 21, 22, 23, 24, 15, 16, 17, 18, 19, 10, 11, 12, 13, 14, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4};
+    int rot90rf[N2];
 
     /* rotates the puzzle 180 degrees */
-    int rot180[N2] = {24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+    int rot180[N2];
 
     /* composes the reflection and 180 degree rotation into a single array */
-    int rot180rf[N2] = {24, 19, 14, 9, 4, 23, 18, 13, 8, 3, 22, 17, 12, 7, 2, 21, 16, 11, 6, 1, 20, 15, 10, 5, 0};
-
-
+    int rot180rf[N2];
 public:
     PatternDataBase();
     void input(const char *filename, unsigned char *table);
@@ -155,6 +159,20 @@ public:
 };
 
 PatternDataBase::PatternDataBase() {
+        /* the position of each tile in order, reflected about the main diagonal */
+    rf[N2] = {0, 5, 10, 15, 20, 1, 6, 11, 16, 21, 2, 7, 12, 17, 22, 3, 8, 13, 18, 23, 4, 9, 14, 19, 24};
+
+    /* rotates the puzzle 90 degrees */
+    rot90[N2] = {20, 15, 10, 5, 0, 21, 16, 11, 6, 1, 22, 17, 12, 7, 2, 23, 18, 13, 8, 3, 24, 19, 14, 9, 4};
+
+    /* composes the reflection and 90 degree rotation into a single array */
+    rot90rf[N2] = {20, 21, 22, 23, 24, 15, 16, 17, 18, 19, 10, 11, 12, 13, 14, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4};
+
+    /* rotates the puzzle 180 degrees */
+    rot180[N2] = {24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+
+    /* composes the reflection and 180 degree rotation into a single array */
+    rot180rf[N2] = {24, 19, 14, 9, 4, 23, 18, 13, 8, 3, 22, 17, 12, 7, 2, 21, 16, 11, 6, 1, 20, 15, 10, 5, 0};
     const char *c0 = "../pdb/pat24.1256712.tab";
     const char *c1 = "../pdb/pat24.34891314.tab";
     cout << "pattern 1 2 5 6 7 12 read in" << endl;
@@ -284,27 +302,27 @@ class local_pdb
 private:
     unsigned char h0[PDB_TABLESIZE];
     unsigned char h1[PDB_TABLESIZE];
-    int order[4] = {1, 0, 2, 3};
+    int order[4]
 
     /* the position of each tile in order, reflected about the main diagonal */
-    int rf[N2] = {0, 5, 10, 15, 20, 1, 6, 11, 16, 21, 2, 7, 12, 17, 22, 3, 8, 13, 18, 23, 4, 9, 14, 19, 24};
+    int rf[N2];
 
     /* rotates the puzzle 90 degrees */
-    int rot90[N2] = {20, 15, 10, 5, 0, 21, 16, 11, 6, 1, 22, 17, 12, 7, 2, 23, 18, 13, 8, 3, 24, 19, 14, 9, 4};
+    int rot90[N2];
 
     /* composes the reflection and 90 degree rotation into a single array */
-    int rot90rf[N2] = {20, 21, 22, 23, 24, 15, 16, 17, 18, 19, 10, 11, 12, 13, 14, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4};
+    int rot90rf[N2];
 
     /* rotates the puzzle 180 degrees */
-    int rot180[N2] = {24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+    int rot180[N2];
 
     /* composes the reflection and 180 degree rotation into a single array */
-    int rot180rf[N2] = {24, 19, 14, 9, 4, 23, 18, 13, 8, 3, 22, 17, 12, 7, 2, 21, 16, 11, 6, 1, 20, 15, 10, 5, 0};
+    int rot180rf[N2];
 
 
 
 public:
-    local_pdb(PatternDataBase *pdb);
+    local_pdb();
     __device__ unsigned int hash0(const int *inv);
     __device__ unsigned int hash1(const int *inv);
     __device__ unsigned int hash2(const int *inv);
@@ -317,11 +335,27 @@ public:
 
 };
 
-local_pdb::local_pdb(PatternDataBase) {
+local_pdb::local_pdb() {
+    order[4]
+
+    /* the position of each tile in order, reflected about the main diagonal */
+    rf[N2] = {0, 5, 10, 15, 20, 1, 6, 11, 16, 21, 2, 7, 12, 17, 22, 3, 8, 13, 18, 23, 4, 9, 14, 19, 24};
+
+    /* rotates the puzzle 90 degrees */
+    rot90[N2] = {20, 15, 10, 5, 0, 21, 16, 11, 6, 1, 22, 17, 12, 7, 2, 23, 18, 13, 8, 3, 24, 19, 14, 9, 4};
+
+    /* composes the reflection and 90 degree rotation  a single array */
+    rot90rf[N2] = {20, 21, 22, 23, 24, 15, 16, 17, 18, 19, 10, 11, 12, 13, 14, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4};
+
+    /* rotates the puzzle 180 degrees */
+    rot180[N2] = {24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+
+    /* composes the reflection and 180 degree rotation  a single array */
+    rot180rf[N2] = {24, 19, 14, 9, 4, 23, 18, 13, 8, 3, 22, 17, 12, 7, 2, 21, 16, 11, 6, 1, 20, 15, 10, 5, 0};
     for (int i = 0; i < PDB_TABLESIZE; ++i)
     {
         h0[i] = pdb.h0[i];
-        h1[i] = pdb->h1[i];
+        h1[i] = pdb.h1[i];
     }
 }
 
@@ -408,11 +442,6 @@ __device__ unsigned int local_pdb::get_hash_value(const int *inv) {
         hashref0(inv) + hashref1(inv) + hashref2(inv) + hashref3(inv) ); 
 }
 
-Node s_node;
-int ans;
-priority_queue<Node, vector<Node>, greater<Node> > pq;
-local_pdb  *dev_pd;
-PatternDataBase pd;
 
 
 void input_table(char *input_file) {
@@ -600,7 +629,7 @@ void ida_star() {
     //root_setをGPU側のdev_root_setにコピー
     HANDLE_ERROR(cudaMemcpy(dev_root_set, root_set, pq_size * sizeof(Node), cudaMemcpyHostToDevice) );
 
-    for (int limit = s_node.md; limit < 100; ++limit, ++limit)
+    for (int limit = s_node.h; limit < 100; ++limit, ++limit)
     {
         // path.resize(limit);
         // priority_queue<Node, vector<Node>, greater<Node> > tmp_pq = pq;
@@ -635,7 +664,7 @@ int main() {
     pd = PatternDataBase();
     //gpu側のメモリ割当て
     HANDLE_ERROR(cudaMalloc((void**)&dev_pd, sizeof(local_pdb) ) );
-    local_pdb lpdb = local_pdb(pd);
+    local_pdb lpdb = local_pdb();
     //root_setをGPU側のdev_pdにコピー
     HANDLE_ERROR(cudaMemcpy(dev_pd, lpdb&, sizeof(local_pdb), cudaMemcpyHostToDevice) );
 
