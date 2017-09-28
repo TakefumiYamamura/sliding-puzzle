@@ -1,0 +1,660 @@
+#include <iostream>
+#include <stdio.h>
+#include <assert.h>
+#include <vector>
+#include <queue>
+#include <fstream>
+#include <time.h>
+ 
+#include <cmath>
+#include <algorithm>
+#include <string>
+#include <set>
+#include <climits>
+#include <stack>
+#include <sstream>
+
+template <typename T> std::string tostr(const T& t)
+{
+    std::ostringstream os; os<<t; return os.str();
+}
+ 
+#define N 5
+#define N2 25
+#define STACK_LIMIT 64 * 8
+#define CORE_NUM 1536
+#define WARP_SIZE 32
+#define BLOCK_NUM 48
+
+using namespace std;
+
+static void HandleError( cudaError_t err,
+                         const char *file,
+                         int line ) {
+    if (err != cudaSuccess) {
+        printf( "%s in %s at line %d\n", cudaGetErrorString( err ),
+                file, line );
+        exit( EXIT_FAILURE );
+    }
+}
+#define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ ))
+
+
+#define HANDLE_NULL( a ) {if (a == NULL) { \
+                            printf( "Host memory failed in %s at line %d\n", \
+                                    __FILE__, __LINE__ ); \
+                            exit( EXIT_FAILURE );}}
+ 
+static const int dx[4] = {0, -1, 0, 1};
+static const int dy[4] = {1, 0, -1, 0};
+// static const char dir[4] = {'r', 'u', 'l', 'd'}; 
+static const int order[4] = {1, 0, 2, 3};
+
+
+struct Node
+{
+    int puzzle[N2];
+    int inv_puzzle[N2];
+    int space;
+    // int md;
+    int h;
+    int depth;
+    int pre;
+    bool operator < (const Node& n) const {
+        return depth + h < n.depth + n.h;
+    }
+
+    bool operator > (const Node& n) const {
+        return depth + h > n.depth + n.h;
+    }
+};
+
+template<class T, int NUM>
+class local_stack
+{
+private:
+    T buf[NUM];
+    int tos;
+
+public:
+    __device__ local_stack() :
+    tos(-1)
+    {
+    }
+
+    __device__ T const & top() const
+    {
+        return buf[tos];
+    }
+
+    __device__ T & top()
+    {
+        return buf[tos];
+    }
+
+    __device__ void push(T const & v)
+    {
+        buf[++tos] = v;
+    }
+
+    __device__ T pop()
+    {
+        return buf[tos--];
+    }
+
+    __device__ bool full()
+    {
+        return tos == (NUM - 1);
+    }
+
+    __device__ bool empty()
+    {
+        return tos == -1;
+    }
+};
+
+class PatternDataBase
+{
+private:
+    unsigned char h0[PDB_TABLESIZE];
+    unsigned char h1[PDB_TABLESIZE];
+    int order[4] = {1, 0, 2, 3};
+
+    /* the position of each tile in order, reflected about the main diagonal */
+    int rf[N2] = {0, 5, 10, 15, 20, 1, 6, 11, 16, 21, 2, 7, 12, 17, 22, 3, 8, 13, 18, 23, 4, 9, 14, 19, 24};
+
+    /* rotates the puzzle 90 degrees */
+    int rot90[N2] = {20, 15, 10, 5, 0, 21, 16, 11, 6, 1, 22, 17, 12, 7, 2, 23, 18, 13, 8, 3, 24, 19, 14, 9, 4};
+
+    /* composes the reflection and 90 degree rotation into a single array */
+    int rot90rf[N2] = {20, 21, 22, 23, 24, 15, 16, 17, 18, 19, 10, 11, 12, 13, 14, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4};
+
+    /* rotates the puzzle 180 degrees */
+    int rot180[N2] = {24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+
+    /* composes the reflection and 180 degree rotation into a single array */
+    int rot180rf[N2] = {24, 19, 14, 9, 4, 23, 18, 13, 8, 3, 22, 17, 12, 7, 2, 21, 16, 11, 6, 1, 20, 15, 10, 5, 0};
+
+
+public:
+    PatternDataBase();
+    void input(const char *filename, unsigned char *table);
+    unsigned int hash0(const int *inv);
+    unsigned int hash1(const int *inv);
+    unsigned int hash2(const int *inv);
+    unsigned int hash3(const int *inv);
+    unsigned int hashref0(const int *inv);
+    unsigned int hashref1(const int *inv);
+    unsigned int hashref2(const int *inv);
+    unsigned int hashref3(const int *inv);
+    unsigned int get_hash_value(const int *inv);
+    unsigned char get_h0_value(int i);
+    unsigned char get_h1_value(int i);
+
+};
+
+PatternDataBase::PatternDataBase() {
+    const char *c0 = "../pdb/pat24.1256712.tab";
+    const char *c1 = "../pdb/pat24.34891314.tab";
+    cout << "pattern 1 2 5 6 7 12 read in" << endl;
+    input(c0, h0);
+    cout << "pattern 3 4 8 9 13 14 read in" << endl;
+    input(c1, h1);
+}
+
+void PatternDataBase::input(const char *filename, unsigned char *table) {
+    FILE *infile;
+    infile = fopen(filename, "rb");
+    int index;
+    int s[6];
+    for (s[0] = 0; s[0] < N2; s[0]++) {
+        for (s[1] = 0; s[1] < N2; s[1]++) {
+            if (s[1] == s[0]) continue;
+            for (s[2] = 0; s[2] < N2; s[2]++) {
+                if (s[2] == s[0] || s[2] == s[1]) continue;
+                for (s[3] = 0; s[3] < N2; s[3]++) {
+                    if (s[3] == s[0] || s[3] == s[1] || s[3] == s[2]) continue;
+                    for (s[4] = 0; s[4] < N2; s[4]++) {
+                        if (s[4] == s[0] || s[4] == s[1] || s[4] == s[2] || s[4] == s[3]) continue;
+                        for (s[5] = 0; s[5] < N2; s[5]++)   {
+                            if (s[5] == s[0] || s[5] == s[1] || s[5] == s[2] || s[5] == s[3] || s[5] == s[4]) continue;
+                            index = ((((s[0]*25+s[1])*25+s[2])*25+s[3])*25+s[4])*25+s[5];
+                            table[index] = getc(infile);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    fclose(infile);
+}
+
+unsigned int PatternDataBase::hash0(const int *inv) {
+    int hashval;
+    hashval = ((((inv[1]*N2+inv[2])*N2+inv[5])*N2+inv[6])*N2+inv[7])*N2+inv[12];
+    return h0[hashval];
+}
+
+unsigned int PatternDataBase::hash1(const int *inv) {
+    int hashval;
+    hashval = ((((inv[3]*N2+inv[4])*N2+inv[8])*N2+inv[9])*N2+inv[13])*N2+inv[14];
+    return (h1[hashval]);
+}
+
+unsigned int PatternDataBase::hash2(const int *inv) {
+    int hashval;
+    hashval = ((((rot180[inv[21]] * N2
+              + rot180[inv[20]]) * N2
+             + rot180[inv[16]]) * N2
+            + rot180[inv[15]]) * N2
+           + rot180[inv[11]]) * N2
+          + rot180[inv[10]];
+    return (h1[hashval]);
+}
+
+unsigned int PatternDataBase::hash3(const int *inv) {
+    int hashval;
+    hashval = ((((rot90[inv[19]] * N2
+              + rot90[inv[24]]) * N2
+             + rot90[inv[18]]) * N2
+            + rot90[inv[23]]) * N2
+           + rot90[inv[17]]) * N2
+          + rot90[inv[22]];
+    return (h1[hashval]);
+}
+
+unsigned int PatternDataBase::hashref0(const int *inv) {
+    int hashval;
+    hashval = (((((rf[inv[5]] * N2
+               + rf[inv[10]]) * N2
+              + rf[inv[1]]) * N2
+             + rf[inv[6]]) * N2
+            + rf[inv[11]]) * N2
+           + rf[inv[12]]);
+    return (h0[hashval]);
+}
+
+unsigned int PatternDataBase::hashref1(const int *inv) {
+    int hashval;
+    hashval = (((((rf[inv[15]] * N2
+               + rf[inv[20]]) * N2
+              + rf[inv[16]]) * N2
+             + rf[inv[21]]) * N2
+            + rf[inv[17]]) * N2
+           + rf[inv[22]]);
+    return (h1[hashval]);
+}
+unsigned int PatternDataBase::hashref2(const int *inv) {
+    int hashval;
+    hashval = (((((rot180rf[inv[9]] * N2
+               + rot180rf[inv[4]]) * N2
+              + rot180rf[inv[8]]) * N2
+             + rot180rf[inv[3]]) * N2
+            + rot180rf[inv[7]]) * N2
+           + rot180rf[inv[2]]);
+    return (h1[hashval]);
+}
+
+unsigned int PatternDataBase::hashref3(const int *inv) {
+    int hashval;
+    hashval = (((((rot90rf[inv[23]] * N2
+               + rot90rf[inv[24]]) * N2
+              + rot90rf[inv[18]]) * N2
+             + rot90rf[inv[19]]) * N2
+            + rot90rf[inv[13]]) * N2
+           + rot90rf[inv[14]]);
+    return (h1[hashval]);
+}
+
+unsigned int PatternDataBase::get_hash_value(const int *inv) {
+    return max( hash0(inv) + hash1(inv) + hash2(inv) + hash3(inv), 
+        hashref0(inv) + hashref1(inv) + hashref2(inv) + hashref3(inv) ); 
+}
+
+unsigned char PatternDataBase::get_h0_value(int i) {
+    return h0[i];
+}
+unsigned char PatternDataBase::get_h1_value(int i) {
+    return h1[i];
+}
+
+class local_pdb
+{
+private:
+    unsigned char h0[PDB_TABLESIZE];
+    unsigned char h1[PDB_TABLESIZE];
+    int order[4] = {1, 0, 2, 3};
+
+    /* the position of each tile in order, reflected about the main diagonal */
+    int rf[N2] = {0, 5, 10, 15, 20, 1, 6, 11, 16, 21, 2, 7, 12, 17, 22, 3, 8, 13, 18, 23, 4, 9, 14, 19, 24};
+
+    /* rotates the puzzle 90 degrees */
+    int rot90[N2] = {20, 15, 10, 5, 0, 21, 16, 11, 6, 1, 22, 17, 12, 7, 2, 23, 18, 13, 8, 3, 24, 19, 14, 9, 4};
+
+    /* composes the reflection and 90 degree rotation into a single array */
+    int rot90rf[N2] = {20, 21, 22, 23, 24, 15, 16, 17, 18, 19, 10, 11, 12, 13, 14, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4};
+
+    /* rotates the puzzle 180 degrees */
+    int rot180[N2] = {24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+
+    /* composes the reflection and 180 degree rotation into a single array */
+    int rot180rf[N2] = {24, 19, 14, 9, 4, 23, 18, 13, 8, 3, 22, 17, 12, 7, 2, 21, 16, 11, 6, 1, 20, 15, 10, 5, 0};
+
+
+
+public:
+    __device__ local_pdb(PatternDataBase *pdb);
+    __device__ unsigned int hash0(const int *inv);
+    __device__ unsigned int hash1(const int *inv);
+    __device__ unsigned int hash2(const int *inv);
+    __device__ unsigned int hash3(const int *inv);
+    __device__ unsigned int hashref0(const int *inv);
+    __device__ unsigned int hashref1(const int *inv);
+    __device__ unsigned int hashref2(const int *inv);
+    __device__ unsigned int hashref3(const int *inv);
+    __device__ unsigned int get_hash_value(const int *inv);
+
+};
+
+__device__ local_pdb::local_pdb(PatternDataBase) {
+    for (int i = 0; i < PDB_TABLESIZE; ++i)
+    {
+        h0[i] = pdb.h0[i];
+        h1[i] = pdb->h1[i];
+    }
+}
+
+
+__device__ unsigned int local_pdb::hash0(const int *inv) {
+    int hashval;
+    hashval = ((((inv[1]*N2+inv[2])*N2+inv[5])*N2+inv[6])*N2+inv[7])*N2+inv[12];
+    return h0[hashval];
+}
+
+__device__ unsigned int local_pdb::hash1(const int *inv) {
+    int hashval;
+    hashval = ((((inv[3]*N2+inv[4])*N2+inv[8])*N2+inv[9])*N2+inv[13])*N2+inv[14];
+    return (h1[hashval]);
+}
+
+__device__ unsigned int local_pdb::hash2(const int *inv) {
+    int hashval;
+    hashval = ((((rot180[inv[21]] * N2
+              + rot180[inv[20]]) * N2
+             + rot180[inv[16]]) * N2
+            + rot180[inv[15]]) * N2
+           + rot180[inv[11]]) * N2
+          + rot180[inv[10]];
+    return (h1[hashval]);
+}
+
+__device__ unsigned int local_pdb::hash3(const int *inv) {
+    int hashval;
+    hashval = ((((rot90[inv[19]] * N2
+              + rot90[inv[24]]) * N2
+             + rot90[inv[18]]) * N2
+            + rot90[inv[23]]) * N2
+           + rot90[inv[17]]) * N2
+          + rot90[inv[22]];
+    return (h1[hashval]);
+}
+
+__device__ unsigned int local_pdb::hashref0(const int *inv) {
+    int hashval;
+    hashval = (((((rf[inv[5]] * N2
+               + rf[inv[10]]) * N2
+              + rf[inv[1]]) * N2
+             + rf[inv[6]]) * N2
+            + rf[inv[11]]) * N2
+           + rf[inv[12]]);
+    return (h0[hashval]);
+}
+
+__device__ unsigned int local_pdb::hashref1(const int *inv) {
+    int hashval;
+    hashval = (((((rf[inv[15]] * N2
+               + rf[inv[20]]) * N2
+              + rf[inv[16]]) * N2
+             + rf[inv[21]]) * N2
+            + rf[inv[17]]) * N2
+           + rf[inv[22]]);
+    return (h1[hashval]);
+}
+__device__ unsigned int local_pdb::hashref2(const int *inv) {
+    int hashval;
+    hashval = (((((rot180rf[inv[9]] * N2
+               + rot180rf[inv[4]]) * N2
+              + rot180rf[inv[8]]) * N2
+             + rot180rf[inv[3]]) * N2
+            + rot180rf[inv[7]]) * N2
+           + rot180rf[inv[2]]);
+    return (h1[hashval]);
+}
+
+__device__ unsigned int local_pdb::hashref3(const int *inv) {
+    int hashval;
+    hashval = (((((rot90rf[inv[23]] * N2
+               + rot90rf[inv[24]]) * N2
+              + rot90rf[inv[18]]) * N2
+             + rot90rf[inv[19]]) * N2
+            + rot90rf[inv[13]]) * N2
+           + rot90rf[inv[14]]);
+    return (h1[hashval]);
+}
+
+__device__ unsigned int local_pdb::get_hash_value(const int *inv) {
+    return max( hash0(inv) + hash1(inv) + hash2(inv) + hash3(inv), 
+        hashref0(inv) + hashref1(inv) + hashref2(inv) + hashref3(inv) ); 
+}
+
+
+void input_table(char *input_file) {
+    s_node = Node();
+    fstream ifs(input_file);
+
+    for (int i = 0; i < N2; ++i)
+    {
+        int tmp;
+        // scanf("%d", &tmp);
+        ifs >> tmp;
+        // cin >> tmp;
+        if(tmp == 0) {
+            s_node.space = i;
+        }
+        s_node.puzzle[i] = tmp;
+        s_node.inv_puzzle[tmp] = i;
+    }
+    s_node.h = pd.get_hash_value(s_node.inv_puzzle);
+    s_node.depth = 0;
+    s_node.pre = -10;
+}
+
+
+
+bool dfs(int limit, Node s_n) {
+    stack<Node> st;
+    st.push(s_n);
+
+    while(!st.empty()) {
+        Node cur_n = st.top();
+        st.pop();
+        if(cur_n.h == 0 ) {
+            ans = cur_n.depth;
+            return true;
+        }
+        int s_x = cur_n.space / N;
+        int s_y = cur_n.space % N;
+        for (int operator_order = 0; operator_order < 4; ++operator_order)
+        {
+            int i = order[operator_order];
+            Node next_n = cur_n;
+            int new_x = s_x + dx[i];
+            int new_y = s_y + dy[i];
+            if(new_x < 0  || new_y < 0 || new_x >= N || new_y >= N) continue; 
+            if(max(cur_n.pre, i) - min(cur_n.pre, i) == 2) continue;
+ 
+            swap(next_n.puzzle[new_x * N + new_y], next_n.puzzle[s_x * N + s_y]);
+            swap(next_n.inv_puzzle[new_x * N + new_y], next_n.inv_puzzle[s_x * N + s_y]);
+            next_n.space = new_x * N + new_y;
+            next_n.h = pd.get_hash_value(cur_n.inv_puzzle);
+            // assert(get_md_sum(new_n.puzzle) == new_n.h);
+            // return dfs(new_n, depth+1, i);
+            next_n.depth++;
+            if(cur_n.depth + cur_n.h > limit) continue;
+            next_n.pre = i;
+            st.push(next_n);
+            if(next_n.h == 0) {
+                ans = next_n.depth;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool create_root_set() {
+    pq.push(s_node);
+    while(pq.size() < CORE_NUM) {
+        Node cur_n = pq.top();
+        pq.pop();
+        if(cur_n.h == 0 ) {
+            ans = cur_n.depth;
+            return true;
+        }
+        int s_x = cur_n.space / N;
+        int s_y = cur_n.space % N;
+        for (int operator_order = 0; operator_order < 4; ++operator_order)
+        {
+            int i = order[operator_order];
+            Node next_n = cur_n;
+            int new_x = s_x + dx[i];
+            int new_y = s_y + dy[i];
+            if(new_x < 0  || new_y < 0 || new_x >= N || new_y >= N) continue; 
+            if(max(cur_n.pre, i) - min(cur_n.pre, i) == 2) continue;
+ 
+ 
+            swap(next_n.puzzle[new_x * N + new_y], next_n.puzzle[s_x * N + s_y]);
+            swap(next_n.inv_puzzle[new_x * N + new_y], next_n.inv_puzzle[s_x * N + s_y]);
+            next_n.space = new_x * N + new_y;
+            next_n.h = pd.get_hash_value(cur_n.inv_puzzle);
+
+            next_n.depth++;
+            next_n.pre = i;
+            if(next_n.h == 0) {
+                ans = next_n.depth;
+                return true;
+            }
+            pq.push(next_n);
+            if(pq.size() >= CORE_NUM){
+                return false;
+            }
+        }
+    }
+    return false;
+}
+
+__global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, PatternDataBase *dev_pd) {
+    int idx = blockDim.x * blockIdx.x + threadIdx.x;
+
+    local_stack<Node, STACK_LIMIT> st;
+    st.push(root_set[idx]);
+
+    int order[4] = {1, 0, 2, 3};
+    int dx[4] = {0, -1, 0, 1};
+    int dy[4] = {1, 0, -1, 0};
+
+    while(!st.empty()) {
+        Node cur_n = st.top();
+        st.pop();
+        if(cur_n.h == 0 ) {
+            // ans = cur_n.depth;
+            dev_flag[idx] = cur_n.depth;
+            return;
+        }
+        int s_x = cur_n.space / N;
+        int s_y = cur_n.space % N;
+        for (int operator_order = 0; operator_order < 4; ++operator_order)
+        {
+            int i = order[operator_order];
+            Node next_n = cur_n;
+            int new_x = s_x + dx[i];
+            int new_y = s_y + dy[i];
+            if(new_x < 0  || new_y < 0 || new_x >= N || new_y >= N) continue; 
+            if(max(cur_n.pre, i) - min(cur_n.pre, i) == 2) continue;
+ 
+
+ 
+            int a = next_n.puzzle[new_x * N + new_y];
+            int b = next_n.inv_puzzle[new_x * N + new_y];
+            next_n.puzzle[new_x * N + new_y] = next_n.puzzle[s_x * N + s_y];
+            next_n.inv_puzzle[new_x * N + new_y] = next_n.inv_puzzle[s_x * N + s_y];
+            next_n.puzzle[s_x * N + s_y] = a;
+            next_n.inv_puzzle[s_x * N + s_y] = b;
+
+            next_n.space = new_x * N + new_y;
+            next_n.h = dev_pd.get_hash_value(cur_n.inv_puzzle);
+
+            next_n.depth++;
+            if(cur_n.depth + cur_n.h > limit) continue;
+            next_n.pre = i;
+            st.push(next_n);
+            if(next_n.h == 0) {
+                // ans = next_n.depth;
+                dev_flag[idx] = next_n.depth;
+                return;
+            }
+        }
+    }
+    dev_flag[idx] = -1;
+    return;
+
+}
+
+void ida_star() {
+    if(create_root_set()) {
+        printf("%d\n", ans);
+        return;
+    }
+    int pq_size = pq.size();
+    Node root_set[CORE_NUM];
+    int i = 0;
+    while(!pq.empty()) {
+        Node n = pq.top();
+        pq.pop();
+        root_set[i] = n;
+        i++;
+    }
+
+
+    //gpu側で使う根集合のポインタ
+    Node *dev_root_set;
+    //gpu側のメモリ割当て
+    HANDLE_ERROR(cudaMalloc((void**)&dev_root_set, pq_size * sizeof(Node) ) );
+    //root_setをGPU側のdev_root_setにコピー
+    HANDLE_ERROR(cudaMemcpy(dev_root_set, root_set, pq_size * sizeof(Node), cudaMemcpyHostToDevice) );
+
+    for (int limit = s_node.md; limit < 100; ++limit, ++limit)
+    {
+        // path.resize(limit);
+        // priority_queue<Node, vector<Node>, greater<Node> > tmp_pq = pq;
+
+        int flag[CORE_NUM];
+        int *dev_flag;
+
+        //gpu側にメモリ割当
+        HANDLE_ERROR(cudaMalloc( (void**)&dev_flag, pq_size * sizeof(int) ) );
+        dfs_kernel<<<BLOCK_NUM, WARP_SIZE>>>(limit, dev_root_set, dev_flag);
+        HANDLE_ERROR(cudaMemcpy(flag, dev_flag, CORE_NUM * sizeof(int), cudaMemcpyDeviceToHost));
+        for (int i = 0; i < CORE_NUM; ++i)
+        {
+            if(flag[i] != -1) {
+                cout << flag[i] << endl;
+                return;
+            }
+        }
+        HANDLE_ERROR(cudaFree(dev_flag) );
+    }
+    HANDLE_ERROR(cudaFree(dev_root_set));
+}
+
+ 
+int main() {
+
+    FILE *output_file;
+    output_file = fopen("../result/yama24_psimple_result.csv","w");
+
+    // set_md();
+    // pattern database 
+    pd = PatternDataBase();
+    local_pdb  *dev_pd;
+    //gpu側のメモリ割当て
+    HANDLE_ERROR(cudaMalloc((void**)&dev_pd, sizeof(local_pdb) ) );
+    //root_setをGPU側のdev_root_setにコピー
+    HANDLE_ERROR(cudaMemcpy(dev_root_set, root_set, pq_size * sizeof(Node), cudaMemcpyHostToDevice) );
+
+
+    for (int i = 1; i <= 50; ++i)
+    {
+        string input_file = "../benchmarks/yama24_50/prob";
+        // string input_file = "../benchmarks/korf100/prob";
+        if(i < 10) {
+            input_file += "00";
+        } else if(i < 100) {
+            input_file += "0";
+        }
+        input_file += tostr(i);
+        cout << input_file << endl;
+        // set_md();
+
+        clock_t start = clock();
+
+        input_table(const_cast<char*>(input_file.c_str()));
+        ida_star();
+
+        clock_t end = clock();
+        fprintf(output_file,"%f\n", (double)(end - start) / CLOCKS_PER_SEC);
+
+        // writing_file << (double)(end - start) / CLOCKS_PER_SEC << endl;
+    }
+    fclose(output_file);
+}
