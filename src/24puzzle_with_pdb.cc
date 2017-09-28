@@ -49,7 +49,6 @@ struct Node
     int puzzle[N2];
     int inv_puzzle[N2];
     int space;
-    // int md;
     int h;
 };
 
@@ -198,37 +197,14 @@ private:
     Node cur_n;
     int limit;
     int node_num;
-    // int md[N2][N2];
     vector<int> path;
     int ans;
-    // int node_num;
     PatternDataBase pd;
 public:
-    // Npuzzle();
     Npuzzle(string input_file, PatternDataBase _pd);
-    // int get_md_sum(int *puzzle);
-    // void set_md();
     bool dfs(int depth, int pre);
     void ida_star();
 };
-
-// Npuzzle::Npuzzle() {
-//     s_n = Node();
-//     node_num = 0;
-//     int in[N2];
-//     for (int i = 0; i < N2; ++i)
-//     {
-//         int tmp;
-//         cin >> tmp;
-//         if(tmp == 0) {
-//             s_n.space = i;
-//         }
-//         s_n.puzzle[i] = tmp;
-//         s_n.inv_puzzle[tmp] = i;
-//     }
-//     set_md();
-//     s_n.md = get_md_sum(s_n.puzzle);
-// }
 
 Npuzzle::Npuzzle(string input_file, PatternDataBase _pd) {
     node_num = 0;
@@ -247,28 +223,6 @@ Npuzzle::Npuzzle(string input_file, PatternDataBase _pd) {
     pd = _pd;
     s_n.h = pd.get_hash_value(s_n.inv_puzzle);
 }
-
-// int Npuzzle::get_md_sum(int *puzzle) {
-//     int sum = 0;
-//     for (int i = 0; i < N2; ++i)
-//     {
-//         if(puzzle[i] == 0) continue;
-//         // cout << md[i][puzzle[i]] << " ";
-//         sum += md[i][puzzle[i]];
-//     }
-//     return sum;
-// }
-
-// void Npuzzle::set_md() {
-//     for (int i = 0; i < N2; ++i)
-//     {
-//         for (int j = 0; j < N2; ++j)
-//         {
-//             md[i][j] = abs(i / N - j / N) + abs(i % N - j % N);
-//         }
-//     }
-// }
-
 
 bool Npuzzle::dfs(int depth, int pre) {
     if(cur_n.h == 0 ) {

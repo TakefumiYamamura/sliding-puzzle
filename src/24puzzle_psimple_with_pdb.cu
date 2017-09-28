@@ -303,7 +303,7 @@ private:
 
 
 public:
-    __device__ local_pdb(PatternDataBase *pdb);
+    local_pdb(PatternDataBase *pdb);
     __device__ unsigned int hash0(const int *inv);
     __device__ unsigned int hash1(const int *inv);
     __device__ unsigned int hash2(const int *inv);
@@ -316,7 +316,7 @@ public:
 
 };
 
-__device__ local_pdb::local_pdb(PatternDataBase) {
+local_pdb::local_pdb(PatternDataBase) {
     for (int i = 0; i < PDB_TABLESIZE; ++i)
     {
         h0[i] = pdb.h0[i];
@@ -406,6 +406,12 @@ __device__ unsigned int local_pdb::get_hash_value(const int *inv) {
     return max( hash0(inv) + hash1(inv) + hash2(inv) + hash3(inv), 
         hashref0(inv) + hashref1(inv) + hashref2(inv) + hashref3(inv) ); 
 }
+
+Node s_node;
+int ans;
+priority_queue<Node, vector<Node>, greater<Node> > pq;
+local_pdb  *dev_pd;
+PatternDataBase pd;
 
 
 void input_table(char *input_file) {
@@ -513,7 +519,7 @@ bool create_root_set() {
     return false;
 }
 
-__global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, PatternDataBase *dev_pd) {
+__global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, local_pdb *dev_pdb) {
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
 
     local_stack<Node, STACK_LIMIT> st;
@@ -552,7 +558,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, PatternData
             next_n.inv_puzzle[s_x * N + s_y] = b;
 
             next_n.space = new_x * N + new_y;
-            next_n.h = dev_pd.get_hash_value(cur_n.inv_puzzle);
+            next_n.h = dev_pdb.get_hash_value(cur_n.inv_puzzle);
 
             next_n.depth++;
             if(cur_n.depth + cur_n.h > limit) continue;
@@ -603,7 +609,7 @@ void ida_star() {
 
         //gpu側にメモリ割当
         HANDLE_ERROR(cudaMalloc( (void**)&dev_flag, pq_size * sizeof(int) ) );
-        dfs_kernel<<<BLOCK_NUM, WARP_SIZE>>>(limit, dev_root_set, dev_flag);
+        dfs_kernel<<<BLOCK_NUM, WARP_SIZE>>>(limit, dev_root_set, dev_flag, dev_pd);
         HANDLE_ERROR(cudaMemcpy(flag, dev_flag, CORE_NUM * sizeof(int), cudaMemcpyDeviceToHost));
         for (int i = 0; i < CORE_NUM; ++i)
         {
@@ -626,11 +632,11 @@ int main() {
     // set_md();
     // pattern database 
     pd = PatternDataBase();
-    local_pdb  *dev_pd;
     //gpu側のメモリ割当て
     HANDLE_ERROR(cudaMalloc((void**)&dev_pd, sizeof(local_pdb) ) );
-    //root_setをGPU側のdev_root_setにコピー
-    HANDLE_ERROR(cudaMemcpy(dev_root_set, root_set, pq_size * sizeof(Node), cudaMemcpyHostToDevice) );
+    local_pdb lpdb = local_pdb(pd);
+    //root_setをGPU側のdev_pdにコピー
+    HANDLE_ERROR(cudaMemcpy(dev_pd, lpdb&, sizeof(local_pdb), cudaMemcpyHostToDevice) );
 
 
     for (int i = 1; i <= 50; ++i)
@@ -656,5 +662,6 @@ int main() {
 
         // writing_file << (double)(end - start) / CLOCKS_PER_SEC << endl;
     }
+    HANDLE_ERROR(cudaFree(dev_pd));
     fclose(output_file);
 }
