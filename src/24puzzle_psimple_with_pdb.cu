@@ -117,7 +117,6 @@ public:
 Node s_node;
 int ans;
 priority_queue<Node, vector<Node>, greater<Node> > pq;
-local_pdb  *dev_pd;
 PatternDataBase pd;
 
 class PatternDataBase
@@ -125,8 +124,6 @@ class PatternDataBase
 private:
     unsigned char h0[PDB_TABLESIZE];
     unsigned char h1[PDB_TABLESIZE];
-
-
     /* the position of each tile in order, reflected about the main diagonal */
     int rf[N2];
 
@@ -158,21 +155,13 @@ public:
 
 };
 
-PatternDataBase::PatternDataBase() {
-        /* the position of each tile in order, reflected about the main diagonal */
-    rf[N2] = {0, 5, 10, 15, 20, 1, 6, 11, 16, 21, 2, 7, 12, 17, 22, 3, 8, 13, 18, 23, 4, 9, 14, 19, 24};
+PatternDataBase::PatternDataBase() : rf{0, 5, 10, 15, 20, 1, 6, 11, 16, 21, 2, 7, 12, 17, 22, 3, 8, 13, 18, 23, 4, 9, 14, 19, 24}, 
+                                    rot90{20, 15, 10, 5, 0, 21, 16, 11, 6, 1, 22, 17, 12, 7, 2, 23, 18, 13, 8, 3, 24, 19, 14, 9, 4},
+                                    rot90rf{20, 21, 22, 23, 24, 15, 16, 17, 18, 19, 10, 11, 12, 13, 14, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4},
+                                    rot180{24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0},
+                                    rot180rf{24, 19, 14, 9, 4, 23, 18, 13, 8, 3, 22, 17, 12, 7, 2, 21, 16, 11, 6, 1, 20, 15, 10, 5, 0}
 
-    /* rotates the puzzle 90 degrees */
-    rot90[N2] = {20, 15, 10, 5, 0, 21, 16, 11, 6, 1, 22, 17, 12, 7, 2, 23, 18, 13, 8, 3, 24, 19, 14, 9, 4};
-
-    /* composes the reflection and 90 degree rotation into a single array */
-    rot90rf[N2] = {20, 21, 22, 23, 24, 15, 16, 17, 18, 19, 10, 11, 12, 13, 14, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4};
-
-    /* rotates the puzzle 180 degrees */
-    rot180[N2] = {24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
-
-    /* composes the reflection and 180 degree rotation into a single array */
-    rot180rf[N2] = {24, 19, 14, 9, 4, 23, 18, 13, 8, 3, 22, 17, 12, 7, 2, 21, 16, 11, 6, 1, 20, 15, 10, 5, 0};
+{
     const char *c0 = "../pdb/pat24.1256712.tab";
     const char *c1 = "../pdb/pat24.34891314.tab";
     cout << "pattern 1 2 5 6 7 12 read in" << endl;
@@ -297,12 +286,14 @@ unsigned char PatternDataBase::get_h1_value(int i) {
     return h1[i];
 }
 
+
+local_pdb  *dev_pd;
+
 class local_pdb
 {
 private:
     unsigned char h0[PDB_TABLESIZE];
     unsigned char h1[PDB_TABLESIZE];
-    int order[4]
 
     /* the position of each tile in order, reflected about the main diagonal */
     int rf[N2];
@@ -335,23 +326,12 @@ public:
 
 };
 
-local_pdb::local_pdb() {
-    order[4]
-
-    /* the position of each tile in order, reflected about the main diagonal */
-    rf[N2] = {0, 5, 10, 15, 20, 1, 6, 11, 16, 21, 2, 7, 12, 17, 22, 3, 8, 13, 18, 23, 4, 9, 14, 19, 24};
-
-    /* rotates the puzzle 90 degrees */
-    rot90[N2] = {20, 15, 10, 5, 0, 21, 16, 11, 6, 1, 22, 17, 12, 7, 2, 23, 18, 13, 8, 3, 24, 19, 14, 9, 4};
-
-    /* composes the reflection and 90 degree rotation  a single array */
-    rot90rf[N2] = {20, 21, 22, 23, 24, 15, 16, 17, 18, 19, 10, 11, 12, 13, 14, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4};
-
-    /* rotates the puzzle 180 degrees */
-    rot180[N2] = {24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
-
-    /* composes the reflection and 180 degree rotation  a single array */
-    rot180rf[N2] = {24, 19, 14, 9, 4, 23, 18, 13, 8, 3, 22, 17, 12, 7, 2, 21, 16, 11, 6, 1, 20, 15, 10, 5, 0};
+local_pdb::local_pdb() : rf{0, 5, 10, 15, 20, 1, 6, 11, 16, 21, 2, 7, 12, 17, 22, 3, 8, 13, 18, 23, 4, 9, 14, 19, 24}, 
+                        rot90{20, 15, 10, 5, 0, 21, 16, 11, 6, 1, 22, 17, 12, 7, 2, 23, 18, 13, 8, 3, 24, 19, 14, 9, 4},
+                        rot90rf{20, 21, 22, 23, 24, 15, 16, 17, 18, 19, 10, 11, 12, 13, 14, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4},
+                        rot180{24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0},
+                        rot180rf{24, 19, 14, 9, 4, 23, 18, 13, 8, 3, 22, 17, 12, 7, 2, 21, 16, 11, 6, 1, 20, 15, 10, 5, 0}
+{
     for (int i = 0; i < PDB_TABLESIZE; ++i)
     {
         h0[i] = pdb.h0[i];
