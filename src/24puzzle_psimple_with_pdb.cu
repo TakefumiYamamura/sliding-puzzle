@@ -151,12 +151,12 @@ PatternDataBase::PatternDataBase() {
     const char *c0 = "../pdb/pat24.1256712.tab";
     const char *c1 = "../pdb/pat24.34891314.tab";
     cout << "pattern 1 2 5 6 7 12 read in" << endl;
-    input(c0, h0);
+    input_h0(c0);
     cout << "pattern 3 4 8 9 13 14 read in" << endl;
-    input(c1, h1);
+    input_h1(c1);
 }
 
-void PatternDataBase::input(const char *filename, unsigned char *table) {
+void PatternDataBase::input_h0(const char *filenam) {
     FILE *infile;
     infile = fopen(filename, "rb");
     int index;
@@ -173,7 +173,35 @@ void PatternDataBase::input(const char *filename, unsigned char *table) {
                         for (s[5] = 0; s[5] < N2; s[5]++)   {
                             if (s[5] == s[0] || s[5] == s[1] || s[5] == s[2] || s[5] == s[3] || s[5] == s[4]) continue;
                             index = ((((s[0]*25+s[1])*25+s[2])*25+s[3])*25+s[4])*25+s[5];
-                            table[index] = getc(infile);
+                            h0[index] = getc(infile);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    fclose(infile);
+}
+
+
+void PatternDataBase::input_h1(const char *filenam) {
+    FILE *infile;
+    infile = fopen(filename, "rb");
+    int index;
+    int s[6];
+    for (s[0] = 0; s[0] < N2; s[0]++) {
+        for (s[1] = 0; s[1] < N2; s[1]++) {
+            if (s[1] == s[0]) continue;
+            for (s[2] = 0; s[2] < N2; s[2]++) {
+                if (s[2] == s[0] || s[2] == s[1]) continue;
+                for (s[3] = 0; s[3] < N2; s[3]++) {
+                    if (s[3] == s[0] || s[3] == s[1] || s[3] == s[2]) continue;
+                    for (s[4] = 0; s[4] < N2; s[4]++) {
+                        if (s[4] == s[0] || s[4] == s[1] || s[4] == s[2] || s[4] == s[3]) continue;
+                        for (s[5] = 0; s[5] < N2; s[5]++)   {
+                            if (s[5] == s[0] || s[5] == s[1] || s[5] == s[2] || s[5] == s[3] || s[5] == s[4]) continue;
+                            index = ((((s[0]*25+s[1])*25+s[2])*25+s[3])*25+s[4])*25+s[5];
+                            h1[index] = getc(infile);
                         }
                     }
                 }
@@ -550,7 +578,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, local_pdb *
             next_n.inv_puzzle[s_x * N + s_y] = b;
 
             next_n.space = new_x * N + new_y;
-            next_n.h = dev_pdb.get_hash_value(cur_n.inv_puzzle);
+            next_n.h = dev_pdb->get_hash_value(cur_n.inv_puzzle);
             next_n.depth++;
             if(cur_n.depth + cur_n.h > limit) continue;
             next_n.pre = i;
@@ -625,10 +653,9 @@ int main() {
     pd = PatternDataBase();
     //gpu側のメモリ割当て
     HANDLE_ERROR(cudaMalloc((void**)&dev_pd, sizeof(local_pdb) ) );
-    local_pdb lpdb = local_pdb();
+    local_pdb *lpdb = new local_pdb();
     //root_setをGPU側のdev_pdにコピー
-    HANDLE_ERROR(cudaMemcpy(dev_pd, lpdb&, sizeof(local_pdb), cudaMemcpyHostToDevice) );
-
+    HANDLE_ERROR(cudaMemcpy(dev_pd, lpdb, sizeof(local_pdb), cudaMemcpyHostToDevice) );
 
     for (int i = 1; i <= 50; ++i)
     {
