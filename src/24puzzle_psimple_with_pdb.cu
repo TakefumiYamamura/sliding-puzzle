@@ -51,11 +51,17 @@ static const int dy[4] = {1, 0, -1, 0};
 // static const char dir[4] = {'r', 'u', 'l', 'd'}; 
 static const int order[4] = {1, 0, 2, 3};
 
-static __device__ __constant__ const int rf[] = {0,5,10,15,20,1,6,11,16,21,2,7,12,17,22,3,8,13,18,23,4,9,14,19,24};
-static __device__ __constant__ const int rot90[] = {20,15,10,5,0,21,16,11,6,1,22,17,12,7,2,23,18,13,8,3,24,19,14,9,4};
-static __device__ __constant__ const int rot90rf[] = {20,21,22,23,24,15,16,17,18,19,10,11,12,13,14,5,6,7,8,9,0,1,2,3,4};
-static __device__ __constant__ const int rot180[] = {24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0};
-static __device__ __constant__ const int rot180rf[] = {24,19,14,9,4,23,18,13,8,3,22,17,12,7,2,21,16,11,6,1,20,15,10,5,0};
+static __device__ __constant__ const int dev_rf[] = {0,5,10,15,20,1,6,11,16,21,2,7,12,17,22,3,8,13,18,23,4,9,14,19,24};
+static __device__ __constant__ const int dev_rot90[] = {20,15,10,5,0,21,16,11,6,1,22,17,12,7,2,23,18,13,8,3,24,19,14,9,4};
+static __device__ __constant__ const int dev_rot90rf[] = {20,21,22,23,24,15,16,17,18,19,10,11,12,13,14,5,6,7,8,9,0,1,2,3,4};
+static __device__ __constant__ const int dev_rot180[] = {24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0};
+static __device__ __constant__ const int dev_rot180rf[] = {24,19,14,9,4,23,18,13,8,3,22,17,12,7,2,21,16,11,6,1,20,15,10,5,0};
+
+static  const int rf[] = {0,5,10,15,20,1,6,11,16,21,2,7,12,17,22,3,8,13,18,23,4,9,14,19,24};
+static  const int rot90[] = {20,15,10,5,0,21,16,11,6,1,22,17,12,7,2,23,18,13,8,3,24,19,14,9,4};
+static  const int rot90rf[] = {20,21,22,23,24,15,16,17,18,19,10,11,12,13,14,5,6,7,8,9,0,1,2,3,4};
+static  const int rot180[] = {24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0};
+static  const int rot180rf[] = {24,19,14,9,4,23,18,13,8,3,22,17,12,7,2,21,16,11,6,1,20,15,10,5,0};
 
 
 struct Node
@@ -309,24 +315,6 @@ class local_pdb
 private:
     unsigned char h0[PDB_TABLESIZE];
     unsigned char h1[PDB_TABLESIZE];
-
-    /* the position of each tile in order, reflected about the main diagonal */
-    int rf[N2];
-
-    /* rotates the puzzle 90 degrees */
-    int rot90[N2];
-
-    /* composes the reflection and 90 degree rotation into a single array */
-    int rot90rf[N2];
-
-    /* rotates the puzzle 180 degrees */
-    int rot180[N2];
-
-    /* composes the reflection and 180 degree rotation into a single array */
-    int rot180rf[N2];
-
-
-
 public:
     local_pdb();
     __device__ unsigned int hash0(const int *inv);
@@ -364,66 +352,66 @@ __device__ unsigned int local_pdb::hash1(const int *inv) {
 
 __device__ unsigned int local_pdb::hash2(const int *inv) {
     int hashval;
-    hashval = ((((rot180[inv[21]] * N2
-              + rot180[inv[20]]) * N2
-             + rot180[inv[16]]) * N2
-            + rot180[inv[15]]) * N2
-           + rot180[inv[11]]) * N2
-          + rot180[inv[10]];
+    hashval = ((((dev_rot180[inv[21]] * N2
+              + dev_rot180[inv[20]]) * N2
+             + dev_rot180[inv[16]]) * N2
+            + dev_rot180[inv[15]]) * N2
+           + dev_rot180[inv[11]]) * N2
+          + dev_rot180[inv[10]];
     return (h1[hashval]);
 }
 
 __device__ unsigned int local_pdb::hash3(const int *inv) {
     int hashval;
-    hashval = ((((rot90[inv[19]] * N2
-              + rot90[inv[24]]) * N2
-             + rot90[inv[18]]) * N2
-            + rot90[inv[23]]) * N2
-           + rot90[inv[17]]) * N2
-          + rot90[inv[22]];
+    hashval = ((((dev_rot90[inv[19]] * N2
+              + dev_rot90[inv[24]]) * N2
+             + dev_rot90[inv[18]]) * N2
+            + dev_rot90[inv[23]]) * N2
+           + dev_rot90[inv[17]]) * N2
+          + dev_rot90[inv[22]];
     return (h1[hashval]);
 }
 
 __device__ unsigned int local_pdb::hashref0(const int *inv) {
     int hashval;
-    hashval = (((((rf[inv[5]] * N2
-               + rf[inv[10]]) * N2
-              + rf[inv[1]]) * N2
-             + rf[inv[6]]) * N2
-            + rf[inv[11]]) * N2
-           + rf[inv[12]]);
+    hashval = (((((dev_rf[inv[5]] * N2
+               + dev_rf[inv[10]]) * N2
+              + dev_rf[inv[1]]) * N2
+             + dev_rf[inv[6]]) * N2
+            + dev_rf[inv[11]]) * N2
+           + dev_rf[inv[12]]);
     return (h0[hashval]);
 }
 
 __device__ unsigned int local_pdb::hashref1(const int *inv) {
     int hashval;
-    hashval = (((((rf[inv[15]] * N2
-               + rf[inv[20]]) * N2
-              + rf[inv[16]]) * N2
-             + rf[inv[21]]) * N2
-            + rf[inv[17]]) * N2
-           + rf[inv[22]]);
+    hashval = (((((dev_rf[inv[15]] * N2
+               + dev_rf[inv[20]]) * N2
+              + dev_rf[inv[16]]) * N2
+             + dev_rf[inv[21]]) * N2
+            + dev_rf[inv[17]]) * N2
+           + dev_rf[inv[22]]);
     return (h1[hashval]);
 }
 __device__ unsigned int local_pdb::hashref2(const int *inv) {
     int hashval;
-    hashval = (((((rot180rf[inv[9]] * N2
-               + rot180rf[inv[4]]) * N2
-              + rot180rf[inv[8]]) * N2
-             + rot180rf[inv[3]]) * N2
-            + rot180rf[inv[7]]) * N2
-           + rot180rf[inv[2]]);
+    hashval = (((((dev_rot180rf[inv[9]] * N2
+               + dev_rot180rf[inv[4]]) * N2
+              + dev_rot180rf[inv[8]]) * N2
+             + dev_rot180rf[inv[3]]) * N2
+            + dev_rot180rf[inv[7]]) * N2
+           + dev_rot180rf[inv[2]]);
     return (h1[hashval]);
 }
 
 __device__ unsigned int local_pdb::hashref3(const int *inv) {
     int hashval;
-    hashval = (((((rot90rf[inv[23]] * N2
-               + rot90rf[inv[24]]) * N2
-              + rot90rf[inv[18]]) * N2
-             + rot90rf[inv[19]]) * N2
-            + rot90rf[inv[13]]) * N2
-           + rot90rf[inv[14]]);
+    hashval = (((((dev_rot90rf[inv[23]] * N2
+               + dev_rot90rf[inv[24]]) * N2
+              + dev_rot90rf[inv[18]]) * N2
+             + dev_rot90rf[inv[19]]) * N2
+            + dev_rot90rf[inv[13]]) * N2
+           + dev_rot90rf[inv[14]]);
     return (h1[hashval]);
 }
 
