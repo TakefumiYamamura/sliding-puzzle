@@ -185,7 +185,7 @@ void PatternDataBase::input_h0(const char *filename) {
 }
 
 
-void PatternDataBase::input_h1(const char *filenam) {
+void PatternDataBase::input_h1(const char *filename) {
     FILE *infile;
     infile = fopen(filename, "rb");
     int index;
@@ -344,8 +344,8 @@ public:
 local_pdb::local_pdb() {
     for (int i = 0; i < PDB_TABLESIZE; ++i)
     {
-        h0[i] = pd.h0[i];
-        h1[i] = pd.h1[i];
+        h0[i] = pd.get_h0_value(i);
+        h1[i] = pd.get_h1_value(i);
     }
 }
 
