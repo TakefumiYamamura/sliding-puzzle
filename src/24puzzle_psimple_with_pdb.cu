@@ -157,7 +157,7 @@ PatternDataBase::PatternDataBase() {
     input_h1(c1);
 }
 
-void PatternDataBase::input_h0(const char *filenam) {
+void PatternDataBase::input_h0(const char *filename) {
     FILE *infile;
     infile = fopen(filename, "rb");
     int index;
