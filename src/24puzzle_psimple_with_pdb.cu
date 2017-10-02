@@ -123,7 +123,7 @@ public:
 Node s_node;
 int ans;
 priority_queue<Node, vector<Node>, greater<Node> > pq;
-PatternDataBase pd;
+
 
 class PatternDataBase
 {
@@ -273,9 +273,6 @@ unsigned char PatternDataBase::get_h1_value(int i) {
     return h1[i];
 }
 
-
-local_pdb  *dev_pd;
-
 class local_pdb
 {
 private:
@@ -404,6 +401,9 @@ __device__ unsigned int local_pdb::get_hash_value(const int *inv) {
         hashref0(inv) + hashref1(inv) + hashref2(inv) + hashref3(inv) ); 
 }
 
+
+PatternDataBase pd;
+local_pdb  *dev_pd;
 
 
 void input_table(char *input_file) {
@@ -551,7 +551,6 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, local_pdb *
 
             next_n.space = new_x * N + new_y;
             next_n.h = dev_pdb.get_hash_value(cur_n.inv_puzzle);
-
             next_n.depth++;
             if(cur_n.depth + cur_n.h > limit) continue;
             next_n.pre = i;
