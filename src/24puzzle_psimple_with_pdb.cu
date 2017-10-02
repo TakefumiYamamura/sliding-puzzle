@@ -145,10 +145,9 @@ public:
     unsigned int get_hash_value(const int *inv);
     unsigned char get_h0_value(int i);
     unsigned char get_h1_value(int i);
-
 };
 
-PatternDataBase::PatternDataBase()　{
+PatternDataBase::PatternDataBase() {
     const char *c0 = "../pdb/pat24.1256712.tab";
     const char *c1 = "../pdb/pat24.34891314.tab";
     cout << "pattern 1 2 5 6 7 12 read in" << endl;
@@ -273,6 +272,9 @@ unsigned char PatternDataBase::get_h1_value(int i) {
     return h1[i];
 }
 
+
+PatternDataBase pd;
+
 class local_pdb
 {
 private:
@@ -313,8 +315,8 @@ public:
 local_pdb::local_pdb() {
     for (int i = 0; i < PDB_TABLESIZE; ++i)
     {
-        h0[i] = pdb.h0[i];
-        h1[i] = pdb.h1[i];
+        h0[i] = pd.h0[i];
+        h1[i] = pd.h1[i];
     }
 }
 
@@ -401,8 +403,6 @@ __device__ unsigned int local_pdb::get_hash_value(const int *inv) {
         hashref0(inv) + hashref1(inv) + hashref2(inv) + hashref3(inv) ); 
 }
 
-
-PatternDataBase pd;
 local_pdb  *dev_pd;
 
 
