@@ -199,14 +199,14 @@ private:
     int node_num;
     vector<int> path;
     int ans;
-    PatternDataBase pd;
+    PatternDataBase *pd;
 public:
-    Npuzzle(string input_file, PatternDataBase _pd);
+    Npuzzle(string input_file, PatternDataBase* _pd);
     bool dfs(int depth, int pre);
     void ida_star();
 };
 
-Npuzzle::Npuzzle(string input_file, PatternDataBase _pd) {
+Npuzzle::Npuzzle(string input_file, PatternDataBase* _pd) {
     node_num = 0;
     ifstream ifs(input_file);
     int in[N2];
@@ -221,7 +221,7 @@ Npuzzle::Npuzzle(string input_file, PatternDataBase _pd) {
         s_n.inv_puzzle[tmp] = i;
     }
     pd = _pd;
-    s_n.h = pd.get_hash_value(s_n.inv_puzzle);
+    s_n.h = pd->get_hash_value(s_n.inv_puzzle);
 }
 
 bool Npuzzle::dfs(int depth, int pre) {
@@ -248,7 +248,7 @@ bool Npuzzle::dfs(int depth, int pre) {
         swap(cur_n.inv_puzzle[cur_n.puzzle[new_x * N + new_y]], cur_n.inv_puzzle[cur_n.puzzle[s_x * N + s_y]]); 
         swap(cur_n.puzzle[new_x * N + new_y], cur_n.puzzle[s_x * N + s_y]);
 
-        cur_n.h = pd.get_hash_value(cur_n.inv_puzzle);
+        cur_n.h = pd->get_hash_value(cur_n.inv_puzzle);
         cur_n.space = new_x * N + new_y;
         // assert(get_md_sum(cur_n.puzzle) == cur_n.md);
         // return dfs(cur_n, depth+1, i);
@@ -284,7 +284,7 @@ void Npuzzle::ida_star() {
 
 
 int main() {
-    PatternDataBase pdb = PatternDataBase();
+    PatternDataBase *pdb = new PatternDataBase();
     string output_file = "../result/korf50_result.csv";
     ofstream writing_file;
     writing_file.open(output_file, std::ios::out);
