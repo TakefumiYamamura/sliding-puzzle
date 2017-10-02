@@ -133,7 +133,8 @@ private:
     /* the position of each tile in order, reflected about the main diagonal */
 public:
     PatternDataBase();
-    void input(const char *filename, unsigned char *table);
+    void input_h0(const char *filename);
+    void input_h1(const char *filename);
     unsigned int hash0(const int *inv);
     unsigned int hash1(const int *inv);
     unsigned int hash2(const int *inv);
