@@ -67,8 +67,8 @@ static  const int rot180rf[] = {24,19,14,9,4,23,18,13,8,3,22,17,12,7,2,21,16,11,
 // __device__ unsigned char dev_h0[PDB_TABLESIZE];
 // __device__ unsigned char dev_h1[PDB_TABLESIZE];
 
-__device__ unsigned char dev_h0[PDB_TABLESIZE];
-__device__ unsigned char dev_h1[PDB_TABLESIZE];
+__device__ unsigned char* dev_h0;
+__device__ unsigned char* dev_h1;
 
 unsigned char h0[PDB_TABLESIZE];
 unsigned char h1[PDB_TABLESIZE];
@@ -537,16 +537,8 @@ bool create_root_set() {
     return false;
 }
 
-__global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, local_pdb *dev_pdb, unsigned char *h0_ptr, unsigned char *h1_ptr) {
+__global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, local_pdb *dev_pdb) {
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
-
-    if(idx == 0) {
-        for (int i = 0; i < PDB_TABLESIZE; ++i)
-        {
-            dev_h0[i] = h0_ptr[i];
-            dev_h1[i] = h1_ptr[i];
-        }
-    }
 
     local_stack<Node, STACK_LIMIT> st;
     st.push(root_set[idx]);
@@ -601,11 +593,13 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, local_pdb *
 
 }
 
-void ida_star(unsigned char *d_h0, unsigned char *d_h1) {
+void ida_star() {
+    cout << "before_create_root" << endl;
     if(create_root_set()) {
         printf("%d\n", ans);
         return;
     }
+    cout << "after_create_root" << endl;
 
     int pq_size = pq.size();
     Node root_set[CORE_NUM];
@@ -634,7 +628,7 @@ void ida_star(unsigned char *d_h0, unsigned char *d_h1) {
 
         //gpu側にメモリ割当
         HANDLE_ERROR(cudaMalloc( (void**)&dev_flag, pq_size * sizeof(int) ) );
-        dfs_kernel<<<BLOCK_NUM, WARP_SIZE>>>(limit, dev_root_set, dev_flag, dev_pd, d_h0, d_h1);
+        dfs_kernel<<<BLOCK_NUM, WARP_SIZE>>>(limit, dev_root_set, dev_flag, dev_pd);
         cudaDeviceSynchronize();
         HANDLE_ERROR(cudaMemcpy(flag, dev_flag, CORE_NUM * sizeof(int), cudaMemcpyDeviceToHost));
         for (int i = 0; i < CORE_NUM; ++i)
@@ -666,16 +660,18 @@ int main() {
     //root_setをGPU側のdev_pdにコピー
     HANDLE_ERROR(cudaMemcpy(dev_pd, lpdb, sizeof(local_pdb), cudaMemcpyHostToDevice) );
 
-    unsigned char *d_h0;
-    unsigned char *d_h1;
+    // unsigned char *d_h0;
+    // unsigned char *d_h1;
 
+    // デバイス側に領域確保
     HANDLE_ERROR(cudaMalloc((void**)&d_h0, PDB_TABLESIZE * sizeof(unsigned char) ) );
     HANDLE_ERROR(cudaMalloc((void**)&d_h1, PDB_TABLESIZE * sizeof(unsigned char) ) );
 
-    HANDLE_ERROR(cudaMemcpy(d_h0, h0, PDB_TABLESIZE * sizeof(unsigned char), cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(d_h1, h1, PDB_TABLESIZE * sizeof(unsigned char), cudaMemcpyHostToDevice));
+    //ホスト側のメモリをコピー
+    HANDLE_ERROR(cudaMemcpyToSymbol(dev_h0, h0, PDB_TABLESIZE * sizeof(unsigned char)));
+    HANDLE_ERROR(cudaMemcpyToSymbol(dev_h1, h1, PDB_TABLESIZE * sizeof(unsigned char)));
 
-    for (int i = 0; i <= 50; ++i)
+    for (int i = 1; i <= 50; ++i)
     {
         string input_file = "../benchmarks/yama24_50/prob";
         // string input_file = "../benchmarks/korf100/prob";
@@ -691,7 +687,7 @@ int main() {
         clock_t start = clock();
 
         input_table(const_cast<char*>(input_file.c_str()));
-        ida_star(d_h0, d_h1);
+        ida_star();
 
         clock_t end = clock();
         fprintf(output_file,"%f\n", (double)(end - start) / CLOCKS_PER_SEC);
