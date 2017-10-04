@@ -16,7 +16,7 @@
 #define N 4
 #define N2 16
 #define STACK_LIMIT 100
-#define CORE_NUM 1
+#define CORE_NUM 1536
 // 1536
 using namespace std;
  
@@ -201,7 +201,7 @@ void ida_star() {
 }
  
 int main() {
-    string output_file = "../result/korf100_psimple_result.csv";
+    string output_file = "../result/korf100_psimple_result_" + to_string(CORE_NUM) + ".csv";
     ofstream writing_file;
     writing_file.open(output_file, std::ios::out);
     for (int i = 0; i < 100; ++i)
