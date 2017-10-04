@@ -668,8 +668,8 @@ int main() {
     HANDLE_ERROR(cudaMalloc((void**)&dev_h1, PDB_TABLESIZE * sizeof(unsigned char) ) );
 
     //ホスト側のメモリをコピー
-    HANDLE_ERROR(cudaMemcpyToSymbol(dev_h0, h0, PDB_TABLESIZE * sizeof(unsigned char)));
-    HANDLE_ERROR(cudaMemcpyToSymbol(dev_h1, h1, PDB_TABLESIZE * sizeof(unsigned char)));
+    HANDLE_ERROR(cudaMemcpyToSymbol(dev_h0, h0, sizeof(h0)));
+    HANDLE_ERROR(cudaMemcpyToSymbol(dev_h1, h1, sizeof(h1)));
 
     for (int i = 1; i <= 50; ++i)
     {
