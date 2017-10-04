@@ -664,8 +664,8 @@ int main() {
     // unsigned char *d_h1;
 
     // デバイス側に領域確保
-    HANDLE_ERROR(cudaMalloc((void**)&d_h0, PDB_TABLESIZE * sizeof(unsigned char) ) );
-    HANDLE_ERROR(cudaMalloc((void**)&d_h1, PDB_TABLESIZE * sizeof(unsigned char) ) );
+    HANDLE_ERROR(cudaMalloc((void**)&dev_h0, PDB_TABLESIZE * sizeof(unsigned char) ) );
+    HANDLE_ERROR(cudaMalloc((void**)&dev_h1, PDB_TABLESIZE * sizeof(unsigned char) ) );
 
     //ホスト側のメモリをコピー
     HANDLE_ERROR(cudaMemcpyToSymbol(dev_h0, h0, PDB_TABLESIZE * sizeof(unsigned char)));
@@ -695,7 +695,8 @@ int main() {
         // writing_file << (double)(end - start) / CLOCKS_PER_SEC << endl;
     }
     HANDLE_ERROR(cudaFree(dev_pd));
-    HANDLE_ERROR(cudaFree(d_h0));
-    HANDLE_ERROR(cudaFree(d_h1));
+    // HANDLE_ERROR(cudaFree(dev_h0));
+    // HANDLE_ERROR(cudaFree(dev_h1));
     fclose(output_file);
+    cudaDeviceReset();
 }
