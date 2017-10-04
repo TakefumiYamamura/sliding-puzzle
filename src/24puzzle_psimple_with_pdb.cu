@@ -339,8 +339,8 @@ public:
 };
 
 local_pdb::local_pdb() {
-    HANDLE_ERROR(cudaMemcpy(dev_h0, h0, PDB_TABLESIZE * sizeof(unsigned char), cudaMemcpyHostToDevice) );
-    HANDLE_ERROR(cudaMemcpy(dev_h1, h1, PDB_TABLESIZE * sizeof(unsigned char), cudaMemcpyHostToDevice) );
+    // HANDLE_ERROR(cudaMemcpy(dev_h0, h0, PDB_TABLESIZE * sizeof(unsigned char), cudaMemcpyHostToDevice) );
+    // HANDLE_ERROR(cudaMemcpy(dev_h1, h1, PDB_TABLESIZE * sizeof(unsigned char), cudaMemcpyHostToDevice) );
 }
 
 
@@ -534,8 +534,16 @@ bool create_root_set() {
     return false;
 }
 
-__global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, local_pdb *dev_pdb) {
+__global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, local_pdb *dev_pdb, unsigned char *h0_ptr, unsigned char *h1_ptr) {
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
+
+    if(idx == 0) {
+        for (int i = 0; i < PDB_TABLESIZE; ++i)
+        {
+            dev_h0[i] = h0_ptr[i];
+            dev_h1[i] = h1_ptr[i];
+        }
+    }
 
     local_stack<Node, STACK_LIMIT> st;
     st.push(root_set[idx]);
@@ -590,11 +598,12 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, local_pdb *
 
 }
 
-void ida_star() {
+void ida_star(unsigned char *d_h0, unsigned char *d_h1) {
     if(create_root_set()) {
         printf("%d\n", ans);
         return;
     }
+
     int pq_size = pq.size();
     Node root_set[CORE_NUM];
     int i = 0;
@@ -604,7 +613,6 @@ void ida_star() {
         root_set[i] = n;
         i++;
     }
-
 
     //gpu側で使う根集合のポインタ
     Node *dev_root_set;
@@ -623,7 +631,8 @@ void ida_star() {
 
         //gpu側にメモリ割当
         HANDLE_ERROR(cudaMalloc( (void**)&dev_flag, pq_size * sizeof(int) ) );
-        dfs_kernel<<<BLOCK_NUM, WARP_SIZE>>>(limit, dev_root_set, dev_flag, dev_pd);
+        dfs_kernel<<<BLOCK_NUM, WARP_SIZE>>>(limit, dev_root_set, dev_flag, dev_pd, d_h0, d_h1);
+        cudaDeviceSynchronize();
         HANDLE_ERROR(cudaMemcpy(flag, dev_flag, CORE_NUM * sizeof(int), cudaMemcpyDeviceToHost));
         for (int i = 0; i < CORE_NUM; ++i)
         {
@@ -635,6 +644,7 @@ void ida_star() {
         HANDLE_ERROR(cudaFree(dev_flag) );
     }
     HANDLE_ERROR(cudaFree(dev_root_set));
+
 }
 
  
@@ -650,9 +660,16 @@ int main() {
     HANDLE_ERROR(cudaMalloc((void**)&dev_pd, sizeof(local_pdb) ) );
     local_pdb *lpdb = new local_pdb();
     //root_setをGPU側のdev_pdにコピー
-    cout << "test" << endl;
     HANDLE_ERROR(cudaMemcpy(dev_pd, lpdb, sizeof(local_pdb), cudaMemcpyHostToDevice) );
-    cout << "test" << endl;
+
+    unsigned char *d_h0;
+    unsigned char *d_h1;
+
+    HANDLE_ERROR(cudaMalloc((void**)&d_h0, PDB_TABLESIZE * sizeof(unsigned char) ) );
+    HANDLE_ERROR(cudaMalloc((void**)&d_h1, PDB_TABLESIZE * sizeof(unsigned char) ) );
+
+    HANDLE_ERROR(cudaMemcpy(d_h0, h0, PDB_TABLESIZE * sizeof(unsigned char), cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(d_h1, h1, PDB_TABLESIZE * sizeof(unsigned char), cudaMemcpyHostToDevice));
 
     for (int i = 1; i <= 50; ++i)
     {
@@ -670,7 +687,7 @@ int main() {
         clock_t start = clock();
 
         input_table(const_cast<char*>(input_file.c_str()));
-        ida_star();
+        ida_star(d_h0, d_h1);
 
         clock_t end = clock();
         fprintf(output_file,"%f\n", (double)(end - start) / CLOCKS_PER_SEC);
@@ -678,5 +695,7 @@ int main() {
         // writing_file << (double)(end - start) / CLOCKS_PER_SEC << endl;
     }
     HANDLE_ERROR(cudaFree(dev_pd));
+    HANDLE_ERROR(cudaFree(d_h0));
+    HANDLE_ERROR(cudaFree(d_h1));
     fclose(output_file);
 }
