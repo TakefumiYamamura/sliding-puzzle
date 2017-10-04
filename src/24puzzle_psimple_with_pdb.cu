@@ -64,11 +64,13 @@ static  const int rot180[] = {24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7
 static  const int rot180rf[] = {24,19,14,9,4,23,18,13,8,3,22,17,12,7,2,21,16,11,6,1,20,15,10,5,0};
 
 
-// __device__ unsigned char dev_h0[PDB_TABLESIZE];
-// __device__ unsigned char dev_h1[PDB_TABLESIZE];
+__device__ unsigned char dev_h0[PDB_TABLESIZE];
+__device__ unsigned char dev_h1[PDB_TABLESIZE];
 
-__device__ unsigned char* dev_h0;
-__device__ unsigned char* dev_h1;
+// __device__ unsigned char* dev_h0;
+// __device__ unsigned char* dev_h1;
+
+// __device__ unsigned char dev_h0;
 
 unsigned char h0[PDB_TABLESIZE];
 unsigned char h1[PDB_TABLESIZE];
@@ -664,8 +666,8 @@ int main() {
     // unsigned char *d_h1;
 
     // デバイス側に領域確保
-    HANDLE_ERROR(cudaMalloc((void**)&dev_h0, PDB_TABLESIZE * sizeof(unsigned char) ) );
-    HANDLE_ERROR(cudaMalloc((void**)&dev_h1, PDB_TABLESIZE * sizeof(unsigned char) ) );
+    // HANDLE_ERROR(cudaMalloc((void**)&dev_h0, PDB_TABLESIZE * sizeof(unsigned char) ) );
+    // HANDLE_ERROR(cudaMalloc((void**)&dev_h1, PDB_TABLESIZE * sizeof(unsigned char) ) );
 
     //ホスト側のメモリをコピー
 
