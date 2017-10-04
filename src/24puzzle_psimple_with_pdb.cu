@@ -660,7 +660,7 @@ int main() {
     HANDLE_ERROR(cudaMemcpyToSymbol(dev_h0, &h0, PDB_TABLESIZE * sizeof(unsigned char)));
     HANDLE_ERROR(cudaMemcpyToSymbol(dev_h1, &h1, PDB_TABLESIZE * sizeof(unsigned char)));
 
-    for (int i = 0; i <= 20; ++i)
+    for (int i = 0; i <= 50; ++i)
     {
         string input_file = "../benchmarks/yama24_50/prob";
         // string input_file = "../benchmarks/korf100/prob";

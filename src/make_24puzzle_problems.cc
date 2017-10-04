@@ -51,7 +51,7 @@ void Npuzzle::rand_proceed() {
 		cur.puzzle[i/N][i%N] = i;
 	}
 	cur.space = pair<int, int>(0, 0);
-	for (int i = 0; i < 150; ++i)
+	for (int i = 0; i < 70; ++i)
 	{
 		int rnd = rand() % 4;
 		pair<int, int> next = pair<int, int>(cur.space.first + dx[rnd], cur.space.second + dy[rnd]);
