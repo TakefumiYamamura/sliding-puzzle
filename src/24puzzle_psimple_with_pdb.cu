@@ -67,11 +67,6 @@ static  const int rot180rf[] = {24,19,14,9,4,23,18,13,8,3,22,17,12,7,2,21,16,11,
 __device__ unsigned char dev_h0[PDB_TABLESIZE];
 __device__ unsigned char dev_h1[PDB_TABLESIZE];
 
-// __device__ unsigned char* dev_h0;
-// __device__ unsigned char* dev_h1;
-
-// __device__ unsigned char dev_h0;
-
 unsigned char h0[PDB_TABLESIZE];
 unsigned char h1[PDB_TABLESIZE];
 
@@ -620,7 +615,7 @@ void ida_star() {
     //root_setをGPU側のdev_root_setにコピー
     HANDLE_ERROR(cudaMemcpy(dev_root_set, root_set, pq_size * sizeof(Node), cudaMemcpyHostToDevice) );
 
-    for (int limit = s_node.h; limit < 100; ++limit, ++limit)
+    for (int limit = s_node.h; limit < 50; ++limit, ++limit)
     {
         // path.resize(limit);
         // priority_queue<Node, vector<Node>, greater<Node> > tmp_pq = pq;
@@ -662,36 +657,10 @@ int main() {
     //root_setをGPU側のdev_pdにコピー
     HANDLE_ERROR(cudaMemcpy(dev_pd, lpdb, sizeof(local_pdb), cudaMemcpyHostToDevice) );
 
-    // unsigned char *d_h0;
-    // unsigned char *d_h1;
-
-    // デバイス側に領域確保
-    // HANDLE_ERROR(cudaMalloc((void**)&dev_h0, PDB_TABLESIZE * sizeof(unsigned char) ) );
-    // HANDLE_ERROR(cudaMalloc((void**)&dev_h1, PDB_TABLESIZE * sizeof(unsigned char) ) );
-
-    //ホスト側のメモリをコピー
-
-    // unsigned char *devPtr0 = NULL;
-    // HANDLE_ERROR(cudaGetSymbolAddress((void** )&devPtr0, dev_h0));
-    // HANDLE_ERROR(cudaMemcpy(devPtr0, h0, PDB_TABLESIZE * sizeof(unsigned char), cudaMemcpyHostToDevice));
-
-    // unsigned char *devPtr1 = NULL;
-    // HANDLE_ERROR(cudaGetSymbolAddress((void** )&devPtr1, dev_h1));
-    // HANDLE_ERROR(cudaMemcpy(devPtr1, h1, PDB_TABLESIZE * sizeof(unsigned char), cudaMemcpyHostToDevice));
-
-
-
-    // unsigned char *devPtr0 = NULL;
-    // HANDLE_ERROR(cudaGetSymbolAddress((void** )&devPtr0, dev_h0));
-    // HANDLE_ERROR(cudaMemcpy(devPtr0, h0, PDB_TABLESIZE * sizeof(unsigned char), cudaMemcpyHostToDevice));
-
-    // unsigned char *devPtr1 = NULL;
-    // HANDLE_ERROR(cudaGetSymbolAddress((void** )&devPtr1, dev_h1));
-    // HANDLE_ERROR(cudaMemcpy(devPtr1, h1, PDB_TABLESIZE * sizeof(unsigned char), cudaMemcpyHostToDevice));
     HANDLE_ERROR(cudaMemcpyToSymbol(dev_h0, &h0, PDB_TABLESIZE * sizeof(unsigned char)));
     HANDLE_ERROR(cudaMemcpyToSymbol(dev_h1, &h1, PDB_TABLESIZE * sizeof(unsigned char)));
 
-    for (int i = 1; i <= 50; ++i)
+    for (int i = 0; i <= 50; ++i)
     {
         string input_file = "../benchmarks/yama24_50/prob";
         // string input_file = "../benchmarks/korf100/prob";
