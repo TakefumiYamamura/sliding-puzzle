@@ -23,9 +23,9 @@ template <typename T> std::string tostr(const T& t)
 #define N2 25
 #define PDB_TABLESIZE 244140625
 #define STACK_LIMIT 64 * 8
-#define CORE_NUM 1536
+#define CORE_NUM 768
 #define WARP_SIZE 32
-#define BLOCK_NUM 48
+#define BLOCK_NUM 24
 
 using namespace std;
 
