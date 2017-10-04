@@ -615,7 +615,7 @@ void ida_star() {
     //root_setをGPU側のdev_root_setにコピー
     HANDLE_ERROR(cudaMemcpy(dev_root_set, root_set, pq_size * sizeof(Node), cudaMemcpyHostToDevice) );
 
-    for (int limit = s_node.h; limit < 50; ++limit, ++limit)
+    for (int limit = s_node.h; limit < 100; ++limit, ++limit)
     {
         // path.resize(limit);
         // priority_queue<Node, vector<Node>, greater<Node> > tmp_pq = pq;
@@ -660,7 +660,7 @@ int main() {
     HANDLE_ERROR(cudaMemcpyToSymbol(dev_h0, &h0, PDB_TABLESIZE * sizeof(unsigned char)));
     HANDLE_ERROR(cudaMemcpyToSymbol(dev_h1, &h1, PDB_TABLESIZE * sizeof(unsigned char)));
 
-    for (int i = 0; i <= 50; ++i)
+    for (int i = 2; i <= 50; ++i)
     {
         string input_file = "../benchmarks/yama24_50/prob";
         // string input_file = "../benchmarks/korf100/prob";
