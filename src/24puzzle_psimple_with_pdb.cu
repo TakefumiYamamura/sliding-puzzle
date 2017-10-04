@@ -148,6 +148,7 @@ private:
     /* the position of each tile in order, reflected about the main diagonal */
 public:
     PatternDataBase();
+    void init();
     void input_h0(const char *filename);
     void input_h1(const char *filename);
     unsigned int hash0(const int *inv);
@@ -163,7 +164,9 @@ public:
     // unsigned char get_h1_value(int i);
 };
 
-PatternDataBase::PatternDataBase() {
+PatternDataBase::PatternDataBase() {}
+
+void PatternDataBase::init() {
     const char *c0 = "../pdb/pat24.1256712.tab";
     const char *c1 = "../pdb/pat24.34891314.tab";
     cout << "pattern 1 2 5 6 7 12 read in" << endl;
@@ -656,6 +659,7 @@ int main() {
     // set_md();
     // pattern database 
     pd = PatternDataBase();
+    pd.init();
     //gpu側のメモリ割当て
     HANDLE_ERROR(cudaMalloc((void**)&dev_pd, sizeof(local_pdb) ) );
     local_pdb *lpdb = new local_pdb();
