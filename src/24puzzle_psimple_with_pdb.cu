@@ -669,10 +669,14 @@ int main() {
 
     //ホスト側のメモリをコピー
     unsigned char *devPtr0 = NULL;
-    cudaGetSymbolAddress((void** )&devPtr0, dev_h0);
-    cudaMemcpy(devPtr0, h0, PDB_TABLESIZE * sizeof(unsigned char), cudaMemcpyHostToDevice);
+    HANDLE_ERROR(cudaGetSymbolAddress((void** )&devPtr0, dev_h0));
+    HANDLE_ERROR(cudaMemcpy(devPtr0, h0, PDB_TABLESIZE * sizeof(unsigned char), cudaMemcpyHostToDevice));
+
+    unsigned char *devPtr1 = NULL;
+    HANDLE_ERROR(cudaGetSymbolAddress((void** )&devPtr1, dev_h1));
+    HANDLE_ERROR(cudaMemcpy(devPtr1, h1, PDB_TABLESIZE * sizeof(unsigned char), cudaMemcpyHostToDevice));
     // HANDLE_ERROR(cudaMemcpyToSymbol(dev_h0, h0, sizeof(h0)));
-    HANDLE_ERROR(cudaMemcpyToSymbol(dev_h1, h1, sizeof(h1)));
+    // HANDLE_ERROR(cudaMemcpyToSymbol(dev_h1, h1, sizeof(h1)));
 
     for (int i = 1; i <= 50; ++i)
     {
