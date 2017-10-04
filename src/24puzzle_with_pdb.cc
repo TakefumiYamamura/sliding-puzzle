@@ -294,7 +294,7 @@ int main() {
     ofstream writing_file;
     writing_file.open(output_file, std::ios::out);
 
-    for (int i = 50; i <= 50; ++i)
+    for (int i = 0; i <= 50; ++i)
     {
      // string input_file = "../benchmarks/korf50_24puzzle/";
      string input_file = "../benchmarks/yama24_50/prob";
