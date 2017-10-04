@@ -651,7 +651,7 @@ void ida_star(unsigned char *d_h0, unsigned char *d_h1) {
 int main() {
 
     FILE *output_file;
-    output_file = fopen("../result/yama24_psimple_result.csv","w");
+    output_file = fopen("../result/yama24_psimple_with_pdb_result.csv","w");
 
     // set_md();
     // pattern database 
@@ -671,7 +671,7 @@ int main() {
     HANDLE_ERROR(cudaMemcpy(d_h0, h0, PDB_TABLESIZE * sizeof(unsigned char), cudaMemcpyHostToDevice));
     HANDLE_ERROR(cudaMemcpy(d_h1, h1, PDB_TABLESIZE * sizeof(unsigned char), cudaMemcpyHostToDevice));
 
-    for (int i = 1; i <= 50; ++i)
+    for (int i = 0; i <= 50; ++i)
     {
         string input_file = "../benchmarks/yama24_50/prob";
         // string input_file = "../benchmarks/korf100/prob";
