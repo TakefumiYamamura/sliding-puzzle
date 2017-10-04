@@ -64,6 +64,15 @@ static  const int rot180[] = {24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7
 static  const int rot180rf[] = {24,19,14,9,4,23,18,13,8,3,22,17,12,7,2,21,16,11,6,1,20,15,10,5,0};
 
 
+// __device__ unsigned char dev_h0[PDB_TABLESIZE];
+// __device__ unsigned char dev_h1[PDB_TABLESIZE];
+
+__device__ unsigned char dev_h0[PDB_TABLESIZE];
+__device__ unsigned char dev_h1[PDB_TABLESIZE];
+
+unsigned char h0[PDB_TABLESIZE];
+unsigned char h1[PDB_TABLESIZE];
+
 struct Node
 {
     int puzzle[N2];
@@ -134,8 +143,8 @@ priority_queue<Node, vector<Node>, greater<Node> > pq;
 class PatternDataBase
 {
 private:
-    unsigned char h0[PDB_TABLESIZE];
-    unsigned char h1[PDB_TABLESIZE];
+    // unsigned char h0[PDB_TABLESIZE];
+    // unsigned char h1[PDB_TABLESIZE];
     /* the position of each tile in order, reflected about the main diagonal */
 public:
     PatternDataBase();
@@ -150,8 +159,8 @@ public:
     unsigned int hashref2(const int *inv);
     unsigned int hashref3(const int *inv);
     unsigned int get_hash_value(const int *inv);
-    unsigned char get_h0_value(int i);
-    unsigned char get_h1_value(int i);
+    // unsigned char get_h0_value(int i);
+    // unsigned char get_h1_value(int i);
 };
 
 PatternDataBase::PatternDataBase() {
@@ -300,21 +309,21 @@ unsigned int PatternDataBase::get_hash_value(const int *inv) {
         hashref0(inv) + hashref1(inv) + hashref2(inv) + hashref3(inv) ); 
 }
 
-unsigned char PatternDataBase::get_h0_value(int i) {
-    return h0[i];
-}
-unsigned char PatternDataBase::get_h1_value(int i) {
-    return h1[i];
-}
+// unsigned char PatternDataBase::get_h0_value(int i) {
+//     return h0[i];
+// }
+// unsigned char PatternDataBase::get_h1_value(int i) {
+//     return h1[i];
+// }
 
 
 PatternDataBase pd;
 
 class local_pdb
 {
-private:
-    unsigned char h0[PDB_TABLESIZE];
-    unsigned char h1[PDB_TABLESIZE];
+// private:
+//     unsigned char h0[PDB_TABLESIZE];
+//     unsigned char h1[PDB_TABLESIZE];
 public:
     local_pdb();
     __device__ unsigned int hash0(const int *inv);
@@ -330,24 +339,21 @@ public:
 };
 
 local_pdb::local_pdb() {
-    for (int i = 0; i < PDB_TABLESIZE; ++i)
-    {
-        h0[i] = pd.get_h0_value(i);
-        h1[i] = pd.get_h1_value(i);
-    }
+    HANDLE_ERROR(cudaMemcpy(dev_h0, h0, PDB_TABLESIZE * sizeof(unsigned char), cudaMemcpyHostToDevice) );
+    HANDLE_ERROR(cudaMemcpy(dev_h1, h1, PDB_TABLESIZE * sizeof(unsigned char), cudaMemcpyHostToDevice) );
 }
 
 
 __device__ unsigned int local_pdb::hash0(const int *inv) {
     int hashval;
     hashval = ((((inv[1]*N2+inv[2])*N2+inv[5])*N2+inv[6])*N2+inv[7])*N2+inv[12];
-    return h0[hashval];
+    return dev_h0[hashval];
 }
 
 __device__ unsigned int local_pdb::hash1(const int *inv) {
     int hashval;
     hashval = ((((inv[3]*N2+inv[4])*N2+inv[8])*N2+inv[9])*N2+inv[13])*N2+inv[14];
-    return (h1[hashval]);
+    return (dev_h1[hashval]);
 }
 
 __device__ unsigned int local_pdb::hash2(const int *inv) {
@@ -358,7 +364,7 @@ __device__ unsigned int local_pdb::hash2(const int *inv) {
             + dev_rot180[inv[15]]) * N2
            + dev_rot180[inv[11]]) * N2
           + dev_rot180[inv[10]];
-    return (h1[hashval]);
+    return (dev_h1[hashval]);
 }
 
 __device__ unsigned int local_pdb::hash3(const int *inv) {
@@ -369,7 +375,7 @@ __device__ unsigned int local_pdb::hash3(const int *inv) {
             + dev_rot90[inv[23]]) * N2
            + dev_rot90[inv[17]]) * N2
           + dev_rot90[inv[22]];
-    return (h1[hashval]);
+    return (dev_h1[hashval]);
 }
 
 __device__ unsigned int local_pdb::hashref0(const int *inv) {
@@ -380,7 +386,7 @@ __device__ unsigned int local_pdb::hashref0(const int *inv) {
              + dev_rf[inv[6]]) * N2
             + dev_rf[inv[11]]) * N2
            + dev_rf[inv[12]]);
-    return (h0[hashval]);
+    return (dev_h0[hashval]);
 }
 
 __device__ unsigned int local_pdb::hashref1(const int *inv) {
@@ -391,7 +397,7 @@ __device__ unsigned int local_pdb::hashref1(const int *inv) {
              + dev_rf[inv[21]]) * N2
             + dev_rf[inv[17]]) * N2
            + dev_rf[inv[22]]);
-    return (h1[hashval]);
+    return (dev_h1[hashval]);
 }
 __device__ unsigned int local_pdb::hashref2(const int *inv) {
     int hashval;
@@ -401,7 +407,7 @@ __device__ unsigned int local_pdb::hashref2(const int *inv) {
              + dev_rot180rf[inv[3]]) * N2
             + dev_rot180rf[inv[7]]) * N2
            + dev_rot180rf[inv[2]]);
-    return (h1[hashval]);
+    return (dev_h1[hashval]);
 }
 
 __device__ unsigned int local_pdb::hashref3(const int *inv) {
@@ -412,7 +418,7 @@ __device__ unsigned int local_pdb::hashref3(const int *inv) {
              + dev_rot90rf[inv[19]]) * N2
             + dev_rot90rf[inv[13]]) * N2
            + dev_rot90rf[inv[14]]);
-    return (h1[hashval]);
+    return (dev_h1[hashval]);
 }
 
 __device__ unsigned int local_pdb::get_hash_value(const int *inv) {
@@ -644,7 +650,9 @@ int main() {
     HANDLE_ERROR(cudaMalloc((void**)&dev_pd, sizeof(local_pdb) ) );
     local_pdb *lpdb = new local_pdb();
     //root_setをGPU側のdev_pdにコピー
+    cout << "test" << endl;
     HANDLE_ERROR(cudaMemcpy(dev_pd, lpdb, sizeof(local_pdb), cudaMemcpyHostToDevice) );
+    cout << "test" << endl;
 
     for (int i = 1; i <= 50; ++i)
     {
