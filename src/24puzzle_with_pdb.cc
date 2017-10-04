@@ -28,6 +28,7 @@ static const int order[4] = {1, 0, 2, 3};
 unsigned char h0[PDB_TABLESIZE];
 unsigned char h1[PDB_TABLESIZE];
 
+
 /* the position of each tile in order, reflected about the main diagonal */
 static const int rf[N2] = {0, 5, 10, 15, 20, 1, 6, 11, 16, 21, 2, 7, 12, 17, 22, 3, 8, 13, 18, 23, 4, 9, 14, 19, 24};
 
@@ -190,6 +191,8 @@ unsigned int PatternDataBase::get_hash_value(const int *inv) {
         hashref0(inv) + hashref1(inv) + hashref2(inv) + hashref3(inv) ); 
 }
 
+PatternDataBase *pd;
+
 class Npuzzle
 {
 private:
@@ -199,14 +202,14 @@ private:
     int node_num;
     vector<int> path;
     int ans;
-    PatternDataBase pd;
+    // PatternDataBase *pd;
 public:
-    Npuzzle(string input_file, PatternDataBase _pd);
+    Npuzzle(string input_file);
     bool dfs(int depth, int pre);
     void ida_star();
 };
 
-Npuzzle::Npuzzle(string input_file, PatternDataBase _pd) {
+Npuzzle::Npuzzle(string input_file) {
     node_num = 0;
     ifstream ifs(input_file);
     int in[N2];
@@ -220,8 +223,8 @@ Npuzzle::Npuzzle(string input_file, PatternDataBase _pd) {
         s_n.puzzle[i] = tmp;
         s_n.inv_puzzle[tmp] = i;
     }
-    pd = _pd;
-    s_n.h = pd.get_hash_value(s_n.inv_puzzle);
+    s_n.h = pd->get_hash_value(s_n.inv_puzzle);
+    // cout << s_n.h << endl;
 }
 
 bool Npuzzle::dfs(int depth, int pre) {
@@ -248,7 +251,7 @@ bool Npuzzle::dfs(int depth, int pre) {
         swap(cur_n.inv_puzzle[cur_n.puzzle[new_x * N + new_y]], cur_n.inv_puzzle[cur_n.puzzle[s_x * N + s_y]]); 
         swap(cur_n.puzzle[new_x * N + new_y], cur_n.puzzle[s_x * N + s_y]);
 
-        cur_n.h = pd.get_hash_value(cur_n.inv_puzzle);
+        cur_n.h = pd->get_hash_value(cur_n.inv_puzzle);
         cur_n.space = new_x * N + new_y;
         // assert(get_md_sum(cur_n.puzzle) == cur_n.md);
         // return dfs(cur_n, depth+1, i);
@@ -262,7 +265,7 @@ bool Npuzzle::dfs(int depth, int pre) {
 }
 
 void Npuzzle::ida_star() {
-    for (limit = s_n.h; limit < 1000; ++limit, ++limit)
+    for (limit = cur_n.h; limit < 1000; ++limit, ++limit)
     {
         // path.resize(limit);
         cur_n = s_n;
@@ -275,6 +278,7 @@ void Npuzzle::ida_star() {
             // }
             // cout << str << endl;
             cout << node_num << endl;
+            cout << ans << endl;
             return;
         }
     }
@@ -284,14 +288,16 @@ void Npuzzle::ida_star() {
 
 
 int main() {
-    PatternDataBase pdb = PatternDataBase();
-    string output_file = "../result/korf50_result.csv";
+    // string output_file = "../result/korf50_result.csv";
+    pd = new PatternDataBase();
+    string output_file = "../result/yama24_result_pdb_wo_cuda.csv";
     ofstream writing_file;
     writing_file.open(output_file, std::ios::out);
 
-    for (int i = 25; i <= 25; ++i)
+    for (int i = 0; i <= 50; ++i)
     {
-     string input_file = "../benchmarks/korf50_24puzzle/";
+     // string input_file = "../benchmarks/korf50_24puzzle/";
+     string input_file = "../benchmarks/yama24_50/prob";
      if(i < 10) {
          input_file += "00";
      } else if(i < 100) {
@@ -300,7 +306,7 @@ int main() {
      input_file += to_string(i);
      cout << input_file << endl;
      clock_t start = clock();
-     Npuzzle np = Npuzzle(input_file, pdb);
+     Npuzzle np = Npuzzle(input_file);
      np.ida_star();
      clock_t end = clock();
      writing_file << (double)(end - start) / CLOCKS_PER_SEC << endl;

@@ -336,6 +336,7 @@ void ida_star() {
         //gpu側にメモリ割当
         HANDLE_ERROR(cudaMalloc( (void**)&dev_flag, pq_size * sizeof(int) ) );
         dfs_kernel<<<BLOCK_NUM, WARP_SIZE>>>(limit, dev_root_set, dev_flag);
+        cudaDeviceSynchronize();
         HANDLE_ERROR(cudaMemcpy(flag, dev_flag, CORE_NUM * sizeof(int), cudaMemcpyDeviceToHost));
         for (int i = 0; i < CORE_NUM; ++i)
         {
@@ -358,7 +359,7 @@ int main() {
     output_file = fopen("../result/yama24_psimple_result.csv","w");
 
     set_md();
-    for (int i = 1; i <= 50; ++i)
+    for (int i = 0; i <= 50; ++i)
     {
         string input_file = "../benchmarks/yama24_50/prob";
         // string input_file = "../benchmarks/korf100/prob";

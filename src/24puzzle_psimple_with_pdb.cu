@@ -591,12 +591,12 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, local_pdb *
 }
 
 void ida_star() {
-    cout << "before_create_root" << endl;
+    // cout << "before_create_root" << endl;
     if(create_root_set()) {
         printf("%d\n", ans);
         return;
     }
-    cout << "after_create_root" << endl;
+    // cout << "after_create_root" << endl;
 
     int pq_size = pq.size();
     Node root_set[CORE_NUM];
@@ -660,7 +660,7 @@ int main() {
     HANDLE_ERROR(cudaMemcpyToSymbol(dev_h0, &h0, PDB_TABLESIZE * sizeof(unsigned char)));
     HANDLE_ERROR(cudaMemcpyToSymbol(dev_h1, &h1, PDB_TABLESIZE * sizeof(unsigned char)));
 
-    for (int i = 0; i <= 50; ++i)
+    for (int i = 0; i <= 20; ++i)
     {
         string input_file = "../benchmarks/yama24_50/prob";
         // string input_file = "../benchmarks/korf100/prob";
