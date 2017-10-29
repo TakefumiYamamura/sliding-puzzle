@@ -355,10 +355,10 @@ int main() {
     // ofstream writing_file;
     // writing_file.open(output_file, std::ios::out);
     FILE *output_file;
-    output_file = fopen("../result/korf100_psimple_result_99.csv","w");
+    output_file = fopen("../result/korf100_psimple_result_50.csv","w");
 
     set_md();
-    for (int i = 0; i < 99; ++i)
+    for (int i = 0; i < 50; ++i)
     {
         string input_file = "../benchmarks/korf100/prob";
         if(i < 10) {
