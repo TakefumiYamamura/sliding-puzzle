@@ -80,6 +80,7 @@ PatternDataBase::PatternDataBase() {
     input(c0, h0);
     cout << "pattern 3 4 8 9 13 14 read in" << endl;
     input(c1, h1);
+    cout << "pdb is installed." << endl;
 }
 
 void PatternDataBase::input(const char *filename, unsigned char *table) {
@@ -277,7 +278,7 @@ void Npuzzle::ida_star() {
             //  str += dir[path[i]];
             // }
             // cout << str << endl;
-            cout << node_num << endl;
+            // cout << node_num << " ";
             cout << ans << endl;
             return;
         }
@@ -304,7 +305,7 @@ int main() {
          input_file += "0";
      }
      input_file += to_string(i);
-     cout << input_file << endl;
+     cout << input_file << " ";
      clock_t start = clock();
      Npuzzle np = Npuzzle(input_file);
      np.ida_star();
