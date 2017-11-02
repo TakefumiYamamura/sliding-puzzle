@@ -369,7 +369,7 @@ int main() {
             input_file += "0";
         }
         input_file += tostr(i);
-        cout << input_file << endl;
+        cout << input_file << " ";
         // set_md();
 
         clock_t start = clock();
