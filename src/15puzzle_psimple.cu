@@ -343,7 +343,7 @@ void ida_star() {
         HANDLE_ERROR(cudaDeviceSynchronize());
         HANDLE_ERROR(cudaMemcpy(&flag, dev_flag, sizeof(int), cudaMemcpyDeviceToHost));
         if(flag != -1) {
-            cout << flag[i] << endl;
+            cout << *flag << endl;
             return;
         }
         HANDLE_ERROR(cudaFree(dev_flag));
