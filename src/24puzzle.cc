@@ -123,6 +123,7 @@ bool Npuzzle::dfs(int depth, int pre) {
 		int new_y = s_y + dy[i];
 		if(new_x < 0  || new_y < 0 || new_x >= N || new_y >= N) continue; 
 		if(max(pre, i) - min(pre, i) == 2) continue;
+		node_num++;
 
 		//incremental manhattan distance
 		cur_n.md -= md[new_x * N + new_y][cur_n.puzzle[new_x * N + new_y]];
@@ -147,7 +148,7 @@ void Npuzzle::ida_star() {
 		// path.resize(limit);
 		cur_n = s_n;
 		if(dfs(0, -10)) {
-			cout << ans << endl;
+			cout << ans << " " << node_num << endl;
 			// string str = "";
 			// for (int i = 0; i < limit; ++i)
 			// {
@@ -168,6 +169,9 @@ int main() {
 	ofstream writing_file;
 	writing_file.open(output_file, std::ios::out);
 
+	// vector<int> test_array = {25, 32};
+
+	// for(auto i : test_array)
 	for (int i = 1; i <= 50; ++i)
 	{
 		// string input_file = "../benchmarks/korf50_24puzzle/";
@@ -178,7 +182,7 @@ int main() {
 			input_file += "0";
 		}
 		input_file += to_string(i);
-		cout << input_file << endl;
+		cout << input_file << " ";
 		clock_t start = clock();
 		Npuzzle np = Npuzzle(input_file);
 		np.ida_star();
