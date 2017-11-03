@@ -261,7 +261,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
         st.pop();
         if(cur_n.md == 0 ) {
             // ans = cur_n.depth;
-            dev_flag = cur_n.depth;
+            *dev_flag = cur_n.depth;
             return;
         }
         int s_x = cur_n.space / N;
@@ -292,7 +292,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
             st.push(next_n);
             if(next_n.md == 0) {
                 // ans = next_n.depth;
-                dev_flag = next_n.depth;
+                *dev_flag = next_n.depth;
                 return;
             }
         }
@@ -341,12 +341,12 @@ void ida_star() {
 
         HANDLE_ERROR(cudaGetLastError());
         HANDLE_ERROR(cudaDeviceSynchronize());
-        HANDLE_ERROR(cudaMemcpy(flag, dev_flag, sizeof(int), cudaMemcpyDeviceToHost))
+        HANDLE_ERROR(cudaMemcpy(&flag, dev_flag, sizeof(int), cudaMemcpyDeviceToHost));
         if(flag != -1) {
             cout << flag[i] << endl;
             return;
         }
-        HANDLE_ERROR(cudaFree(dev_flag) );
+        HANDLE_ERROR(cudaFree(dev_flag));
     }
     HANDLE_ERROR(cudaFree(dev_root_set));
 }
