@@ -30,7 +30,7 @@ def simple_test(exec_file_name):
         # print(outputs)
     print("")
 
-os.system("g++ -std='c++14' -O3 -o ../src/15puzzle_speed ../src/15puzzle_speed.cc")
+os.system("g++ -std='c++11' -O3 -o ../src/15puzzle_speed ../src/15puzzle_speed.cc")
 simple_test("../src/./15puzzle_speed")
-os.system("nvcc -std='c++14' -O3 -o ../src/15puzzle_psimple ../src/15puzzle_psimple.cu")
+os.system("nvcc -std='c++11' -O3 -o ../src/15puzzle_psimple ../src/15puzzle_psimple.cu")
 simple_test("../src/./15puzzle_psimple")
