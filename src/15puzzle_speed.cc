@@ -152,21 +152,19 @@ void Npuzzle::ida_star() {
 			// {
 			// 	str += dir[path[i]];
 			// }
+			cout << ans << endl;
 			// cout << str << endl;
 			return;
 		}
 	}
 }
 
-
-
-
 int main() {
-	string output_file = "../result/korf100_result9.csv";
+	string output_file = "../result/korf100_result16.csv";
 	ofstream writing_file;
 	writing_file.open(output_file, std::ios::out);
 
-	for (int i = 0; i < 100; ++i)
+	for (int i = 0; i < 30; ++i)
 	{
 		string input_file = "../benchmarks/korf100/prob";
 		if(i < 10) {
@@ -175,7 +173,7 @@ int main() {
 			input_file += "0";
 		}
 		input_file += to_string(i);
-		cout << input_file << endl;
+		cout << input_file << " ";
 		clock_t start = clock();
 		Npuzzle np = Npuzzle(input_file);
 		np.ida_star();
