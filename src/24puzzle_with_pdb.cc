@@ -76,9 +76,9 @@ public:
 PatternDataBase::PatternDataBase() {
     const char *c0 = "../pdb/pat24.1256712.tab";
     const char *c1 = "../pdb/pat24.34891314.tab";
-    cout << "pattern 1 2 5 6 7 12 read in" << endl;
+    cout << "pattern 1 2 5 6 7 12 read in ";
     input(c0, h0);
-    cout << "pattern 3 4 8 9 13 14 read in" << endl;
+    cout << "pattern 3 4 8 9 13 14 read in ";
     input(c1, h1);
     cout << "pdb is installed." << endl;
 }
@@ -270,7 +270,6 @@ void Npuzzle::ida_star() {
     {
         // path.resize(limit);
         cur_n = s_n;
-        node_num = 0;
         if(dfs(0, -10)) {
             // string str = "";
             // for (int i = 0; i < limit; ++i)
@@ -279,7 +278,8 @@ void Npuzzle::ida_star() {
             // }
             // cout << str << endl;
             // cout << node_num << " ";
-            cout << ans << endl;
+            cout << ans << " ";
+            cout << node_num << endl;
             return;
         }
     }
@@ -294,8 +294,10 @@ int main() {
     string output_file = "../result/yama24_result_pdb_wo_cuda.csv";
     ofstream writing_file;
     writing_file.open(output_file, std::ios::out);
-
-    for (int i = 0; i <= 50; ++i)
+    // vector<int> test_array = {25, 32};
+//1, 5, 13, 25, 30, 32, 37, 38, 40, 44
+    for (int i = 1; i <= 50; ++i)
+    // for (auto i : test_array)
     {
      // string input_file = "../benchmarks/korf50_24puzzle/";
      string input_file = "../benchmarks/yama24_50/prob";

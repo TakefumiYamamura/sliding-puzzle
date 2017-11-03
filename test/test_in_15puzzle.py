@@ -15,8 +15,8 @@ def simple_test(exec_file_name):
     outputs = results.split('\n');
     for res in outputs:
         array = res.split()
-        if len(array) != 2:
-            break
+        if len(array) != 2 and len(array) != 3:
+            continue
 
         if ans_hash[array[0]] != array[1]:
             flag = False
