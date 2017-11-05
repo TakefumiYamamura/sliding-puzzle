@@ -165,7 +165,8 @@ void Npuzzle::ida_star() {
 
 int main() {
 	// string output_file = "../result/korf50_result.csv";
-	string output_file = "../result/yama24_result.csv";
+	// string output_file = "../result/yama24_result.csv";
+	output_file = fopen("../result/yama24_med_result.csv","w");
 	ofstream writing_file;
 	writing_file.open(output_file, std::ios::out);
 
@@ -175,7 +176,8 @@ int main() {
 	for (int i = 1; i <= 50; ++i)
 	{
 		// string input_file = "../benchmarks/korf50_24puzzle/";
-		string input_file = "../benchmarks/yama24_50/prob";
+		// string input_file = "../benchmarks/yama24_50/prob";
+		string input_file = "../benchmarks/yama24_50_med/prob";
 		if(i < 10) {
 			input_file += "00";
 		} else if(i < 100) {

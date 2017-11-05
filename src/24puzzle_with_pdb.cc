@@ -291,7 +291,8 @@ void Npuzzle::ida_star() {
 int main() {
     // string output_file = "../result/korf50_result.csv";
     pd = new PatternDataBase();
-    string output_file = "../result/yama24_result_pdb_wo_cuda.csv";
+    // string output_file = "../result/yama24_result_pdb_wo_cuda.csv";
+    string output_file = "../result/yama24_med_result_pdb_wo_cuda.csv";
     ofstream writing_file;
     writing_file.open(output_file, std::ios::out);
     // vector<int> test_array = {25, 32};
@@ -300,7 +301,8 @@ int main() {
     // for (auto i : test_array)
     {
      // string input_file = "../benchmarks/korf50_24puzzle/";
-     string input_file = "../benchmarks/yama24_50/prob";
+     // string input_file = "../benchmarks/yama24_50/prob";
+     string input_file = "../benchmarks/yama24_50_med/prob";
      if(i < 10) {
          input_file += "00";
      } else if(i < 100) {

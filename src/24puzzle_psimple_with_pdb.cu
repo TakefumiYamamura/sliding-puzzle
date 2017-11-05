@@ -652,7 +652,8 @@ void ida_star() {
 int main() {
 
     FILE *output_file;
-    output_file = fopen("../result/yama24_psimple_with_pdb_result.csv","w");
+    // output_file = fopen("../result/yama24_psimple_with_pdb_result.csv","w");
+    output_file = fopen("../result/yama24_med_psimple_with_pdb_result.csv","w");
 
     // set_md();
     // pattern database 
@@ -671,6 +672,7 @@ int main() {
     {
         // string input_file = "../benchmarks/yama24_50_easy/prob";
         string input_file = "../benchmarks/yama24_50/prob";
+        string input_file = "../benchmarks/yama24_50_med/prob";
         // string input_file = "../benchmarks/korf100/prob";
         if(i < 10) {
             input_file += "00";
