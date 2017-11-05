@@ -302,6 +302,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
 }
 
 void ida_star() {
+    pq = priority_queue<Node, vector<Node>, greater<Node> >();
     if(create_root_set()) {
         printf("%d\n", ans);
         return;
