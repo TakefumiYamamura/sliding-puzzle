@@ -26,12 +26,15 @@ def simple_test(exec_file_name):
             flag = False
             print("answer is different in " + array[0] + " true ans is " + ans_hash[array[0]] + " : false ans is " + array[1])
         else:
-            print("answer is same in " + array[0] + " " + ans_hash[array[0]])
+            # print("answer is same in " + array[0] + " " + ans_hash[array[0]])
 
 
     if flag == True :
         print(exec_file_name + " this solver is valid")
         # print(outputs)
+    else:
+        print(exec_file_name + " unvalid !!!")
+
     print("")
 
 os.system("g++ -std='c++11' -O3 -o ../src/24puzzle ../src/24puzzle.cc")
