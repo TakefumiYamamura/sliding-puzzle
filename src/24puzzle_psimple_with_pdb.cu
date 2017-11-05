@@ -671,7 +671,7 @@ int main() {
     for (int i = 0; i <= 50; ++i)
     {
         // string input_file = "../benchmarks/yama24_50_easy/prob";
-        string input_file = "../benchmarks/yama24_50/prob";
+        // string input_file = "../benchmarks/yama24_50/prob";
         string input_file = "../benchmarks/yama24_50_med/prob";
         // string input_file = "../benchmarks/korf100/prob";
         if(i < 10) {

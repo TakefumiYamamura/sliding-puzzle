@@ -166,7 +166,7 @@ void Npuzzle::ida_star() {
 int main() {
 	// string output_file = "../result/korf50_result.csv";
 	// string output_file = "../result/yama24_result.csv";
-	output_file = fopen("../result/yama24_med_result.csv","w");
+	string output_file = "../result/yama24_med_result.csv";
 	ofstream writing_file;
 	writing_file.open(output_file, std::ios::out);
 
