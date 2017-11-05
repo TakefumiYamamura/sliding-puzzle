@@ -262,7 +262,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
         st.pop();
         if(cur_n.md == 0 ) {
             // ans = cur_n.depth;
-            dev_flag[idx] = cur_n.depth;
+            *dev_flag = cur_n.depth;
             return;
         }
         int s_x = cur_n.space / N;
@@ -293,7 +293,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
             st.push(next_n);
             if(next_n.md == 0) {
                 // ans = next_n.depth;
-                dev_flag[idx] = next_n.depth;
+                *dev_flag = next_n.depth;
                 return;
             }
         }
@@ -333,23 +333,23 @@ void ida_star() {
         // path.resize(limit);
         // priority_queue<Node, vector<Node>, greater<Node> > tmp_pq = pq;
 
-        int flag[CORE_NUM];
+        int flag = -1;
         int *dev_flag;
 
         //gpu側にメモリ割当
-        HANDLE_ERROR(cudaMalloc( (void**)&dev_flag, pq_size * sizeof(int) ) );
+        HANDLE_ERROR(cudaMalloc( (void**)&dev_flag, sizeof(int) ) );
         dfs_kernel<<<BLOCK_NUM, WARP_SIZE>>>(limit, dev_root_set, dev_flag);
 
         HANDLE_ERROR(cudaGetLastError());
         HANDLE_ERROR(cudaDeviceSynchronize());
 
-        HANDLE_ERROR(cudaMemcpy(flag, dev_flag, CORE_NUM * sizeof(int), cudaMemcpyDeviceToHost));
-        for (int i = 0; i < CORE_NUM; ++i)
-        {
-            if(flag[i] != -1) {
-                cout << flag[i] << endl;
-                return;
-            }
+        HANDLE_ERROR(cudaMemcpy(&flag, dev_flag, sizeof(int), cudaMemcpyDeviceToHost));
+ 
+        if(flag != -1) {
+            cout << flag << endl;
+            HANDLE_ERROR(cudaFree(dev_flag) );
+            HANDLE_ERROR(cudaFree(dev_root_set));
+            return;
         }
         HANDLE_ERROR(cudaFree(dev_flag) );
     }
