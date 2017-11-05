@@ -367,7 +367,7 @@ int main() {
     output_file = fopen("../result/yama24_med_psimple_result.csv","w");
 
     set_md();
-    for (int i = 0; i <= 50; ++i)
+    for (int i = 1; i <= 50; ++i)
     {
         // string input_file = "../benchmarks/yama24_50/prob";
         string input_file = "../benchmarks/yama24_50_med/prob";
