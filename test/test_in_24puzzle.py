@@ -32,7 +32,7 @@ def simple_test(exec_file_name):
 	if flag == True:
 		print(exec_file_name + " this solver is valid")
 	else:
-		print(exec_file_name + " unvalid !!!")
+		print(exec_file_name + " invalid !!!")
 	print("")
 
 os.system("g++ -std='c++11' -O3 -o ../src/24puzzle ../src/24puzzle.cc")
