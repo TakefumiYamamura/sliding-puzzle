@@ -10,6 +10,7 @@
 #include <string>
 #include <set>
 #include <climits>
+#include <chrono>
 
 #define N 5
 #define N2 25
@@ -300,21 +301,24 @@ int main() {
     for (int i = 1; i <= 50; ++i)
     // for (auto i : test_array)
     {
-     // string input_file = "../benchmarks/korf50_24puzzle/";
-     // string input_file = "../benchmarks/yama24_50/prob";
-     string input_file = "../benchmarks/yama24_50_med/prob";
-     if(i < 10) {
-         input_file += "00";
-     } else if(i < 100) {
-         input_file += "0";
-     }
-     input_file += to_string(i);
-     cout << input_file << " ";
-     clock_t start = clock();
-     Npuzzle np = Npuzzle(input_file);
-     np.ida_star();
-     clock_t end = clock();
-     writing_file << (double)(end - start) / CLOCKS_PER_SEC << endl;
+// string input_file = "../benchmarks/korf50_24puzzle/";
+// string input_file = "../benchmarks/yama24_50/prob";
+        string input_file = "../benchmarks/yama24_50_med/prob";
+        if(i < 10) {
+        input_file += "00";
+        } else if(i < 100) {
+        input_file += "0";
+        }
+        input_file += to_string(i);
+        cout << input_file << " ";
+        // clock_t start = clock();
+        auto start = std::chrono::system_clock::now();
+        Npuzzle np = Npuzzle(input_file);
+        np.ida_star();
+        auto end = std::chrono::system_clock::now();
+        // clock_t end = clock();
+        auto diff = end - start;
+        writing_file << std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / 1000000000.0 << endl;
     }
 }
 

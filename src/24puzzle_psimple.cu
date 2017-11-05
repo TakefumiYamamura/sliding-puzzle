@@ -13,6 +13,7 @@
 #include <climits>
 #include <stack>
 #include <sstream>
+#include <chrono>
 
 template <typename T> std::string tostr(const T& t)
 {
@@ -381,13 +382,16 @@ int main() {
         cout << input_file << " ";
         // set_md();
 
-        clock_t start = clock();
+        // clock_t start = clock();
+        auto start = std::chrono::system_clock::now();
 
         input_table(const_cast<char*>(input_file.c_str()));
         ida_star();
 
-        clock_t end = clock();
-        fprintf(output_file,"%f\n", (double)(end - start) / CLOCKS_PER_SEC);
+        // clock_t end = clock();
+        auto end = std::chrono::system_clock::now();
+        auto diff = end - start;
+        fprintf(output_file,"%f\n", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / (double)1000000000.0);
 
         // writing_file << (double)(end - start) / CLOCKS_PER_SEC << endl;
     }
