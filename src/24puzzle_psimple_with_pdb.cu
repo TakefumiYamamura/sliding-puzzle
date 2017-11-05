@@ -591,7 +591,6 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, local_pdb *
             }
         }
     }
-    dev_flag[idx] = -1;
     return;
 
 }
@@ -632,6 +631,7 @@ void ida_star() {
 
         //gpu側にメモリ割当
         HANDLE_ERROR(cudaMalloc( (void**)&dev_flag, sizeof(int) ) );
+        HANDLE_ERROR(cudaMemcpy(dev_flag, &flag, sizeof(int), cudaMemcpyHostToDevice));
         dfs_kernel<<<BLOCK_NUM, WARP_SIZE>>>(limit, dev_root_set, dev_flag, dev_pd);
         HANDLE_ERROR(cudaGetLastError());
         HANDLE_ERROR(cudaDeviceSynchronize());

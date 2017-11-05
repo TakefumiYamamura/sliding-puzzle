@@ -298,7 +298,6 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
             }
         }
     }
-    dev_flag[idx] = -1;
     return;
 
 }
@@ -328,6 +327,7 @@ void ida_star() {
     HANDLE_ERROR(cudaMemcpy(dev_root_set, root_set, pq_size * sizeof(Node), cudaMemcpyHostToDevice) );
 
     // cout << " before_loop : "<< s_node.md << endl;
+    // cout << " pq_size : "<< pq_size << endl;
     for (int limit = s_node.md; limit < 100; ++limit, ++limit)
     {
         // path.resize(limit);
@@ -338,6 +338,7 @@ void ida_star() {
 
         //gpu側にメモリ割当
         HANDLE_ERROR(cudaMalloc( (void**)&dev_flag, sizeof(int) ) );
+        HANDLE_ERROR(cudaMemcpy(dev_flag, &flag, sizeof(int), cudaMemcpyHostToDevice));
         dfs_kernel<<<BLOCK_NUM, WARP_SIZE>>>(limit, dev_root_set, dev_flag);
 
         HANDLE_ERROR(cudaGetLastError());
