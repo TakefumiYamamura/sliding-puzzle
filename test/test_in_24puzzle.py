@@ -31,7 +31,6 @@ def simple_test(exec_file_name):
 
     if flag == True :
         print(exec_file_name + " this solver is valid")
-        # print(outputs)
     else:
         print(exec_file_name + " unvalid !!!")
 
