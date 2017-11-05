@@ -25,7 +25,7 @@ def simple_test(exec_file_name):
 		if ans_hash[array[0]] != array[1]:
 			flag = False
 			print("answer is different in " + array[0] + " true ans is " + ans_hash[array[0]] + " : false ans is " + array[1])
-		else:
+		# else:
 			# print("answer is same in " + array[0] + " " + ans_hash[array[0]])
 
 
