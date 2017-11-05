@@ -592,6 +592,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, local_pdb *
 
 void ida_star() {
     // cout << "before_create_root" << endl;
+    pq = priority_queue<Node, vector<Node>, greater<Node> >;
     if(create_root_set()) {
         printf("%d\n", ans);
         return;
