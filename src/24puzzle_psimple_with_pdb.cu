@@ -512,12 +512,15 @@ bool create_root_set() {
             int new_y = s_y + dy[i];
             if(new_x < 0  || new_y < 0 || new_x >= N || new_y >= N) continue; 
             if(max(cur_n.pre, i) - min(cur_n.pre, i) == 2) continue;
- 
- 
+
+            swap(next_n.inv_puzzle[next_n.puzzle[new_x * N + new_y]], next_n.inv_puzzle[next_n.puzzle[s_x * N + s_y]]); 
             swap(next_n.puzzle[new_x * N + new_y], next_n.puzzle[s_x * N + s_y]);
-            swap(next_n.inv_puzzle[new_x * N + new_y], next_n.inv_puzzle[s_x * N + s_y]);
+ 
+ 
+            // swap(next_n.puzzle[new_x * N + new_y], next_n.puzzle[s_x * N + s_y]);
+            // swap(next_n.inv_puzzle[new_x * N + new_y], next_n.inv_puzzle[s_x * N + s_y]);
             next_n.space = new_x * N + new_y;
-            next_n.h = pd.get_hash_value(cur_n.inv_puzzle);
+            next_n.h = pd.get_hash_value(next_n.inv_puzzle);
 
             next_n.depth++;
             next_n.pre = i;
@@ -565,15 +568,18 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, local_pdb *
  
 
  
-            int a = next_n.puzzle[new_x * N + new_y];
-            int b = next_n.inv_puzzle[new_x * N + new_y];
-            next_n.puzzle[new_x * N + new_y] = next_n.puzzle[s_x * N + s_y];
-            next_n.inv_puzzle[new_x * N + new_y] = next_n.inv_puzzle[s_x * N + s_y];
-            next_n.puzzle[s_x * N + s_y] = a;
-            next_n.inv_puzzle[s_x * N + s_y] = b;
+            int a = next_n.inv_puzzle[next_n.puzzle[new_x * N + new_y]];
+            int b = next_n.inv_puzzle[next_n.puzzle[s_x * N + s_y]];
+            next_n.inv_puzzle[next_n.puzzle[new_x * N + new_y]] = b;
+            next_n.inv_puzzle[next_n.puzzle[s_x * N + s_y]] = a;
+
+            int c = next_n.puzzle[new_x * N + new_y];
+            int d = next_n.puzzle[s_x * N + s_y];
+            next_n.puzzle[new_x * N + new_y] = d;
+            next_n.puzzle[s_x * N + s_y] = c;
 
             next_n.space = new_x * N + new_y;
-            next_n.h = dev_pdb->get_hash_value(cur_n.inv_puzzle);
+            next_n.h = dev_pdb->get_hash_value(next_n.inv_puzzle);
             next_n.depth++;
             if(cur_n.depth + cur_n.h > limit) continue;
             next_n.pre = i;
@@ -592,7 +598,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, local_pdb *
 
 void ida_star() {
     // cout << "before_create_root" << endl;
-    pq = priority_queue<Node, vector<Node>, greater<Node> >;
+    pq = priority_queue<Node, vector<Node>, greater<Node> >();
     if(create_root_set()) {
         printf("%d\n", ans);
         return;
@@ -615,7 +621,7 @@ void ida_star() {
     HANDLE_ERROR(cudaMalloc((void**)&dev_root_set, pq_size * sizeof(Node) ) );
     //root_setをGPU側のdev_root_setにコピー
     HANDLE_ERROR(cudaMemcpy(dev_root_set, root_set, pq_size * sizeof(Node), cudaMemcpyHostToDevice) );
-
+    // cout << "md" << s_node.h << endl;
     for (int limit = s_node.h; limit < 100; ++limit, ++limit)
     {
         // path.resize(limit);
@@ -672,7 +678,7 @@ int main() {
             input_file += "0";
         }
         input_file += tostr(i);
-        cout << input_file << endl;
+        cout << input_file << " ";
         // set_md();
 
         clock_t start = clock();
