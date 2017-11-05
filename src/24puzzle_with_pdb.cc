@@ -266,7 +266,7 @@ bool Npuzzle::dfs(int depth, int pre) {
 }
 
 void Npuzzle::ida_star() {
-    for (limit = cur_n.h; limit < 1000; ++limit, ++limit)
+    for (limit = s_n.h; limit < 1000; ++limit, ++limit)
     {
         // path.resize(limit);
         cur_n = s_n;
