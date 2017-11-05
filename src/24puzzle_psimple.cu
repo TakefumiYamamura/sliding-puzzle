@@ -154,6 +154,7 @@ void input_table(char *input_file) {
         s_node.puzzle[i] = tmp;
     }
     s_node.md = get_md_sum(s_node.puzzle);
+    // cout << "s_node md" << s_node.md << endl;
     s_node.depth = 0;
     s_node.pre = -10;
 }
@@ -303,6 +304,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
 }
 
 void ida_star() {
+    pq = priority_queue<Node, vector<Node>, greater<Node> >();
     if(create_root_set()) {
         printf("%d\n", ans);
         return;
@@ -325,7 +327,7 @@ void ida_star() {
     //root_setをGPU側のdev_root_setにコピー
     HANDLE_ERROR(cudaMemcpy(dev_root_set, root_set, pq_size * sizeof(Node), cudaMemcpyHostToDevice) );
 
-    cout << s_node.md << endl;
+    // cout << " before_loop : "<< s_node.md << endl;
     for (int limit = s_node.md; limit < 100; ++limit, ++limit)
     {
         // path.resize(limit);
