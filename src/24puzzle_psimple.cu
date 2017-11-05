@@ -325,6 +325,7 @@ void ida_star() {
     //root_setをGPU側のdev_root_setにコピー
     HANDLE_ERROR(cudaMemcpy(dev_root_set, root_set, pq_size * sizeof(Node), cudaMemcpyHostToDevice) );
 
+    cout << s_node.md << endl;
     for (int limit = s_node.md; limit < 100; ++limit, ++limit)
     {
         // path.resize(limit);
