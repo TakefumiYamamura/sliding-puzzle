@@ -53,7 +53,7 @@ os.system("./calculate_executed_sum ../result/yama24_med_psimple_result_30.csv 5
 
 
 print("cpu with pdb in 24 puzzle")
-os.system("./calculate_executed_sum ../result/yama24_med_result.csv 50")
+os.system("./calculate_executed_sum ../result/yama24_med_result_pdb_wo_cuda.csv 50")
 print("psimple with pdb gpu in 24 puzzle")
 os.system("./calculate_executed_sum ../result/yama24_med_psimple_with_pdb_result.csv 50")
 
