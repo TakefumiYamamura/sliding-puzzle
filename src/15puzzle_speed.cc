@@ -164,7 +164,7 @@ int main() {
 	ofstream writing_file;
 	writing_file.open(output_file, std::ios::out);
 
-	for (int i = 0; i < 30; ++i)
+	for (int i = 0; i < 50; ++i)
 	{
 		string input_file = "../benchmarks/korf100/prob";
 		if(i < 10) {
