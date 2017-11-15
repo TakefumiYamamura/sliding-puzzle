@@ -334,7 +334,6 @@ void ida_star() {
         int flag = -1;
         int *dev_flag;
 
-
         //gpu側にメモリ割当
         HANDLE_ERROR(cudaMalloc((void**)&dev_flag, sizeof(int)));
         cudaMemcpy(dev_flag, &flag, sizeof(int), cudaMemcpyHostToDevice);
@@ -346,6 +345,8 @@ void ida_star() {
         HANDLE_ERROR(cudaMemcpy(&flag, dev_flag, sizeof(int), cudaMemcpyDeviceToHost));
         if(flag != -1) {
             cout << flag << endl;
+            HANDLE_ERROR(cudaFree(dev_flag));
+            HANDLE_ERROR(cudaFree(dev_root_set));
             return;
         }
         HANDLE_ERROR(cudaFree(dev_flag));
