@@ -265,6 +265,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
             *dev_flag = cur_n.depth;
             return;
         }
+        if(cur_n.depth + cur_n.md > limit) continue;
         int s_x = cur_n.space / N;
         int s_y = cur_n.space % N;
         for (int operator_order = 0; operator_order < 4; ++operator_order)
