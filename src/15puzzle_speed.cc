@@ -162,7 +162,7 @@ void Npuzzle::ida_star() {
 
 int main() {
 	FILE *output_file;
-    output_file = fopen("../result/korf100_result_speed.csv");
+    output_file = fopen("../result/korf100_result_speed.csv", "w");
 
 	for (int i = 0; i < 50; ++i)
 	{
