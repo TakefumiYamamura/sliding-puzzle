@@ -176,6 +176,7 @@ window.onload = function () {
     }
   });
   chart2.render();
+
   var chart3 = new CanvasJS.Chart("chartContainer3",
   {
     title:{
@@ -212,4 +213,127 @@ window.onload = function () {
     }
   });
   chart3.render();
+
+  var chart4 = new CanvasJS.Chart("chartContainer4",
+  {
+    title:{
+      text: "cpu_PDB_speed_up / psimple_PDB_speed_up in 24puzzle problems"             
+    }, 
+    animationEnabled: true,     
+    axisY:{
+      titleFontFamily: "arial",
+      titleFontSize: 12,
+      includeZero: false
+    },
+    toolTip: {
+      shared: true
+    },
+    data: [
+    {        
+      type: "line",  
+      name: "cpu_PDB_speed_up / psimple_PDB_speed_up",        
+      showInLegend: true,
+      dataPoints: divide_array(divide_array(array3, array4), divide_array(array1, array2))
+    }, 
+    ],
+    legend:{
+      cursor:"pointer",
+      itemclick:function(e){
+        if(typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+          e.dataSeries.visible = false;
+        }
+        else {
+          e.dataSeries.visible = true;            
+        }
+        chart.render();
+      }
+    }
+  });
+  chart4.render();
+
+  var chart5 = new CanvasJS.Chart("chartContainer-cpu",
+  {
+    title:{
+      text: "Result of IDA*(without pdb) in 24puzzle problems"             
+    }, 
+    animationEnabled: true,     
+    axisY:{
+      titleFontFamily: "arial",
+      titleFontSize: 12,
+      includeZero: false
+    },
+    toolTip: {
+      shared: true
+    },
+    data: [
+    {        
+      type: "line",  
+      name: "cpu",        
+      showInLegend: true,
+      dataPoints: array1
+    }, 
+    {        
+      type: "line",  
+      name: "gpu",        
+      showInLegend: true,
+      dataPoints: array3
+    }
+    ],
+    legend:{
+      cursor:"pointer",
+      itemclick:function(e){
+        if(typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+          e.dataSeries.visible = false;
+        }
+        else {
+          e.dataSeries.visible = true;            
+        }
+        chart.render();
+      }
+    }
+  });
+  chart5.render();
+
+  var chart6 = new CanvasJS.Chart("chartContainer-gpu",
+  {
+    title:{
+      text: "Result of IDA*(with pdb) in 24puzzle problems"             
+    }, 
+    animationEnabled: true,     
+    axisY:{
+      titleFontFamily: "arial",
+      titleFontSize: 12,
+      includeZero: false
+    },
+    toolTip: {
+      shared: true
+    },
+    data: [
+    {        
+      type: "line",  
+      name: "cpu_pdb",        
+      showInLegend: true,
+      dataPoints: array2
+    }, 
+    {        
+      type: "line",  
+      name: "gpu_psimple_pdb",        
+      showInLegend: true,
+      dataPoints: array4
+    }
+    ],
+    legend:{
+      cursor:"pointer",
+      itemclick:function(e){
+        if(typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+          e.dataSeries.visible = false;
+        }
+        else {
+          e.dataSeries.visible = true;            
+        }
+        chart.render();
+      }
+    }
+  });
+  chart6.render();
 }
