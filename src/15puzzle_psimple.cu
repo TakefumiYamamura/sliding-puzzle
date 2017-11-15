@@ -288,7 +288,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
             // assert(get_md_sum(new_n.puzzle) == new_n.md);
             // return dfs(new_n, depth+1, i);
             next_n.depth++;
-            if(cur_n.depth + cur_n.md > limit) continue;
+            if(next_n.depth + next_n.md > limit) continue;
             next_n.pre = i;
             st.push(next_n);
             if(next_n.md == 0) {
