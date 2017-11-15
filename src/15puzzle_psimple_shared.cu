@@ -22,6 +22,7 @@ template <typename T> std::string tostr(const T& t)
  
 #define N 4
 #define N2 16
+#define N4 16 * 16
 #define STACK_LIMIT 64 * 8
 #define CORE_NUM 1536
 #define WARP_SIZE 32
@@ -250,7 +251,8 @@ bool create_root_set() {
 __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
 
-    __shared__ int shared_md[N2*N2];
+    __shared__ int shared_md[N4];
+    __shared__ Node local_stack[STACK_LIMIT];
     for (int i = threadIdx.x; i < N2*N2; ++blockDim.x)
     {
         shared_md[i] = md[i];
