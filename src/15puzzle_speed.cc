@@ -181,5 +181,6 @@ int main() {
         auto diff = end - start;
 		fprintf(output_file,"%f\n", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / (double)1000000000.0);
 	}
+	fclose(output_file);
 }
 
