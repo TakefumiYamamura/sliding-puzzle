@@ -22,10 +22,11 @@ template <typename T> std::string tostr(const T& t)
  
 #define N 4
 #define N2 16
-#define STACK_LIMIT 64 * 8
+#define STACK_LIMIT 64 * 4
 // #define CORE_NUM 1536
+// #define CORE_NUM 384
 #define CORE_NUM 192
-// #define WARP_SIZE 32
+// #define WARP_SIZE 8
 #define WARP_SIZE 4
 #define BLOCK_NUM 48
 
@@ -71,68 +72,24 @@ struct Node
 
 struct Lock {
     int *mutex;
-    Lock() {
-        int state = 0;
-        HANDLE_ERROR(cudaMalloc((void**)&mutex , sizeof(int)));
-        HANDLE_ERROR(cudaMemset(cudaMemset(mutex, 0, sizeof(int))));
-    }
-    ~Lock() {
-        cudaFree(mutex);
+    Lock( void ) {
+        HANDLE_ERROR( cudaMalloc( (void**)&mutex,
+                              sizeof(int) ) );
+        HANDLE_ERROR( cudaMemset( mutex, 0, sizeof(int) ) );
     }
 
-    __device__ void lock() {
-        while(atomicCAS(mutex, 0, 1) != 0);
+    ~Lock( void ) {
+        cudaFree( mutex );
     }
 
-    __device__ void unlock() {
-        atomicExch(mutex, 0);
-    } 
-};
-
-template<class T, int NUM>
-class local_stack
-{
-private:
-    T buf[NUM];
-    int tos;
-
-public:
-    __device__ local_stack() :
-    tos(-1)
-    {
+    __device__ void lock( void ) {
+        while( atomicCAS( mutex, 0, 1 ) != 0 );
+    __threadfence();
     }
 
-    __device__ T const & top() const
-    {
-        return buf[tos];
-    }
-
-    __device__ T & top()
-    {
-        return buf[tos];
-    }
-
-    __device__ void push(T const & v)
-    {
-        atomicAdd(tos, 1);
-        buf[tos] = v;
-    }
-
-    __device__ T pop()
-    {
-        T tmp = buf[tos];
-        atomicSub(tos, 1);
-        return buf[tos--];
-    }
-
-    __device__ bool full()
-    {
-        return tos == (NUM - 1);
-    }
-
-    __device__ bool empty()
-    {
-        return tos == -1;
+    __device__ void unlock( void ) {
+        __threadfence();
+        atomicExch( mutex, 0 );
     }
 };
 
@@ -271,56 +228,93 @@ bool create_root_set() {
     return false;
 }
 
-__global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
-    int idx = blockDim.x * blockIdx.x + threadIdx.x;
+__global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, Lock *lock) {
+    // int idx = blockDim.x * blockIdx.x + threadIdx.x;
 
-    __shared__ local_stack<Node, STACK_LIMIT> st;
-    if(threadIdx == 0) {
-        st.push(root_set[blockIdx.x]);
+    // local_stack<Node, STACK_LIMIT> st;
+    __shared__ Node st[STACK_LIMIT];
+    __shared__ int index;
+    index = -1;
+    __syncthreads();
+
+    if(threadIdx.x == 0) {
+        index++;
+        st[index] = root_set[blockIdx.x];
     }
+    __syncthreads();
 
     int order[4] = {1, 0, 2, 3};
     int dx[4] = {0, -1, 0, 1};
     int dy[4] = {1, 0, -1, 0};
 
-    while(!st.empty()) {
-        Node cur_n = st.top();
-        st.pop();
-        if(cur_n.md == 0 ) {
-            // ans = cur_n.depth;
+    __shared__ Node cur_nodes[WARP_SIZE];
+    __shared__ bool flag[WARP_SIZE];
+
+    while(index >= 0) {
+        for (int i = 0; i < WARP_SIZE; ++i)
+        {
+            flag[i] = false;
+        }
+        __syncthreads();
+        for (int i = 0; i < WARP_SIZE; ++i)
+        {
+            if(i == threadIdx.x && (threadIdx.x % 4) == 0) {
+                // lock[blockIdx.x].lock();
+                // printf("node_num: %d threadIdx.x: %d \n", index, threadIdx.x);
+                if(index >= 0) {
+                    flag[threadIdx.x / 4] = true;
+                    cur_nodes[threadIdx.x / 4] = st[index];
+                    atomicSub(&index, 1);
+                }
+                // lock[blockIdx.x].unlock();
+            }
+        }
+        if(flag[threadIdx.x / 4] == false) continue;
+
+
+        Node cur_n = cur_nodes[threadIdx.x / 4];
+        if(cur_n.md == 0) {
             *dev_flag = cur_n.depth;
             return;
         }
+        if(cur_n.depth + cur_n.md > limit) continue;
         int s_x = cur_n.space / N;
         int s_y = cur_n.space % N; 
-        for (int operator_order = 0; operator_order < 4; ++operator_order)
-        {
-            int i = order[operator_order];
-            Node next_n = cur_n;
-            int new_x = s_x + dx[i];
-            int new_y = s_y + dy[i];
-            if(new_x < 0  || new_y < 0 || new_x >= N || new_y >= N) continue; 
-            if(max(cur_n.pre, i) - min(cur_n.pre, i) == 2) continue;
- 
-            //incremental manhattan distance
-            next_n.md -= md[(new_x * N + new_y) * N2 + next_n.puzzle[new_x * N + new_y]];
-            next_n.md += md[(s_x * N + s_y) * N2 + next_n.puzzle[new_x * N + new_y]];
- 
-            int a = next_n.puzzle[new_x * N + new_y];
-            next_n.puzzle[new_x * N + new_y] = next_n.puzzle[s_x * N + s_y];
-            next_n.puzzle[s_x * N + s_y] = a;
+        int operator_order = threadIdx.x % 4; 
+        int i = order[operator_order];
+        Node next_n = cur_n;
+        int new_x = s_x + dx[i];
+        int new_y = s_y + dy[i];
+        if(new_x < 0  || new_y < 0 || new_x >= N || new_y >= N) continue; 
+        if(max(cur_n.pre, i) - min(cur_n.pre, i) == 2) continue;
 
-            next_n.space = new_x * N + new_y;
-            // assert(get_md_sum(new_n.puzzle) == new_n.md);
-            // return dfs(new_n, depth+1, i);
-            next_n.depth++;
-            if(cur_n.depth + cur_n.md > limit) continue;
-            next_n.pre = i;
-            st.push(next_n);
-            if(next_n.md == 0) {
-                // ans = next_n.depth;
-                *dev_flag = next_n.depth;
-                return;
+        //incremental manhattan distance
+        next_n.md -= md[(new_x * N + new_y) * N2 + next_n.puzzle[new_x * N + new_y]];
+        next_n.md += md[(s_x * N + s_y) * N2 + next_n.puzzle[new_x * N + new_y]];
+
+        int a = next_n.puzzle[new_x * N + new_y];
+        next_n.puzzle[new_x * N + new_y] = next_n.puzzle[s_x * N + s_y];
+        next_n.puzzle[s_x * N + s_y] = a;
+
+        next_n.space = new_x * N + new_y;
+        // assert(get_md_sum(new_n.puzzle) == new_n.md);
+
+        next_n.depth++;
+        if(next_n.depth + next_n.md > limit) continue;
+        next_n.pre = i;
+        if(next_n.md == 0) {
+            *dev_flag = next_n.depth;
+            return;
+        }
+
+        for (int j = 0; j < WARP_SIZE; ++j)
+        {
+            if(j == threadIdx.x) {
+                // lock[blockIdx.x].lock();
+                atomicAdd(&index, 1);
+                // printf("%d:%d:%d\n", index, next_n.depth, next_n.pre);
+                st[index] = next_n;
+                // lock[blockIdx.x].unlock();
             }
         }
     }
@@ -365,7 +359,15 @@ void ida_star() {
         HANDLE_ERROR(cudaMalloc((void**)&dev_flag, sizeof(int)));
         cudaMemcpy(dev_flag, &flag, sizeof(int), cudaMemcpyHostToDevice);
 
-        dfs_kernel<<<BLOCK_NUM, WARP_SIZE>>>(limit, dev_root_set, dev_flag);
+        Lock    lock[BLOCK_NUM];
+        Lock    *dev_lock;
+        HANDLE_ERROR( cudaMalloc( (void**)&dev_lock,
+                              BLOCK_NUM * sizeof( Lock ) ) );
+        HANDLE_ERROR( cudaMemcpy( dev_lock, lock,
+                              BLOCK_NUM * sizeof( Lock ),
+                              cudaMemcpyHostToDevice ) );
+
+        dfs_kernel<<<BLOCK_NUM, WARP_SIZE>>>(limit, dev_root_set, dev_flag, dev_lock);
 
         HANDLE_ERROR(cudaGetLastError());
         HANDLE_ERROR(cudaDeviceSynchronize());
@@ -385,10 +387,10 @@ int main() {
     // ofstream writing_file;
     // writing_file.open(output_file, std::ios::out);
     FILE *output_file;
-    output_file = fopen("../result/korf100_psimple_result_30.csv","w");
+    output_file = fopen("../result/korf100_block_parallel_result_30.csv","w");
 
     set_md();
-    for (int i = 0; i < 30; ++i)
+    for (int i = 0; i < 4; ++i)
     {
         string input_file = "../benchmarks/korf100/prob";
         if(i < 10) {
@@ -410,6 +412,7 @@ int main() {
         auto end = std::chrono::system_clock::now();
         auto diff = end - start;
         fprintf(output_file,"%f\n", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / (double)1000000000.0);
+        printf("%f\n", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / (double)1000000000.0);
 
         // writing_file << (double)(end - start) / CLOCKS_PER_SEC << endl;
     }
