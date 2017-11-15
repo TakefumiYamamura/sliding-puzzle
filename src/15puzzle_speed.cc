@@ -10,6 +10,7 @@
 #include <string>
 #include <set>
 #include <climits>
+#include <chrono>
 
 #define N 4
 #define N2 16
@@ -160,9 +161,8 @@ void Npuzzle::ida_star() {
 }
 
 int main() {
-	string output_file = "../result/korf100_result_speed.csv";
-	ofstream writing_file;
-	writing_file.open(output_file, std::ios::out);
+	FILE *output_file;
+    output_file = fopen("../result/korf100_result_speed.csv");
 
 	for (int i = 0; i < 50; ++i)
 	{
@@ -174,11 +174,12 @@ int main() {
 		}
 		input_file += to_string(i);
 		cout << input_file << " ";
-		clock_t start = clock();
+		auto start = std::chrono::system_clock::now();
 		Npuzzle np = Npuzzle(input_file);
 		np.ida_star();
-		clock_t end = clock();
-		writing_file << (double)(end - start) / CLOCKS_PER_SEC << endl;
+		auto end = std::chrono::system_clock::now();
+        auto diff = end - start;
+		fprintf(output_file,"%f\n", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / (double)1000000000.0);
 	}
 }
 
