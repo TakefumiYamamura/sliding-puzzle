@@ -556,6 +556,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, local_pdb *
             *dev_flag = cur_n.depth;
             return;
         }
+        if(cur_n.depth + cur_n.h > limit) continue;
         int s_x = cur_n.space / N;
         int s_y = cur_n.space % N;
         for (int operator_order = 0; operator_order < 4; ++operator_order)
@@ -582,7 +583,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, local_pdb *
             next_n.space = new_x * N + new_y;
             next_n.h = dev_pdb->get_hash_value(next_n.inv_puzzle);
             next_n.depth++;
-            if(cur_n.depth + cur_n.h > limit) continue;
+            if(next_n.depth + next_n.h > limit) continue;
             next_n.pre = i;
             st.push(next_n);
             if(next_n.h == 0) {
@@ -669,7 +670,7 @@ int main() {
     HANDLE_ERROR(cudaMemcpyToSymbol(dev_h0, &h0, PDB_TABLESIZE * sizeof(unsigned char)));
     HANDLE_ERROR(cudaMemcpyToSymbol(dev_h1, &h1, PDB_TABLESIZE * sizeof(unsigned char)));
 
-    for (int i = 1; i <= 50; ++i)
+    for (int i = 0; i <= 50; ++i)
     {
         // string input_file = "../benchmarks/yama24_50_easy/prob";
         // string input_file = "../benchmarks/yama24_50/prob";

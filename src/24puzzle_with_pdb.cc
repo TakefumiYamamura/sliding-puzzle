@@ -298,7 +298,7 @@ int main() {
     writing_file.open(output_file, std::ios::out);
     // vector<int> test_array = {25, 32};
 //1, 5, 13, 25, 30, 32, 37, 38, 40, 44
-    for (int i = 1; i <= 50; ++i)
+    for (int i = 0; i <= 50; ++i)
     // for (auto i : test_array)
     {
 // string input_file = "../benchmarks/korf50_24puzzle/";

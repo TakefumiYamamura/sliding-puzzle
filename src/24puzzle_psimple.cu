@@ -266,6 +266,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
             *dev_flag = cur_n.depth;
             return;
         }
+        if(cur_n.depth + cur_n.md > limit) continue;
         int s_x = cur_n.space / N;
         int s_y = cur_n.space % N;
         for (int operator_order = 0; operator_order < 4; ++operator_order)
@@ -289,7 +290,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
             // assert(get_md_sum(new_n.puzzle) == new_n.md);
             // return dfs(new_n, depth+1, i);
             next_n.depth++;
-            if(cur_n.depth + cur_n.md > limit) continue;
+            if(next_n.depth + next_n.md > limit) continue;
             next_n.pre = i;
             st.push(next_n);
             if(next_n.md == 0) {
@@ -368,7 +369,7 @@ int main() {
     output_file = fopen("../result/yama24_med_psimple_result.csv","w");
 
     set_md();
-    for (int i = 1; i <= 50; ++i)
+    for (int i = 0; i <= 50; ++i)
     {
         // string input_file = "../benchmarks/yama24_50/prob";
         string input_file = "../benchmarks/yama24_50_med/prob";

@@ -174,7 +174,7 @@ int main() {
 	// vector<int> test_array = {25, 32};
 
 	// for(auto i : test_array)
-	for (int i = 1; i <= 50; ++i)
+	for (int i = 0; i <= 50; ++i)
 	{
 		// string input_file = "../benchmarks/korf50_24puzzle/";
 		// string input_file = "../benchmarks/yama24_50/prob";
