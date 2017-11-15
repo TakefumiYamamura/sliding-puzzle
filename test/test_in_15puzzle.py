@@ -34,3 +34,9 @@ os.system("g++ -std='c++11' -O3 -o ../src/15puzzle_speed ../src/15puzzle_speed.c
 simple_test("../src/./15puzzle_speed")
 os.system("/usr/local/cuda/bin/nvcc -std='c++11' -O3 -o ../src/15puzzle_psimple ../src/15puzzle_psimple.cu")
 simple_test("../src/./15puzzle_psimple")
+
+os.system("g++ -std='c++11' -O3 -o calculate_executed_sum calculate_executed_sum.cc")
+print("cpu in 15 puzzle")
+os.system("./calculate_executed_sum ../result/korf100_result_speed.csv 30")
+print("psimple gpu in 15 puzzle")
+os.system("./calculate_executed_sum ../result/korf100_psimple_result_30.csv 30")
