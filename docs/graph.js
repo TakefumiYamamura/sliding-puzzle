@@ -31,8 +31,9 @@ function loadCSV(targetFile) {
 
 
 window.onload = function () {
-  var array1 = loadCSV("../result/korf100_burns_solver.csv");
-  var array2 = loadCSV("../result/korf100_result8.csv");
+  var array1 = loadCSV("../result/korf100_result_speed.csv");
+  var array2 = loadCSV("../result/korf100_psimple_result.csv");
+  var array3 = loadCSV("../result/korf100_psimple_result_50.csv");
   var chart = new CanvasJS.Chart("chartContainer",
   {
     title:{
@@ -49,16 +50,22 @@ window.onload = function () {
     },
     data: [
     {        
-      type: "spline",  
-      name: "Burns Solver",        
+      type: "line",  
+      name: "cpu",        
       showInLegend: true,
       dataPoints: array1
     }, 
+    // {        
+    //   type: "spline",  
+    //   name: "Psimple",        
+    //   showInLegend: true,
+    //   dataPoints: array2
+    // },
     {        
-      type: "spline",  
-      name: "Yamamura Solver",        
+      type: "line",  
+      name: "Psimple(fixed)",        
       showInLegend: true,
-      dataPoints: array2
+      dataPoints: array3
     }
      
     ],
