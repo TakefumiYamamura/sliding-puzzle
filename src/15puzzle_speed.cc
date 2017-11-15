@@ -160,7 +160,7 @@ void Npuzzle::ida_star() {
 }
 
 int main() {
-	string output_file = "../result/korf100_result16.csv";
+	string output_file = "../result/korf100_result_speed.csv";
 	ofstream writing_file;
 	writing_file.open(output_file, std::ios::out);
 
