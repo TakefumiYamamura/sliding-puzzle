@@ -140,51 +140,6 @@ void input_table(char *input_file) {
     s_node.pre = -10;
 }
 
-
-
-bool dfs(int limit, Node s_n) {
-    stack<Node> st;
-    st.push(s_n);
-
-    while(!st.empty()) {
-        Node cur_n = st.top();
-        st.pop();
-        if(cur_n.md == 0 ) {
-            ans = cur_n.depth;
-            return true;
-        }
-        int s_x = cur_n.space / N;
-        int s_y = cur_n.space % N;
-        for (int operator_order = 0; operator_order < 4; ++operator_order)
-        {
-            int i = order[operator_order];
-            Node next_n = cur_n;
-            int new_x = s_x + dx[i];
-            int new_y = s_y + dy[i];
-            if(new_x < 0  || new_y < 0 || new_x >= N || new_y >= N) continue; 
-            if(max(cur_n.pre, i) - min(cur_n.pre, i) == 2) continue;
- 
-            //incremental manhattan distance
-            next_n.md -= tmp_md[(new_x * N + new_y) * N2 + next_n.puzzle[new_x * N + new_y]];
-            next_n.md += tmp_md[(s_x * N + s_y) * N2 + next_n.puzzle[new_x * N + new_y]];
- 
-            swap(next_n.puzzle[new_x * N + new_y], next_n.puzzle[s_x * N + s_y]);
-            next_n.space = new_x * N + new_y;
-            // assert(get_md_sum(new_n.puzzle) == new_n.md);
-            // return dfs(new_n, depth+1, i);
-            next_n.depth++;
-            if(cur_n.depth + cur_n.md > limit) continue;
-            next_n.pre = i;
-            st.push(next_n);
-            if(next_n.md == 0) {
-                ans = next_n.depth;
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
 bool create_root_set() {
     pq.push(s_node);
     while(pq.size() < BLOCK_NUM) {
@@ -212,7 +167,6 @@ bool create_root_set() {
             swap(next_n.puzzle[new_x * N + new_y], next_n.puzzle[s_x * N + s_y]);
             next_n.space = new_x * N + new_y;
             // assert(get_md_sum(new_n.puzzle) == new_n.md);
-            // return dfs(new_n, depth+1, i);
             next_n.depth++;
             next_n.pre = i;
             if(next_n.md == 0) {
