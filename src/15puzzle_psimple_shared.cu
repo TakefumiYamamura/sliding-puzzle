@@ -252,8 +252,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
 
     __shared__ int shared_md[N4];
-    __shared__ Node local_stack[STACK_LIMIT];
-    for (int i = threadIdx.x; i < N2*N2; ++blockDim.x)
+    for (int i = threadIdx.x; i < N2*N2; i += blockDim.x)
     {
         shared_md[i] = md[i];
     }
