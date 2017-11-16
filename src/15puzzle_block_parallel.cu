@@ -213,14 +213,14 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, Lock *lock)
         for (int i = 0; i < WARP_SIZE; ++i)
         {
             if(i == threadIdx.x && (threadIdx.x % 4) == 0) {
-                // lock[blockIdx.x].lock();
+                lock[blockIdx.x].lock();
                 // printf("node_num: %d threadIdx.x: %d \n", index, threadIdx.x);
                 if(index >= 0) {
                     flag[threadIdx.x / 4] = true;
                     cur_nodes[threadIdx.x / 4] = st[index];
                     atomicSub(&index, 1);
                 }
-                // lock[blockIdx.x].unlock();
+                lock[blockIdx.x].unlock();
             }
         }
         if(flag[threadIdx.x / 4] == false) continue;
@@ -264,11 +264,11 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, Lock *lock)
         for (int j = 0; j < WARP_SIZE; ++j)
         {
             if(j == threadIdx.x) {
-                // lock[blockIdx.x].lock();
+                lock[blockIdx.x].lock();
                 atomicAdd(&index, 1);
                 // printf("%d:%d:%d\n", index, next_n.depth, next_n.pre);
                 st[index] = next_n;
-                // lock[blockIdx.x].unlock();
+                lock[blockIdx.x].unlock();
             }
         }
     }
@@ -302,9 +302,6 @@ void ida_star() {
 
     for (int limit = s_node.md; limit < 100; ++limit, ++limit)
     {
-        // path.resize(limit);
-        // priority_queue<Node, vector<Node>, greater<Node> > tmp_pq = pq;
-
         int flag = -1;
         int *dev_flag;
 
@@ -337,9 +334,6 @@ void ida_star() {
 
  
 int main() {
-    // string output_file = "../result/korf100_psimple_result.csv";
-    // ofstream writing_file;
-    // writing_file.open(output_file, std::ios::out);
     FILE *output_file;
     output_file = fopen("../result/korf100_block_parallel_result_30.csv","w");
 
@@ -354,21 +348,15 @@ int main() {
         }
         input_file += tostr(i);
         cout << input_file << " ";
-        // set_md();
-
-        // clock_t start = clock();
         auto start = std::chrono::system_clock::now();
 
         input_table(const_cast<char*>(input_file.c_str()));
         ida_star();
 
-        // clock_t end = clock();
         auto end = std::chrono::system_clock::now();
         auto diff = end - start;
         fprintf(output_file,"%f\n", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / (double)1000000000.0);
         printf("%f\n", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / (double)1000000000.0);
-
-        // writing_file << (double)(end - start) / CLOCKS_PER_SEC << endl;
     }
     fclose(output_file);
 }
