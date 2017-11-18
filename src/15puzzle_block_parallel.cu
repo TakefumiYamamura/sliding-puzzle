@@ -23,11 +23,12 @@ template <typename T> std::string tostr(const T& t)
 #define N 4
 #define N2 16
 #define STACK_LIMIT 64 * 4
-// #define CORE_NUM 1536
+#define CORE_NUM 1536
 // #define CORE_NUM 384
-#define CORE_NUM 192
+// #define CORE_NUM 192
 // #define WARP_SIZE 8
-#define WARP_SIZE 4
+// #define WARP_SIZE 4
+#define WARP_SIZE 32
 #define BLOCK_NUM 48
 
 using namespace std;
@@ -188,92 +189,90 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, Lock *lock)
     // local_stack<Node, STACK_LIMIT> st;
     __shared__ Node st[STACK_LIMIT];
     __shared__ int index;
-    index = -1;
+    index = 0;
     __syncthreads();
-
-    if(threadIdx.x == 0) {
-        index++;
-        st[index] = root_set[blockIdx.x];
-    }
+    // if(threadIdx.x == 0) {
+    //     index++;
+    st[0] = root_set[blockIdx.x];
+    // }
     __syncthreads();
 
     int order[4] = {1, 0, 2, 3};
     int dx[4] = {0, -1, 0, 1};
     int dy[4] = {1, 0, -1, 0};
 
-    __shared__ Node cur_nodes[WARP_SIZE];
-    __shared__ bool flag[WARP_SIZE];
 
-    while(index >= 0) {
-        for (int i = 0; i < WARP_SIZE; ++i)
-        {
-            flag[i] = false;
+    while(true) {
+        bool stack_is_empty = (index <= -1);
+        __syncthreads();
+        if(stack_is_empty || *dev_flag != -1) break;
+
+        Node cur_n;
+        bool find_cur_n = false;
+        int cur_n_idx = index - (threadIdx.x / 4);
+        if(cur_n_idx >= 0) {
+            cur_n = st[cur_n_idx];
+            find_cur_n = true;
+        }
+
+        if(threadIdx.x == 0) {
+            index = index >= (WARP_SIZE / 4 - 1) ? (index - WARP_SIZE / 4) : -1;
         }
         __syncthreads();
-        for (int i = 0; i < WARP_SIZE; ++i)
-        {
-            if(i == threadIdx.x && (threadIdx.x % 4) == 0) {
-                lock[blockIdx.x].lock();
-                // printf("node_num: %d threadIdx.x: %d \n", index, threadIdx.x);
-                if(index >= 0) {
-                    flag[threadIdx.x / 4] = true;
-                    cur_nodes[threadIdx.x / 4] = st[index];
-                    atomicSub(&index, 1);
+
+
+        if(find_cur_n) {
+            if(cur_n.md == 0) {
+                *dev_flag = cur_n.depth;
+                goto LOOP;
+                // return;
+            }
+            if(cur_n.depth + cur_n.md > limit) goto LOOP;
+            int s_x = cur_n.space / N;
+            int s_y = cur_n.space % N; 
+            int operator_order = threadIdx.x % 4; 
+            int i = order[operator_order];
+            Node next_n = cur_n;
+            int new_x = s_x + dx[i];
+            int new_y = s_y + dy[i];
+            if(new_x < 0  || new_y < 0 || new_x >= N || new_y >= N) goto LOOP; 
+            if(max(cur_n.pre, i) - min(cur_n.pre, i) == 2) goto LOOP;
+
+            //incremental manhattan distance
+            next_n.md -= md[(new_x * N + new_y) * N2 + next_n.puzzle[new_x * N + new_y]];
+            next_n.md += md[(s_x * N + s_y) * N2 + next_n.puzzle[new_x * N + new_y]];
+
+            int a = next_n.puzzle[new_x * N + new_y];
+            next_n.puzzle[new_x * N + new_y] = next_n.puzzle[s_x * N + s_y];
+            next_n.puzzle[s_x * N + s_y] = a;
+
+            next_n.space = new_x * N + new_y;
+            // assert(get_md_sum(new_n.puzzle) == new_n.md);
+
+            next_n.depth++;
+            if(next_n.depth + next_n.md > limit) goto LOOP;
+            next_n.pre = i;
+            if(next_n.md == 0) {
+                *dev_flag = next_n.depth;
+                //return;
+                goto LOOP;
+            }
+            for (int j = 0; j < WARP_SIZE; ++j)
+            {
+                if(j == threadIdx.x) {
+                    // lock[blockIdx.x].lock();
+                    atomicAdd(&index, 1);
+                    // printf("%d:%d:%d\n", index, next_n.depth, next_n.pre);
+                    st[index] = next_n;
+                    // lock[blockIdx.x].unlock();
                 }
-                lock[blockIdx.x].unlock();
             }
+
         }
-        if(flag[threadIdx.x / 4] == false) continue;
-
-
-        Node cur_n = cur_nodes[threadIdx.x / 4];
-        if(cur_n.md == 0) {
-            *dev_flag = cur_n.depth;
-            return;
-        }
-        if(cur_n.depth + cur_n.md > limit) continue;
-        int s_x = cur_n.space / N;
-        int s_y = cur_n.space % N; 
-        int operator_order = threadIdx.x % 4; 
-        int i = order[operator_order];
-        Node next_n = cur_n;
-        int new_x = s_x + dx[i];
-        int new_y = s_y + dy[i];
-        if(new_x < 0  || new_y < 0 || new_x >= N || new_y >= N) continue; 
-        if(max(cur_n.pre, i) - min(cur_n.pre, i) == 2) continue;
-
-        //incremental manhattan distance
-        next_n.md -= md[(new_x * N + new_y) * N2 + next_n.puzzle[new_x * N + new_y]];
-        next_n.md += md[(s_x * N + s_y) * N2 + next_n.puzzle[new_x * N + new_y]];
-
-        int a = next_n.puzzle[new_x * N + new_y];
-        next_n.puzzle[new_x * N + new_y] = next_n.puzzle[s_x * N + s_y];
-        next_n.puzzle[s_x * N + s_y] = a;
-
-        next_n.space = new_x * N + new_y;
-        // assert(get_md_sum(new_n.puzzle) == new_n.md);
-
-        next_n.depth++;
-        if(next_n.depth + next_n.md > limit) continue;
-        next_n.pre = i;
-        if(next_n.md == 0) {
-            *dev_flag = next_n.depth;
-            return;
-        }
-
-        for (int j = 0; j < WARP_SIZE; ++j)
-        {
-            if(j == threadIdx.x) {
-                lock[blockIdx.x].lock();
-                atomicAdd(&index, 1);
-                // printf("%d:%d:%d\n", index, next_n.depth, next_n.pre);
-                st[index] = next_n;
-                lock[blockIdx.x].unlock();
-            }
-        }
+        LOOP:
+        __syncthreads();
     }
     return;
-
 }
 
 void ida_star() {
@@ -338,7 +337,7 @@ int main() {
     output_file = fopen("../result/korf100_block_parallel_result_30.csv","w");
 
     set_md();
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < 50; ++i)
     {
         string input_file = "../benchmarks/korf100/prob";
         if(i < 10) {
