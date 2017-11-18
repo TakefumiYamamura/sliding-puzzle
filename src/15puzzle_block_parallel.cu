@@ -22,7 +22,7 @@ template <typename T> std::string tostr(const T& t)
  
 #define N 4
 #define N2 16
-#define STACK_LIMIT 64 * 4
+#define STACK_LIMIT 64 * 8
 #define CORE_NUM 1536
 // #define CORE_NUM 384
 // #define CORE_NUM 192
@@ -143,7 +143,7 @@ void input_table(char *input_file) {
 
 bool create_root_set() {
     pq.push(s_node);
-    while(pq.size() < BLOCK_NUM) {
+    while(pq.size() < BLOCK_NUM * (WARP_SIZE / 4) ) {
         Node cur_n = pq.top();
         pq.pop();
         if(cur_n.md == 0 ) {
@@ -175,7 +175,7 @@ bool create_root_set() {
                 return true;
             }
             pq.push(next_n);
-            if(pq.size() >= BLOCK_NUM){
+            if(pq.size() >= BLOCK_NUM * (WARP_SIZE / 4)){
                 return false;
             }
         }
@@ -189,11 +189,11 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, Lock *lock)
     // local_stack<Node, STACK_LIMIT> st;
     __shared__ Node st[STACK_LIMIT];
     __shared__ int index;
-    index = 0;
-    __syncthreads();
-    // if(threadIdx.x == 0) {
+    index = WARP_SIZE / 4 - 1;
+    // if(threadIdx.x % 4 == 0) {
     //     index++;
-    st[0] = root_set[blockIdx.x];
+    // printf("stack index : %d  root node index %d\n", threadIdx.x / 4, blockIdx.x * (WARP_SIZE / 4 ) + threadIdx.x / 4);
+    st[threadIdx.x / 4] = root_set[blockIdx.x * (WARP_SIZE / 4 ) + threadIdx.x / 4];
     // }
     __syncthreads();
 
@@ -282,7 +282,7 @@ void ida_star() {
         return;
     }
     int pq_size = pq.size();
-    Node root_set[BLOCK_NUM];
+    Node root_set[CORE_NUM];
     int i = 0;
     while(!pq.empty()) {
         Node n = pq.top();
