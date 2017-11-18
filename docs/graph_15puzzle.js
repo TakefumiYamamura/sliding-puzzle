@@ -32,8 +32,10 @@ function loadCSV(targetFile) {
 
 window.onload = function () {
   var array1 = loadCSV("../result/korf100_result_speed.csv");
-  var array2 = loadCSV("../result/korf100_psimple_result.csv");
+  // var array2 = loadCSV("../result/korf100_psimple_result.csv");
   var array3 = loadCSV("../result/korf100_psimple_result_50.csv");
+  var array4 = loadCSV("../result/korf100_psimple_result_50_shared.csv");
+  var array5 = loadCSV("../result/korf100_block_parallel_result_50.csv");
   var chart = new CanvasJS.Chart("chartContainer",
   {
     title:{
@@ -63,9 +65,21 @@ window.onload = function () {
     // },
     {        
       type: "line",  
-      name: "Psimple(fixed)",        
+      name: "Psimple(constant)",        
       showInLegend: true,
       dataPoints: array3
+    },
+    {        
+      type: "line",  
+      name: "Psimple(shared)",        
+      showInLegend: true,
+      dataPoints: array4
+    },
+    {        
+      type: "line",  
+      name: "Block Parallel",        
+      showInLegend: true,
+      dataPoints: array5
     }
      
     ],
