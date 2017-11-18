@@ -184,9 +184,14 @@ bool create_root_set() {
 }
 
 __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, Lock *lock) {
-    // int idx = blockDim.x * blockIdx.x + threadIdx.x;
+    __shared__ int shared_md[N4];
+    for (int i = threadIdx.x; i < N2*N2; i += blockDim.x)
+    {
+        shared_md[i] = md[i];
+    }
 
-    // local_stack<Node, STACK_LIMIT> st;
+    __syncthreads();
+
     __shared__ Node st[STACK_LIMIT];
     __shared__ int index;
     index = WARP_SIZE / 4 - 1;
@@ -239,8 +244,8 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, Lock *lock)
             if(max(cur_n.pre, i) - min(cur_n.pre, i) == 2) goto LOOP;
 
             //incremental manhattan distance
-            next_n.md -= md[(new_x * N + new_y) * N2 + next_n.puzzle[new_x * N + new_y]];
-            next_n.md += md[(s_x * N + s_y) * N2 + next_n.puzzle[new_x * N + new_y]];
+            next_n.md -= shared_md[(new_x * N + new_y) * N2 + next_n.puzzle[new_x * N + new_y]];
+            next_n.md += shared_md[(s_x * N + s_y) * N2 + next_n.puzzle[new_x * N + new_y]];
 
             int a = next_n.puzzle[new_x * N + new_y];
             next_n.puzzle[new_x * N + new_y] = next_n.puzzle[s_x * N + s_y];
@@ -334,7 +339,7 @@ void ida_star() {
  
 int main() {
     FILE *output_file;
-    output_file = fopen("../result/korf100_block_parallel_result_30.csv","w");
+    output_file = fopen("../result/korf100_block_parallel_result_50.csv","w");
 
     set_md();
     for (int i = 0; i < 50; ++i)
