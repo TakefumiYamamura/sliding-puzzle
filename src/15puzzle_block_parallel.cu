@@ -15,6 +15,8 @@
 #include <sstream>
 #include <chrono>
 
+#define DEBUG
+
 template <typename T> std::string tostr(const T& t)
 {
     std::ostringstream os; os<<t; return os.str();
@@ -22,8 +24,8 @@ template <typename T> std::string tostr(const T& t)
  
 #define N 4
 #define N2 16
-#define STACK_LIMIT 64 * 8
-#define MAX_CORE_NUM 15360
+#define STACK_LIMIT 64 * 9
+#define MAX_CORE_NUM 40000
 #define CORE_NUM 1536
 // #define CORE_NUM 15360
 // #define CORE_NUM 384
@@ -31,8 +33,8 @@ template <typename T> std::string tostr(const T& t)
 // #define WARP_SIZE 8
 // #define WARP_SIZE 4
 #define WARP_SIZE 32
+// #define BLOCK_NUM 2048
 #define BLOCK_NUM 48
-// #define BLOCK_NUM 480
 
 using namespace std;
 
@@ -66,11 +68,11 @@ struct Node
     int depth;
     int pre;
     bool operator < (const Node& n) const {
-        return depth + md < n.depth + n.md;
+        return (depth + md) < (n.depth + n.md);
     }
 
     bool operator > (const Node& n) const {
-        return depth + md > n.depth + n.md;
+        return (depth + md) > (n.depth + n.md);
     }
 };
 
@@ -392,7 +394,11 @@ void ida_star() {
         HANDLE_ERROR(cudaMalloc((void**)&dev_load_set, root_node_size * sizeof(int)));
         HANDLE_ERROR(cudaMemset(dev_load_set, 0, root_node_size * sizeof(int)));
 
-        // cout << root_node_size << endl;
+        #ifdef DEBUG
+        cout << "f_limit : " << limit << endl;
+        cout << root_node_size << endl;
+        #endif
+
         dfs_kernel<<<root_node_size, WARP_SIZE>>>(limit, dev_root_set, dev_flag, dev_lock, dev_load_set);
 
 
@@ -419,11 +425,34 @@ void ida_star() {
             load_sum += load_set[i];
             // cout << load_set[i] << " ";
         }
-        // cout << endl;
+        // cout << "load sum " << load_sum << endl;
         int load_av = load_sum / root_node_size;
-
+        #ifdef DEBUG
+        cout << "load average " << load_av << endl;
+        int stat_cnt[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+        #endif
         for (int i = 0; i < root_node_size; ++i)
         {
+            #ifdef DEBUG
+            if (load_set[i] < load_av)
+                stat_cnt[0]++;
+            else if (load_set[i] < 2 * load_av)
+                stat_cnt[1]++;
+            else if (load_set[i] < 4 * load_av)
+                stat_cnt[2]++;
+            else if (load_set[i] < 8 * load_av)
+                stat_cnt[3]++;
+            else if (load_set[i] < 16 * load_av)
+                stat_cnt[4]++;
+            else if (load_set[i] < 32 * load_av)
+                stat_cnt[5]++;
+            else if (load_set[i] < 64 * load_av)
+                stat_cnt[6]++;
+            else if (load_set[i] < 128 * load_av)
+                stat_cnt[7]++;
+            else
+                stat_cnt[8]++;
+            #endif
             int divide_num = load_av == 0 ? load_set[i] : (load_set[i]- 1) / load_av + 1;
             if(divide_num > 1) {
                 divide_root_set(root_set[i], new_root_set, &new_root_node_size, divide_num);
@@ -431,9 +460,17 @@ void ida_star() {
                 new_root_set[new_root_node_size] = root_set[i];
                 new_root_node_size++;
             }
-            // cout << divide_num << " ";
+
         }
-        // cout << "root_node_size:" <<root_node_size << endl;;
+        #ifdef DEBUG
+        printf("STAT: distr: av=%d, 2av=%d, 4av=%d, 8av=%d, 16av=%d, 32av=%d, "
+             "64av=%d, 128av=%d, more=%d\n",
+             stat_cnt[0], stat_cnt[1], stat_cnt[2], stat_cnt[3], stat_cnt[4],
+             stat_cnt[5], stat_cnt[6], stat_cnt[7], stat_cnt[8]);
+        cout << "root_node_size:" <<root_node_size << endl;
+        cout << "------" << endl;
+        cout << endl;
+        #endif
 
         assert(new_root_node_size <= MAX_CORE_NUM);
 
@@ -448,11 +485,13 @@ void ida_star() {
 
  
 int main() {
+    #ifdef OUTPUT
     FILE *output_file;
-    output_file = fopen("../result/korf100_block_parallel_result_with_staticlb_50.csv","w");
+    output_file = fopen("../result/korf100_block_parallel_result_with_staticlb_100_2048.csv","w");
+    #endif
 
     set_md();
-    for (int i = 0; i < 50; ++i)
+    for (int i = 80; i < 81; ++i)
     {
         string input_file = "../benchmarks/korf100/prob";
         if(i < 10) {
@@ -469,8 +508,14 @@ int main() {
 
         auto end = std::chrono::system_clock::now();
         auto diff = end - start;
+        #ifdef OUTPUT
         fprintf(output_file,"%f\n", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / (double)1000000000.0);
-        // printf("%f\n", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / (double)1000000000.0);
+        #endif
+        #ifdef DEBUG
+        printf("%f\n", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / (double)1000000000.0);
+        #endif
     }
+    #ifdef OUTPUT
     fclose(output_file);
+    #endif
 }
