@@ -1,0 +1,222 @@
+\documentclass[a4paper,11pt,oneside,openany]{jsbook}
+\usepackage{graphicx,enumerate}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{float}
+\usepackage{amssymb}
+\usepackage{mathabx}
+\usepackage{longtable}
+\usepackage{supertabular}
+\usepackage{subfigure}
+\usepackage{lscape}
+
+\pagestyle{plain}
+\setlength{\textwidth}{\fullwidth}
+\setlength{\evensidemargin}{\oddsidemargin}
+\def\vector#1{\mbox{\boldmath $#1$}}
+\begin{document}
+\thispagestyle{empty}
+%------------------------------標題紙作成エリア----------------------------%
+2017年度　修士学位論文%1
+\bigskip%2
+\LARGE%3
+\begin{center}
+修士学位論文
+\end{center}
+\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip %7
+\begin{center} %8
+GPUを利用したIDA*探索について
+\end{center}
+\large %11
+\begin{center}
+Iterative depth first A* search in GPU
+\end{center}
+\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip
+\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip
+\Large %17
+\begin{center}
+広域システム化学系　広域科学専攻
+\end{center}
+\Large %17
+\begin{center}
+指導教員:　福永 アレックス
+\end{center}
+\LARGE %21
+\begin{center}
+山村　武史
+\end{center}
+\normalsize
+%---------------------------------目次エリア-------------------------------%
+\thispagestyle{empty}
+\tableofcontents
+%---------------------------------本文エリア-------------------------------%
+
+\chapter{序論}
+\section{研究の背景}
+実数値最適化問題とは，ある$D$次元の実数値ベクトル$\vector{x} = (x_1, x_2, ..., x_D)$と，それを評価する関数$f(\vector{x})$が与えられた時に，その評価関数を最小もしくは最大化するような実数値ベクトル$\vector{x}$を求める問題である．
+対象問題が，局所解を複数持つ多峰性を有する場合，局所解を避け，大域的な最適解を求めることが実数値最適化問題において重要な課題の一つである．また多くの実問題については，対象問題が単峰性か，多峰性か，及び変数分離可か不可かなどといった情報を探索の事前に知ることは困難である.このような$\vector{x}$の目的関数値$f(\vector{x})$しか利用出来ない実数値最適化問題をblack-box optimizationと呼ぶ．
+そのような実数値最適化問題を対象とする確率的手法の一つとして，差分進化(Differential Evlolution:DE) \cite{Storn} が用いられる．DEはEvolutionary Algorithm(EA)のひとつであり，EAとは，変化と選択に基づく世代交代により解が進化していく計算の総称である．
+最初のDEは，1995年にStornとPriceらによって提案された．
+DEは単純なアルゴリズムでありながら，他の探索手法と比べても良好な性能を有することが報告されている
+ \cite{Storn} \cite{ExDE} ．
+このためDEは実問題への多くの適用例が報告されている \cite{ExDE} ．
+
+\section{関連研究}
+DEの探索性能は用いる制御パラメタに大きく依存し，そのパラメタは集団数，スケール係数$F$，交叉率$CR$である．しかしこれらのパラメタの適切な値は使用する関数や問題設定によって異なり，実問題を解く上でこれらのパラメタをユーザーが試行錯誤する必要がある．
+これらのパラメタを探索中に適応的に変化させていく適応型のDEに関する研究が数多く行われている．
+それら適応型のDE手法としてはJADE \cite{JADE} ，SHADE \cite{SHADE} などが挙げられる．
+JADEでは適応戦略以外に，探索性能を強化するために過去の劣解を保持するアーカイブを使用する．
+変異ベクトル作成時にアーカイブに保存された劣解を用いることで，解集団における多様性の維持に役立つ．
+
+しかしアーカイブは問題設定などによっては，探索性能の向上にうまくつながらないこともある \cite{JADE} ．JADEにてその性能比較を行った先行研究では，次元数が高い時にアーカイブは解集団の探索性能を向上させた．一方で，次元数に対して十分な集団数をもつ場合，アーカイブ使用時の方がJADEにおいてその探索性能は低下した．これは，次元数や集団数によって，解集団が多様性を維持出来ない場合に，アーカイブがその多様性を向上させるためと述べられている．しかしながらアーカイブが解集団にどの程度多様性を与えているのか，そもそも多様性とは何か，なんらかの尺度による調査はなされていない．
+本論文では，アーカイブを使用することで解集団における多様性を確かに維持できているのか，次元数，集団数の違いが多様性維持にどのように影響を与えているのか解明するとともに，従来のアーカイブを改善した手法をいくつか提案する．
+
+\section{本研究の目的}
+本研究の目的は２つある．
+\begin{enumerate}
+\item アーカイブが多様性の維持にどのように役割をはたしているのか調査する
+\vspace{3mm}
+\newline
+アーカイブには，生存選択の時に，劣解として，子個体に上書きされた親個体が保存される．変異ベクトル作成時にアーカイブに保存された劣解を用いることで，解集団における多様性の維持に役立つ．本研究では，アーカイブを使用することで，解集団における多様性を確かに維持できているのか，次元数，集団数の違いが多様性維持にどのように影響を与えているのか多様性評価指標$r_s$，$r_f$を基に調査する．
+\newline
+
+
+\item アーカイブを改良することで，探索性能を向上できないか新たな手法を提案する．
+\vspace{3mm}
+\newline
+アーカイブは多くの適応DEについて使われているにも関わらず，そのシステムについての改良は他の制御パラメタであるスケール係数$F$や交叉率$CR$に比べ試みられていない．
+アーカイブ性能の分析をふまえた上で，その改善をはかるための新たな手法を提案する．
+\end{enumerate}
+
+
+\section{本論文の構成}
+本論文は以下の通りに構成される。2 章でDEの詳細と適応DE，アーカイブの使用例について説明する．3 章ではアーカイブの性能を多様性評価指標$r_s$，$r_f$の値をもとに調査する．4章ではアーカイブの改善を試みた二つの手法について説明する．5章では本研究における知見をまとめる．
+
+\chapter{GPUとグラフ探索アルゴリズムについて}
+\section{GPUとGPGPU}
+GPU(graphics processing unit)は2Dや3Dといったコンピューターグラフィックスの画像処理を行う為に従来使用され、それらの性能を向上することを追求してきた。
+GPUをグラフィックスのレンダリングのみならず、より汎用的な計算にも利用することを目的とした技術がGPGPU(General-purpose computing on graphics processing units)である。
+GPGPUが使われる分野として、物理シミュレーション、機械学習、音声処理、金融工学などのアプリケーションがあげられる。本論文では、GPUがどのような、アーキテクチャであるか、またGPGPUを行うためのプログラミングモデルの一つであるCUDAについての説明を行う。
+
+
+\subsection{GPUの構造}
+GPUの特徴とし
+
+\subsection{CUDA}
+CUDA(Compute Unified Device Architecture)とは汎用的な並列コンピューティングプラットフォーム、プログラミングモデルであり、NVIDIA GPUの並列コンピュートエンジンを利用して多くの複雑なコンピューティング問題をより効率的に解決する。
+CUDAではCPUとそのメモリを扱うホストと、GPUとそのメモリを扱うデバイスの二つにわかれている、ヘテロジニアスアーキテクチャである。
+
+\chapter{グラフ探索アルゴリズム}
+\section{グラフ探索問題}
+グラフとはノードの集合$V$と、そのノード同士を結ぶコストを持ったエッジの集合$E$からなる。またこのエッジに方向を定義している場合、そのようなグラフを有向グラフとよび、一方エッジに方向の定義していないグラフを無向グラフと呼ぶ。
+グラフ探索問題の一つである最短コスト探索問題は、このグラフの中から、入力として、初期ノード$v_0$とゴールノード$v_g$があったときに、$v_0$から$v_g$に至る為の最小の経路を出力する問題である。
+
+\section{ヒューリスティック探索}
+
+\section{A*探索}
+
+\newpage
+\begin{algorithm}
+\caption{A*}
+\label{alg:pbnf}
+\begin{algorithmic}
+\STATE $opendList$
+\STATE 初期ノード$v_0$を$openList$に追加。
+\STATE closedList
+\WHILE {$openList$が空ではない}
+    \STATE $v_{current}$ := pop from $openList$;
+    \IF {$v_{current} \in 終了状態$}
+        \STATE return $v_{current}$ and its parents as a shoretest path;
+    \ENDIF
+    \FOR{$i=1$ to $N$}
+        \STATE $r := \rm{randi}[1,H]$
+        \STATE $F_i := \rm{randc}(M_F, 0.1)$ \\
+        \STATE $CR_i := \rm{randn}(M_{CR}, 0.1)$ \\
+        \STATE 突然変異戦略を用いて変異個体{$\vector{v}^i$}を生成;
+        \STATE $\vector{x}^i$と$\vector{v}^i$に交叉を適用し，子個体$\vector{u}^i$を生成;
+     \ENDFOR
+    \FOR{$i=1$ to $N$}
+        \IF {$f(\vector{u}^i) \leqq f(\vector{x}^i)$}
+            \STATE $\vector{x^i} \rightarrow {A}$;
+            \STATE {$\vector{x}^i := \vector{u}^i$};
+            \STATE $S_F := {F_i}, S_CR := {CR_i};$
+        \ENDIF
+    \ENDFOR
+    \IF {$ S_F,S_{CR} \neq \emptyset$}
+        \STATE $M_{F,k}  :=  mean_L(S_F)$;
+        \STATE $M_{CR,k}  :=  mean_L(S_{CR})$;
+        \STATE $k = (k+1) \% H$;
+    \ENDIF
+    \STATE もしアーカイブがアーカイブサイズ$|A|$を超えていれば，超えた分だけランダムに削除;
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+\newpage
+
+\section{IDA*探索}
+
+
+
+
+\section{実験設定}
+全ての評価関数において実行可能領域は$[-100,100]^D$である．また，探索中に得られた最良解と最適解との誤差が$10^{-8}$以下になった場合は，誤差値は0とする．ベンチマークの詳細については \cite{CEC2015} を参考にしていただきたい．
+
+\section{実験結果}
+表4.1にCEC2015ベンチマークセットにおける実験結果をしめす．
+
+\section{考察}
+全体的には，提案手法 1はDE/Aより劣った性能であったが，パラメタ$alpha$の値によっては，DE/Aより優れた性能を得ることが出来た．
+
+\newpage
+\begin{landscape}
+\begin{table}[!tbp]
+\footnotesize
+\caption{CEC2015ベンチマークセットにおける，DE/Aと提案手法の比較実験の結果．全てのテスト関数の次元数$D$は30次元であり，最大評価回数は，$10，000 \times D$である．また全てのデータは51回の試行の平均である．各セルの中身は得られた最良解と最適値の誤差の平均と標準偏差である．\label{ref-tb-values}} 
+\begin{center}
+\begin{tabular}{llllllll}
+\hline\hline
+\multicolumn{1}{l}{F}&\multicolumn{1}{c}{DE/A}&\multicolumn{1}{c}{DE(提案手法1)}&\multicolumn{1}{c}{DE(提案手法1)}&\multicolumn{1}{c}{DE(提案手法1)}&\multicolumn{1}{c}{DE(提案手法1)}&\multicolumn{1}{c}{DE(提案手法2)}&\multicolumn{1}{c}{DE/NA}\tabularnewline
+&&\multicolumn{1}{c}{{\scriptsize $alpha$=(0.5)}}&\multicolumn{1}{c}{{\scriptsize $alpha$=(1.0)}}&\multicolumn{1}{c}{{\scriptsize $alpha$=(1.5)}}&\multicolumn{1}{c}{{\scriptsize $alpha$=(2.0)}}&&\tabularnewline
+\hline
+$F_{1}$&4.76e+05(3.65e+05)&2.08e+06(1.75e+06)−&2.02e+06(2.23e+06)−&3.23e+05(4.63e+05)+&1.00e+06(1.10e+06)$\approx$&6.10e+05(5.55e+05)$\approx$&2.46e+06(1.90e+06)−\tabularnewline
+$F_{2}$&3.27e+05(1.86e+06)&2.09e+08(2.97e+08) −&2.18e+08(2.80e+08) −&8.81e+05(6.18e+06) −&9.21e+02(2.13e+03) +&3.73e+03(3.74e+03) $\approx$&2.15e+08(2.70e+08) −\tabularnewline
+$F_{3}$&2.08e+01(5.49e-02)&2.08e+01(5.66e-02) $\approx$&2.08e+01(4.63e-02) $\approx$&2.08e+01(5.58e-02) $\approx$&2.08e+01(5.26e-02) $\approx$&2.08e+01(4.52e-02) $\approx$&2.09e+01(5.05e-02) $\approx$\tabularnewline
+$F_{4}$&1.19e+02(1.28e+01)&1.21e+02(1.51e+01) $\approx$&1.19e+02(1.36e+01) $\approx$&1.22e+02(1.78e+01) $\approx$&1.42e+02(2.17e+01) −&1.10e+02(1.74e+01) +&1.20e+02(1.33e+01) $\approx$\tabularnewline
+$F_{5}$&5.67e+03(3.45e+02)&5.76e+03(4.29e+02) $\approx$&5.73e+03(3.47e+02) $\approx$&5.79e+03(4.33e+02) $\approx$&5.95e+03(3.48e+02) −&5.75e+03(4.18e+02) $\approx$&5.80e+03(3.61e+02) −\tabularnewline
+$F_{6}$&2.88e+04(1.94e+04)&3.73e+04(2.83e+04) $\approx$&3.47e+04(2.09e+04) $\approx$&3.16e+04(1.83e+04) $\approx$&1.17e+05(1.10e+05) −&3.01e+04(2.22e+04) $\approx$&3.74e+04(3.06e+04) $\approx$\tabularnewline
+$F_{7}$&1.06e+01(3.13e+00)&1.05e+01(2.63e+00) $\approx$&1.10e+01(2.06e+00) $\approx$&1.07e+01(2.18e+00) $\approx$&1.15e+01(2.71e+00) −&1.07e+01(2.04e+00) $\approx$&1.08e+01(2.31e+00) $\approx$\tabularnewline
+$F_{8}$&8.41e+03(7.45e+03)&9.46e+03(7.99e+03) $\approx$&1.05e+04(9.02e+03) $\approx$&8.69e+03(7.71e+03) $\approx$&1.60e+04(1.33e+04) −&5.60e+03(4.94e+03) $\approx$&1.08e+04(9.70e+03) $\approx$\tabularnewline
+$F_{9}$&1.17e+02(5.23e+01)&1.03e+02(6.25e-01) +&1.07e+02(3.09e+01) +&1.07e+02(3.14e+01) $\approx$&1.06e+02(2.97e+01) $\approx$&1.06e+02(2.87e+01) $\approx$&1.03e+02(1.21e+00) +\tabularnewline
+$F_{10}$&6.01e+03(6.56e+03)&9.96e+03(1.28e+04) −&1.06e+04(1.07e+04) −&8.84e+03(1.15e+04) −&2.08e+04(1.92e+04) −&5.02e+03(3.22e+03) $\approx$&2.17e+04(7.46e+04) −\tabularnewline
+$F_{11}$&5.18e+02(9.52e+01)&5.21e+02(1.17e+02) $\approx$&5.23e+02(1.15e+02) $\approx$&5.08e+02(8.71e+01) $\approx$&5.06e+02(9.83e+01) $\approx$&5.30e+02(9.22e+01) $\approx$&5.15e+02(1.10e+02) $\approx$\tabularnewline
+$F_{12}$&1.05e+02(8.68e-01)&1.06e+02(1.23e+00) −&1.06e+02(1.06e+00) −&1.06e+02(8.23e-01) $\approx$&1.06e+02(1.03e+00) −&1.05e+02(7.97e-01) $\approx$&1.06e+02(1.04e+00) $\approx$\tabularnewline
+$F_{13}$&1.12e+02(3.87e+00)&1.13e+02(3.52e+00) $\approx$&1.13e+02(4.39e+00) $\approx$&1.17e+02(4.80e+00) −&1.18e+02(5.08e+00) −&1.14e+02(4.19e+00) $\approx$&1.13e+02(4.08e+00) $\approx$\tabularnewline
+$F_{14}$&3.36e+04(1.70e+03)&3.42e+04(1.81e+03) $\approx$&3.46e+04(2.13e+03) −&3.35e+04(1.50e+03) $\approx$&3.31e+04(1.67e+03) +&3.35e+04(1.68e+03) $\approx$&3.48e+04(1.78e+03) −\tabularnewline
+$F_{15}$&1.02e+02(3.89e+00)&1.20e+02(1.19e+01) −&1.17e+02(9.64e+00) −&1.00e+02(0.00e+00) +&1.00e+02(8.61e-03) +&1.02e+02(3.59e+00) $\approx$&1.22e+02(1.40e+01) −\tabularnewline
+\hline
+\end{tabular}\end{center}
+
+\end{table}
+\end{landscape}
+\newpage
+
+\chapter{終わりに}
+\section{まとめ}
+
+
+
+%-----------------------------参考文献記述エリア---------------------------%
+\begin{thebibliography}{10}
+  \bibitem{Burns et al. 2012} Burns, E. A.; Hatem, M.; Leighton,  M. J.; and Ruml, W. 2012. Implementing fast heuristic search code. In SOCS.
+  \bibitem{BHLR12}Ethan Andrew Burns, Matthew Hatem, Michael J Leighton, and Wheeler Ruml. Implementing fast heuristic search code. In SOCS, 2012.
+  \bibitem{Korf 1985]}Korf, R. E. 1985. Depth-first iterativedeepening: An optimal admissible tree search. Artificial intelligence 27(1):97-109.
+  \bibitem{Korf and Felner 2002}Korf, R. E., and Felner, A. 2002.
+Disjoint pattern database heuristics. Articial intelli-
+gence 134(1):9-22.
+
+\end{thebibliography}
+%---------------------------------必須エリア-------------------------------%
+\end{document}
+
+
+%----------------------------ファイルはここまで----------------------------%
