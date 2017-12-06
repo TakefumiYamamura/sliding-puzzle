@@ -15,8 +15,9 @@
 #include <sstream>
 #include <chrono>
 
-#define DEBUG
-#define DFS
+// #define DEBUG
+// #define DFS
+// #define SHARED
 // #define USE_LOCK
 
 template <typename T> std::string tostr(const T& t)
@@ -24,10 +25,11 @@ template <typename T> std::string tostr(const T& t)
     std::ostringstream os; os<<t; return os.str();
 }
  
-#define N 4
-#define N2 16
-#define STACK_LIMIT 64 * 9
-#define MAX_CORE_NUM 50500
+#define N 5
+#define N2 25
+#define STACK_LIMIT 76 * 4
+#define MAX_CORE_NUM 65000
+#define MAX_BLOCK_SIZE 64535
 // #define MAX_CORE_NUM 524288
 #define CORE_NUM 1536
 // #define CORE_NUM 15360
@@ -201,16 +203,18 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, Lock *lock,
 __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_set) {
 
 #endif
-
+    #ifdef SHARED
     __shared__ int shared_md[N2*N2];
     for (int i = threadIdx.x; i < N2*N2; i += blockDim.x)
     {
         shared_md[i] = md[i];
     }
+    #endif
 
     __syncthreads();
 
     __shared__ Node st[STACK_LIMIT];
+
     __shared__ int index;
     index = 0;
     st[0] = root_set[blockIdx.x];
@@ -266,8 +270,13 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_s
             if(max(cur_n.pre, i) - min(cur_n.pre, i) == 2) goto LOOP;
 
             //incremental manhattan distance
+            #ifdef SHARED
             next_n.md -= shared_md[(new_x * N + new_y) * N2 + next_n.puzzle[new_x * N + new_y]];
             next_n.md += shared_md[(s_x * N + s_y) * N2 + next_n.puzzle[new_x * N + new_y]];
+            #else
+            next_n.md -= md[(new_x * N + new_y) * N2 + next_n.puzzle[new_x * N + new_y]];
+            next_n.md += md[(s_x * N + s_y) * N2 + next_n.puzzle[new_x * N + new_y]];
+            #endif
 
             int a = next_n.puzzle[new_x * N + new_y];
             next_n.puzzle[new_x * N + new_y] = next_n.puzzle[s_x * N + s_y];
@@ -349,7 +358,7 @@ void divide_root_set(Node root, Node *new_root_set, int *new_root_set_index, int
             // assert(get_md_sum(new_n.puzzle) == new_n.md);
             next_n.depth++;
             next_n.pre = i;
-            // if(next_n.md == 0) {
+            // if(next_n.md == 0) {                                         
             //     prq.push(next_n);
             //     break;
             //     // ans = next_n.depth;
@@ -385,7 +394,6 @@ void divide_root_set(Node root, Node *new_root_set, int *new_root_set_index, int
         st.pop();
         if(cur_n.md == 0 ) {
             st.push(cur_n);
-            break;
         }
         int s_x = cur_n.space / N;
         int s_y = cur_n.space % N;
@@ -407,6 +415,9 @@ void divide_root_set(Node root, Node *new_root_set, int *new_root_set_index, int
             // assert(get_md_sum(new_n.puzzle) == new_n.md);
             next_n.depth++;
             next_n.pre = i;
+            // if(next_n.md == 0) {
+            //     cout << "find ans in divide" << endl;
+            // } 
             st.push(next_n);
         }
     }
@@ -420,6 +431,11 @@ void divide_root_set(Node root, Node *new_root_set, int *new_root_set_index, int
 
 #endif
 
+
+Node root_set[MAX_CORE_NUM];
+int load_set[MAX_CORE_NUM];
+Node new_root_set[MAX_CORE_NUM];
+
 void ida_star() {
     pq = priority_queue<Node, vector<Node>, greater<Node> >();
     if(create_root_set()) {
@@ -427,19 +443,20 @@ void ida_star() {
         return;
     }
     int root_node_size = pq.size();
-    Node root_set[MAX_CORE_NUM];
-    int i = 0;
+    int idx = 0;
     while(!pq.empty()) {
         Node n = pq.top();
         pq.pop();
-        root_set[i] = n;
-        i++;
+        root_set[idx] = n;
+        idx++;
     }
 
-    int load_set[MAX_CORE_NUM];
 
     for (int limit = s_node.md; limit < 100; ++limit, ++limit)
     {
+        #ifdef DEBUG
+        auto start = std::chrono::system_clock::now();
+        #endif
         int flag = -1;
         int *dev_flag;
         // int load;
@@ -473,7 +490,6 @@ void ida_star() {
 
         #ifdef DEBUG
         cout << "f_limit : " << limit << endl;
-        cout << root_node_size << endl;
         #endif
 
         #ifdef USE_LOCK
@@ -501,19 +517,26 @@ void ida_star() {
         }
 
         int new_root_node_size = 0;
-        Node new_root_set[MAX_CORE_NUM];
 
         //calculate load_balance
         int load_sum = 0;
+        int max_load = 0;
         for (int i = 0; i < root_node_size; ++i)
         {
             load_sum += load_set[i];
+            max_load = max(load_set[i], max_load);
             // cout << load_set[i] << " ";
         }
         // cout << "load sum " << load_sum << endl;
         int load_av = load_sum / root_node_size;
+
+        if(flag != -1) {
+            cout << flag << endl;
+            return;
+        }
         #ifdef DEBUG
         cout << "load average " << load_av << endl;
+        cout << "max load " << max_load << endl;
         int stat_cnt[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
         #endif
         for (int i = 0; i < root_node_size; ++i)
@@ -539,8 +562,16 @@ void ida_star() {
                 stat_cnt[8]++;
             #endif
             int divide_num = load_av == 0 ? load_set[i] : (load_set[i]- 1) / load_av + 1;
-            if(divide_num > 1) {
+
+            if((divide_num > 1 && new_root_node_size + root_node_size - i < MAX_BLOCK_SIZE) || (divide_num > 2 && new_root_node_size + root_node_size - i < MAX_BLOCK_SIZE/2)) {
+                #ifdef DEBUG
+                int tmp = new_root_node_size;
+                #endif
                 divide_root_set(root_set[i], new_root_set, &new_root_node_size, divide_num);
+                #ifdef DEBUG
+                // cout << tmp << " " << new_root_node_size << endl;
+                assert(tmp <= new_root_node_size);
+                #endif
             } else {
                 new_root_set[new_root_node_size] = root_set[i];
                 new_root_node_size++;
@@ -554,8 +585,12 @@ void ida_star() {
              stat_cnt[5], stat_cnt[6], stat_cnt[7], stat_cnt[8]);
         cout << "root_node_size:" << root_node_size << endl;
         cout << "new_root_node_size:" << new_root_node_size << endl;
+        auto end = std::chrono::system_clock::now();
+        auto diff = end - start;
+        printf("executed time is %f\n", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / (double)1000000000.0);
         cout << "------" << endl;
         cout << endl;
+
         #endif
 
         assert(new_root_node_size <= MAX_CORE_NUM);
@@ -573,13 +608,13 @@ void ida_star() {
 int main() {
     #ifndef DEBUG
     FILE *output_file;
-    output_file = fopen("../result/korf100_block_parallel_result_with_staticlb_dfs_100_2048.csv","w");
+    output_file = fopen("../result/yama24_med_block_parallel_result_with_staticlb_dfs_100_2048.csv","w");
     #endif
 
     set_md();
-    for (int i = 78; i < 79; ++i)
-    {
-        string input_file = "../benchmarks/korf100/prob";
+    for (int i = 0; i <= 50; ++i)
+    {           
+        string input_file = "../benchmarks/yama24_50_med/prob";
         if(i < 10) {
             input_file += "00";
         } else if(i < 100) {
