@@ -15,7 +15,7 @@
 #include <sstream>
 #include <chrono>
 
-#define DEBUG
+// #define DEBUG
 // #define DFS
 // #define USE_LOCK
 
@@ -27,7 +27,8 @@ template <typename T> std::string tostr(const T& t)
 #define N 4
 #define N2 16
 #define STACK_LIMIT 64 * 9
-#define MAX_CORE_NUM 65000
+#define MAX_CORE_NUM 100000
+#define MAX_BLOCK_SIZE 64535
 //静的ロードバランスを利用する際
 
 // #define MAX_CORE_NUM 5500
@@ -37,7 +38,7 @@ template <typename T> std::string tostr(const T& t)
 // #define CORE_NUM 192
 // #define WARP_SIZE 8
 // #define WARP_SIZE 4
-#define WARP_SIZE 32
+#define WARP_SIZE 32 
 #define THREAD_SIZE_PER_BLOCK 32
 #define BLOCK_NUM 2048
 // #define BLOCK_NUM 512
@@ -304,7 +305,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_s
             {
                 if(j == threadIdx.x  ) {
                     atomicAdd(&index, 1);
-                    if(index >= STACK_LIMIT) printf("index size(%d) is over\n", index); 
+                    // if(index >= STACK_LIMIT) printf("index size(%d) is over\n", index); 
                     // index++;
                     // printf("%d:%d:%d\n", index, next_n.depth, next_n.pre);
                     st[index] = next_n;
@@ -437,6 +438,7 @@ void divide_root_set(Node root, Node *new_root_set, int *new_root_set_index, int
 
 Node root_set[MAX_CORE_NUM];
 Node new_root_set[MAX_CORE_NUM];
+int load_set[MAX_CORE_NUM];
 //メモリが足りなくなるのでグローバル変数として定義
 
 void ida_star() {
@@ -454,8 +456,6 @@ void ida_star() {
         root_set[i] = n;
         i++;
     }
-
-    int load_set[MAX_CORE_NUM];
 
     for (int limit = s_node.md; limit < 100; ++limit, ++limit)
     {
@@ -558,11 +558,11 @@ void ida_star() {
                 stat_cnt[8]++;
             #endif
             int divide_num = load_av == 0 ? load_set[i] : (load_set[i]- 1) / load_av + 1;
-            if(divide_num > 1) {
+
+            if((divide_num > 1 && new_root_node_size + root_node_size - i < MAX_BLOCK_SIZE) || (divide_num > 2 && new_root_node_size + root_node_size - i < MAX_BLOCK_SIZE/2)) {
                 #ifdef DEBUG
                 int tmp = new_root_node_size;
                 #endif
-
                 divide_root_set(root_set[i], new_root_set, &new_root_node_size, divide_num);
                 #ifdef DEBUG
                 // cout << tmp << " " << new_root_node_size << endl;
