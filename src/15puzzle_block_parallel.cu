@@ -16,6 +16,8 @@
 #include <chrono>
 
 #define DEBUG
+// #define DFS
+// #define USE_LOCK
 
 template <typename T> std::string tostr(const T& t)
 {
@@ -25,16 +27,23 @@ template <typename T> std::string tostr(const T& t)
 #define N 4
 #define N2 16
 #define STACK_LIMIT 64 * 9
-#define MAX_CORE_NUM 40000
-#define CORE_NUM 1536
+#define MAX_CORE_NUM 65000
+//静的ロードバランスを利用する際
+
+// #define MAX_CORE_NUM 5500
+// #define MAX_CORE_NUM 524288
 // #define CORE_NUM 15360
 // #define CORE_NUM 384
 // #define CORE_NUM 192
 // #define WARP_SIZE 8
 // #define WARP_SIZE 4
 #define WARP_SIZE 32
-// #define BLOCK_NUM 2048
-#define BLOCK_NUM 48
+#define THREAD_SIZE_PER_BLOCK 32
+#define BLOCK_NUM 2048
+// #define BLOCK_NUM 512
+// #define BLOCK_NUM 4096
+// #define BLOCK_NUM 48
+#define CORE_NUM (BLOCK_NUM * THREAD_SIZE_PER_BLOCK)
 
 using namespace std;
 
@@ -180,15 +189,21 @@ bool create_root_set() {
                 return true;
             }
             pq.push(next_n);
-            if(pq.size() >= BLOCK_NUM){
-                return false;
-            }
         }
     }
     return false;
 }
 
+#ifdef USE_LOCK
+
 __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, Lock *lock, int *loop_set) {
+
+#else
+
+__global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_set) {
+
+#endif
+
     __shared__ int shared_md[N2*N2];
     for (int i = threadIdx.x; i < N2*N2; i += blockDim.x)
     {
@@ -218,6 +233,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, Lock *lock,
         bool stack_is_empty = (index <= -1);
         __syncthreads();
         if(stack_is_empty || *dev_flag != -1) break;
+        loop_count++;
 
         Node cur_n;
         bool find_cur_n = false;
@@ -232,6 +248,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, Lock *lock,
         }
         __syncthreads();
 
+        Node next_n;
 
         if(find_cur_n) {
             if(cur_n.md == 0) {
@@ -244,7 +261,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, Lock *lock,
             int s_y = cur_n.space % N; 
             int operator_order = threadIdx.x % 4; 
             int i = order[operator_order];
-            Node next_n = cur_n;
+            next_n = cur_n;
             int new_x = s_x + dx[i];
             int new_y = s_y + dy[i];
             if(new_x < 0  || new_y < 0 || new_x >= N || new_y >= N) goto LOOP; 
@@ -269,20 +286,48 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, Lock *lock,
                 //return;
                 goto LOOP;
             }
+            #ifdef USE_LOCK
             for (int j = 0; j < WARP_SIZE; ++j)
             {
-                if(j == threadIdx.x) {
-                    // lock[blockIdx.x].lock();
-                    atomicAdd(&index, 1);
+                if(j == (threadIdx.x % WARP_SIZE) ) {
+
+                    lock->lock();
+                    // atomicAdd(&index, 1);
+                    index++;
                     // printf("%d:%d:%d\n", index, next_n.depth, next_n.pre);
                     st[index] = next_n;
-                    // lock[blockIdx.x].unlock();
+                    lock->unlock();
                 }
             }
+            #else
+            for (int j = 0; j < WARP_SIZE; ++j)
+            {
+                if(j == threadIdx.x  ) {
+                    atomicAdd(&index, 1);
+                    if(index >= STACK_LIMIT) printf("index size(%d) is over\n", index); 
+                    // index++;
+                    // printf("%d:%d:%d\n", index, next_n.depth, next_n.pre);
+                    st[index] = next_n;
+                }
+            }
+            #endif
 
         }
+        // for (int j = 0; j < WARP_SIZE; ++j)
+        // {
+        //     if(j == threadIdx.x) {
+        //         // lock[blockIdx.x].lock();
+        //         atomicAdd(&index, 1);
+        //         // printf("%d:%d:%d\n", index, next_n.depth, next_n.pre);
+        //         st[index] = next_n;
+        //         // lock[blockIdx.x].unlock();
+        //     }
+        // }
+
         LOOP:
-        loop_count++;
+
+        // loop_count++;
+
         __syncthreads();
     }
     loop_set[blockIdx.x] = loop_count; 
@@ -290,15 +335,17 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, Lock *lock,
 }
 
 
+#ifndef DFS 
 void divide_root_set(Node root, Node *new_root_set, int *new_root_set_index, int divide_num){
     priority_queue<Node, vector<Node>, greater<Node> > prq;
+    // priority_queue<Node> prq;
     prq.push(root);
     while(!prq.empty() && prq.size() < divide_num ) {
         Node cur_n = prq.top();
         prq.pop();
         if(cur_n.md == 0 ) {
             prq.push(cur_n);
-            break;
+            // break;
         }
         int s_x = cur_n.space / N;
         int s_y = cur_n.space % N;
@@ -317,7 +364,11 @@ void divide_root_set(Node root, Node *new_root_set, int *new_root_set_index, int
  
             swap(next_n.puzzle[new_x * N + new_y], next_n.puzzle[s_x * N + s_y]);
             next_n.space = new_x * N + new_y;
-            // assert(get_md_sum(new_n.puzzle) == new_n.md);
+
+            #ifdef DEBUG
+            assert(get_md_sum(next_n.puzzle) == next_n.md);
+            #endif
+
             next_n.depth++;
             next_n.pre = i;
             // if(next_n.md == 0) {
@@ -328,15 +379,6 @@ void divide_root_set(Node root, Node *new_root_set, int *new_root_set_index, int
             // }
             prq.push(next_n);
         }
-        // if(prq.size() >= divide_num){
-        //     break
-        //     while(prq.empty()) {
-        //         new_root_set[*new_root_set_index] = prq.top();
-        //         prq.pop();
-        //         *new_root_set_index = *new_root_set_index + 1;
-        //     }
-        //     return;
-        // }
     }
     while(!prq.empty()) {
         new_root_set[*new_root_set_index] = prq.top();
@@ -346,6 +388,57 @@ void divide_root_set(Node root, Node *new_root_set, int *new_root_set_index, int
     return;
 }
 
+#else
+
+void divide_root_set(Node root, Node *new_root_set, int *new_root_set_index, int divide_num){
+    stack<Node> st;
+    st.push(root);
+    while(!st.empty() && st.size() < divide_num ) {
+        Node cur_n = st.top();
+        st.pop();
+        if(cur_n.md == 0 ) {
+            st.push(cur_n);
+            // break;
+        }
+        int s_x = cur_n.space / N;
+        int s_y = cur_n.space % N;
+        for (int operator_order = 0; operator_order < 4; ++operator_order)
+        {
+            int i = order[operator_order];
+            Node next_n = cur_n;
+            int new_x = s_x + dx[i];
+            int new_y = s_y + dy[i];
+            if(new_x < 0  || new_y < 0 || new_x >= N || new_y >= N) continue; 
+            if(max(cur_n.pre, i) - min(cur_n.pre, i) == 2) continue;
+ 
+            //incremental manhattan distance
+            next_n.md -= tmp_md[(new_x * N + new_y) * N2 + next_n.puzzle[new_x * N + new_y]];
+            next_n.md += tmp_md[(s_x * N + s_y) * N2 + next_n.puzzle[new_x * N + new_y]];
+ 
+            swap(next_n.puzzle[new_x * N + new_y], next_n.puzzle[s_x * N + s_y]);
+            next_n.space = new_x * N + new_y;
+            #ifdef DEBUG
+            assert(get_md_sum(next_n.puzzle) == next_n.md);
+            #endif
+            next_n.depth++;
+            next_n.pre = i;
+            st.push(next_n);
+        }
+    }
+    while(!st.empty()) {
+        new_root_set[*new_root_set_index] = st.top();
+        st.pop();
+        *new_root_set_index = *new_root_set_index + 1;
+    }
+    return;
+}
+
+#endif
+
+Node root_set[MAX_CORE_NUM];
+Node new_root_set[MAX_CORE_NUM];
+//メモリが足りなくなるのでグローバル変数として定義
+
 void ida_star() {
     pq = priority_queue<Node, vector<Node>, greater<Node> >();
     if(create_root_set()) {
@@ -353,7 +446,7 @@ void ida_star() {
         return;
     }
     int root_node_size = pq.size();
-    Node root_set[MAX_CORE_NUM];
+    // Node root_set[MAX_CORE_NUM];
     int i = 0;
     while(!pq.empty()) {
         Node n = pq.top();
@@ -384,13 +477,16 @@ void ida_star() {
         HANDLE_ERROR(cudaMalloc((void**)&dev_flag, sizeof(int)));
         cudaMemcpy(dev_flag, &flag, sizeof(int), cudaMemcpyHostToDevice);
 
-        Lock    lock[BLOCK_NUM];
+        #ifdef USE_LOCK
+        Lock    lock;
         Lock    *dev_lock;
         HANDLE_ERROR( cudaMalloc( (void**)&dev_lock,
-                              BLOCK_NUM * sizeof( Lock ) ) );
-        HANDLE_ERROR( cudaMemcpy( dev_lock, lock,
-                              BLOCK_NUM * sizeof( Lock ),
+                              sizeof( Lock ) ) );
+        HANDLE_ERROR( cudaMemcpy( dev_lock, &lock,
+                              sizeof( Lock ),
                               cudaMemcpyHostToDevice ) );
+        #endif
+
         HANDLE_ERROR(cudaMalloc((void**)&dev_load_set, root_node_size * sizeof(int)));
         HANDLE_ERROR(cudaMemset(dev_load_set, 0, root_node_size * sizeof(int)));
 
@@ -399,7 +495,11 @@ void ida_star() {
         cout << root_node_size << endl;
         #endif
 
-        dfs_kernel<<<root_node_size, WARP_SIZE>>>(limit, dev_root_set, dev_flag, dev_lock, dev_load_set);
+        #ifdef USE_LOCK
+        dfs_kernel<<<root_node_size, THREAD_SIZE_PER_BLOCK>>>(limit, dev_root_set, dev_flag, dev_lock, dev_load_set);
+        #else
+        dfs_kernel<<<root_node_size, WARP_SIZE>>>(limit, dev_root_set, dev_flag, dev_load_set);
+        #endif
 
 
         HANDLE_ERROR(cudaGetLastError());
@@ -409,6 +509,10 @@ void ida_star() {
 
         HANDLE_ERROR(cudaFree(dev_flag));
         HANDLE_ERROR(cudaFree(dev_root_set));
+        #ifdef USE_LOCK
+        HANDLE_ERROR(cudaFree(dev_lock));
+        #endif
+        HANDLE_ERROR(cudaFree(dev_load_set));
 
         if(flag != -1) {
             cout << flag << endl;
@@ -416,7 +520,7 @@ void ida_star() {
         }
 
         int new_root_node_size = 0;
-        Node new_root_set[MAX_CORE_NUM];
+        // Node new_root_set[MAX_CORE_NUM];
 
         //calculate load_balance
         int load_sum = 0;
@@ -455,7 +559,15 @@ void ida_star() {
             #endif
             int divide_num = load_av == 0 ? load_set[i] : (load_set[i]- 1) / load_av + 1;
             if(divide_num > 1) {
+                #ifdef DEBUG
+                int tmp = new_root_node_size;
+                #endif
+
                 divide_root_set(root_set[i], new_root_set, &new_root_node_size, divide_num);
+                #ifdef DEBUG
+                // cout << tmp << " " << new_root_node_size << endl;
+                assert(tmp <= new_root_node_size);
+                #endif
             } else {
                 new_root_set[new_root_node_size] = root_set[i];
                 new_root_node_size++;
@@ -467,7 +579,8 @@ void ida_star() {
              "64av=%d, 128av=%d, more=%d\n",
              stat_cnt[0], stat_cnt[1], stat_cnt[2], stat_cnt[3], stat_cnt[4],
              stat_cnt[5], stat_cnt[6], stat_cnt[7], stat_cnt[8]);
-        cout << "root_node_size:" <<root_node_size << endl;
+        cout << "root_node_size:" << root_node_size << endl;
+        cout << "new_root_node_size:" << new_root_node_size << endl;
         cout << "------" << endl;
         cout << endl;
         #endif
@@ -485,13 +598,13 @@ void ida_star() {
 
  
 int main() {
-    #ifdef OUTPUT
+    #ifndef DEBUG
     FILE *output_file;
     output_file = fopen("../result/korf100_block_parallel_result_with_staticlb_100_2048.csv","w");
     #endif
 
     set_md();
-    for (int i = 80; i < 81; ++i)
+    for (int i = 0; i < 100; ++i)
     {
         string input_file = "../benchmarks/korf100/prob";
         if(i < 10) {
@@ -508,14 +621,15 @@ int main() {
 
         auto end = std::chrono::system_clock::now();
         auto diff = end - start;
-        #ifdef OUTPUT
+        #ifndef DEBUG
         fprintf(output_file,"%f\n", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / (double)1000000000.0);
         #endif
         #ifdef DEBUG
         printf("%f\n", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / (double)1000000000.0);
         #endif
     }
-    #ifdef OUTPUT
+
+    #ifndef DEBUG
     fclose(output_file);
     #endif
 }
