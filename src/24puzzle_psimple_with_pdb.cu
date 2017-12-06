@@ -27,6 +27,7 @@ template <typename T> std::string tostr(const T& t)
 #define CORE_NUM 768
 #define WARP_SIZE 32
 #define BLOCK_NUM 24
+#define DEBUG
 
 using namespace std;
 
@@ -652,10 +653,11 @@ void ida_star() {
 
  
 int main() {
+    #ifndef DEBUG
 
     FILE *output_file;
-    // output_file = fopen("../result/yama24_psimple_with_pdb_result.csv","w");
     output_file = fopen("../result/yama24_med_psimple_with_pdb_result.csv","w");
+    #endif
 
     // set_md();
     // pattern database 
@@ -694,13 +696,20 @@ int main() {
         // clock_t end = clock();
         auto end = std::chrono::system_clock::now();
         auto diff = end - start;
+        #ifndef DEBUG
         fprintf(output_file,"%f\n", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / (double)1000000000.0);
+        #endif
+        #ifdef DEBUG
+        printf("%f\n", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / (double)1000000000.0);
+        #endif
 
         // writing_file << (double)(end - start) / CLOCKS_PER_SEC << endl;
     }
     HANDLE_ERROR(cudaFree(dev_pd));
     // HANDLE_ERROR(cudaFree(dev_h0));
     // HANDLE_ERROR(cudaFree(dev_h1));
+    #ifndef DEBUG
     fclose(output_file);
+    #endif
     cudaDeviceReset();
 }
