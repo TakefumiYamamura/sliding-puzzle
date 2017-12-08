@@ -272,7 +272,7 @@ void Npuzzle::ida_star() {
         // path.resize(limit);
         cur_n = s_n;
         ans = -1;
-        dfs(0, -10)
+        dfs(0, -10);
         if(ans != -1) {
             // string str = "";
             // for (int i = 0; i < limit; ++i)
