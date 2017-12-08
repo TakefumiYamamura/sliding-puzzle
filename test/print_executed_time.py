@@ -9,6 +9,9 @@ print("cpu expand in 15 puzzle")
 os.system("./calculate_executed_sum ../result/korf100_result_expand_100.csv 100")
 print("psimple gpu in 15 puzzle")
 os.system("./calculate_executed_sum ../result/korf100_psimple_result_50.csv 50")
+
+print("psimple gpu 99 in 15 puzzle")
+os.system("./calculate_executed_sum ../result/korf100_psimple_result_99.csv 99")
 print("psimple shared gpu in 15 puzzle")
 os.system("./calculate_executed_sum ../result/korf100_psimple_result_50_shared.csv 50")
 print("block parallel gpu in 15 puzzle")
@@ -16,6 +19,8 @@ os.system("./calculate_executed_sum ../result/korf100_block_parallel_result_with
 print("block parallel gpu in 15 puzzle")
 os.system("./calculate_executed_sum ../result/korf100_block_parallel_result_with_staticlb_100_2048.csv 100")
 
+print("horie block parallel gpu in 15 puzzle")
+os.system("./calculate_executed_sum ../result/idas_smem.txt 100")
 
 print("------------------------------------")
 
