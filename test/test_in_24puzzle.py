@@ -37,20 +37,27 @@ def simple_test(exec_file_name):
 
 # os.system("g++ -std='c++11' -O3 -o ../src/24puzzle ../src/24puzzle.cc")
 # simple_test("../src/./24puzzle")
-os.system("g++ -std='c++11' -O3 -o ../src/24puzzle_expand ../src/24puzzle_expand.cc")
-simple_test("../src/./24puzzle_expand")
+# os.system("g++ -std='c++11' -o ../src/24puzzle_expand ../src/24puzzle_expand.cc")
+# simple_test("../src/./24puzzle_expand")
 # os.system("g++ -std='c++11' -O3 -o ../src/24puzzle_with_pdb ../src/24puzzle_with_pdb.cc")
 # simple_test("../src/./24puzzle_with_pdb")
+# os.system("g++ -std='c++11' -o ../src/24puzzle_expand_with_pdb ../src/24puzzle_expand_with_pdb.cpp")
+# simple_test("../src/./24puzzle_expand_with_pdb")
 
 # os.system("/usr/local/cuda/bin/nvcc -std='c++11' -O3 -o ../src/24puzzle_psimple ../src/24puzzle_psimple.cu")
 # simple_test("../src/./24puzzle_psimple")
 # os.system("/usr/local/cuda/bin/nvcc -std='c++11' -O3 -o ../src/24puzzle_psimple_with_pdb ../src/24puzzle_psimple_with_pdb.cu")
 # simple_test("../src/./24puzzle_psimple_with_pdb")
 
-# os.system("/usr/local/cuda/bin/nvcc -std='c++11' -O3 -o ../src/24puzzle_block_parallel ../src/24puzzle_block_parallel.cu")
-# simple_test("../src/./24puzzle_block_parallel")
+os.system("/usr/local/cuda/bin/nvcc -std='c++11' -O3 -o ../src/24puzzle_block_parallel ../src/24puzzle_block_parallel.cu")
+simple_test("../src/./24puzzle_block_parallel")
 # os.system("/usr/local/cuda/bin/nvcc -std='c++11' -O3 -o ../src/24puzzle_block_parallel_with_pdb ../src/24puzzle_block_parallel_with_pdb.cu")
 # simple_test("../src/./24puzzle_block_parallel_with_pdb")
+
+os.system("/usr/local/cuda/bin/nvcc -std='c++11' -O3 -o ../src/24puzzle_block_parallel_global ../src/24puzzle_block_parallel_global.cu")
+simple_test("../src/./24puzzle_block_parallel_global")
+# os.system("/usr/local/cuda/bin/nvcc -std='c++11' -O3 -o ../src/24puzzle_block_parallel_with_pdb_global ../src/24puzzle_block_parallel_with_pdb_global.cu")
+# simple_test("../src/./24puzzle_block_parallel_with_pdb_global")
 
 os.system("g++ -std='c++11' -O3 -o calculate_executed_sum calculate_executed_sum.cpp")
 print("cpu in 24 puzzle")
@@ -60,14 +67,28 @@ os.system("./calculate_executed_sum ../result/yama24_med_expand_result.csv 50")
 print("psimple gpu in 24 puzzle")
 os.system("./calculate_executed_sum ../result/yama24_med_psimple_result.csv 50")
 print("block parallel gpu in 24 puzzle")
+os.system("./calculate_executed_sum ../result/yama24_med_block_parallel_result_with_staticlb_100_2048.csv 50")
+print("block parallel gpu dfs in 24 puzzle")
 os.system("./calculate_executed_sum ../result/yama24_med_block_parallel_result_with_staticlb_dfs_100_2048.csv 50")
+
+print("block parallel gpu dfs global in 24 puzzle")
+os.system("./calculate_executed_sum ../result/yama24_med_block_parallel_result_with_staticlb_dfs_100_2048_global.csv 50")
 
 
 print("cpu with pdb in 24 puzzle")
 os.system("./calculate_executed_sum ../result/yama24_med_result_pdb_wo_cuda.csv 50")
+print("cpu expand with pdb in 24 puzzle")
+os.system("./calculate_executed_sum ../result/yama24_med_result_pdb_expand.csv 50")
 print("psimple with pdb gpu in 24 puzzle")
 os.system("./calculate_executed_sum ../result/yama24_med_psimple_with_pdb_result.csv 50")
 print("block parallel with pdb gpu in 24 puzzle")
 os.system("./calculate_executed_sum ../result/yama24_med_block_parallel_result_with_pdb_2048.csv 50")
+print("block parallel with pdb gpu dfs in 24 puzzle")
+os.system("./calculate_executed_sum ../result/yama24_med_block_parallel_result_with_pdb_2048_dfs.csv 50")
+
+
+print("block parallel with pdb gpu dfs global in 24 puzzle")
+os.system("./calculate_executed_sum ../result/yama24_med_block_parallel_result_with_pdb_2048_global.csv 50")
+
 
 

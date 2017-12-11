@@ -1,0 +1,511 @@
+answer is same in ../benchmarks/korf100/prob000 45
+answer is same in ../benchmarks/korf100/prob001 42
+answer is same in ../benchmarks/korf100/prob002 42
+answer is same in ../benchmarks/korf100/prob003 49
+answer is same in ../benchmarks/korf100/prob004 41
+answer is same in ../benchmarks/korf100/prob005 46
+answer is same in ../benchmarks/korf100/prob006 50
+answer is same in ../benchmarks/korf100/prob007 45
+answer is same in ../benchmarks/korf100/prob008 44
+answer is same in ../benchmarks/korf100/prob009 49
+answer is same in ../benchmarks/korf100/prob010 44
+answer is same in ../benchmarks/korf100/prob011 53
+answer is same in ../benchmarks/korf100/prob012 47
+answer is same in ../benchmarks/korf100/prob013 46
+answer is same in ../benchmarks/korf100/prob014 46
+answer is same in ../benchmarks/korf100/prob015 50
+answer is same in ../benchmarks/korf100/prob016 45
+answer is same in ../benchmarks/korf100/prob017 44
+answer is same in ../benchmarks/korf100/prob018 51
+answer is same in ../benchmarks/korf100/prob019 53
+answer is same in ../benchmarks/korf100/prob020 50
+answer is same in ../benchmarks/korf100/prob021 46
+answer is same in ../benchmarks/korf100/prob022 53
+answer is same in ../benchmarks/korf100/prob023 53
+answer is same in ../benchmarks/korf100/prob024 50
+answer is same in ../benchmarks/korf100/prob025 52
+answer is same in ../benchmarks/korf100/prob026 52
+answer is same in ../benchmarks/korf100/prob027 42
+answer is same in ../benchmarks/korf100/prob028 49
+answer is same in ../benchmarks/korf100/prob029 55
+answer is same in ../benchmarks/korf100/prob030 49
+answer is same in ../benchmarks/korf100/prob031 56
+answer is same in ../benchmarks/korf100/prob032 49
+answer is same in ../benchmarks/korf100/prob033 49
+answer is same in ../benchmarks/korf100/prob034 57
+answer is same in ../benchmarks/korf100/prob035 49
+answer is same in ../benchmarks/korf100/prob036 52
+answer is same in ../benchmarks/korf100/prob037 56
+answer is same in ../benchmarks/korf100/prob038 54
+answer is same in ../benchmarks/korf100/prob039 47
+answer is same in ../benchmarks/korf100/prob040 51
+answer is same in ../benchmarks/korf100/prob041 52
+answer is same in ../benchmarks/korf100/prob042 52
+answer is same in ../benchmarks/korf100/prob043 47
+answer is same in ../benchmarks/korf100/prob044 50
+answer is same in ../benchmarks/korf100/prob045 56
+answer is same in ../benchmarks/korf100/prob046 48
+answer is same in ../benchmarks/korf100/prob047 57
+answer is same in ../benchmarks/korf100/prob048 54
+answer is same in ../benchmarks/korf100/prob049 55
+answer is same in ../benchmarks/korf100/prob050 55
+answer is same in ../benchmarks/korf100/prob051 53
+answer is same in ../benchmarks/korf100/prob052 54
+answer is same in ../benchmarks/korf100/prob053 54
+answer is same in ../benchmarks/korf100/prob054 52
+answer is same in ../benchmarks/korf100/prob055 51
+answer is same in ../benchmarks/korf100/prob056 54
+answer is same in ../benchmarks/korf100/prob057 51
+answer is same in ../benchmarks/korf100/prob058 54
+answer is same in ../benchmarks/korf100/prob059 57
+answer is same in ../benchmarks/korf100/prob060 54
+answer is same in ../benchmarks/korf100/prob061 52
+answer is same in ../benchmarks/korf100/prob062 54
+answer is same in ../benchmarks/korf100/prob063 64
+answer is same in ../benchmarks/korf100/prob064 52
+answer is same in ../benchmarks/korf100/prob065 57
+answer is same in ../benchmarks/korf100/prob066 56
+answer is same in ../benchmarks/korf100/prob067 50
+answer is same in ../benchmarks/korf100/prob068 52
+answer is same in ../benchmarks/korf100/prob069 50
+answer is same in ../benchmarks/korf100/prob070 57
+answer is same in ../benchmarks/korf100/prob071 55
+answer is same in ../benchmarks/korf100/prob072 53
+answer is same in ../benchmarks/korf100/prob073 54
+answer is same in ../benchmarks/korf100/prob074 59
+answer is same in ../benchmarks/korf100/prob075 53
+answer is same in ../benchmarks/korf100/prob076 56
+answer is same in ../benchmarks/korf100/prob077 56
+answer is same in ../benchmarks/korf100/prob078 57
+answer is same in ../benchmarks/korf100/prob079 60
+answer is same i3830.36
+n ../benchmarks/korf100/prob080 58
+answer is same in ../benchmarks/korf100/prob081 59
+answer is same in ../benchmarks/korf100/prob082 57
+answer is same in ../benchmarks/korf100/prob083 56
+answer is same in ../benchmarks/korf100/prob084 58
+answer is same in ../benchmarks/korf100/prob085 59
+answer is same in ../benchmarks/korf100/prob086 56
+answer is same in ../benchmarks/korf100/prob087 59
+answer is same in ../benchmarks/korf100/prob088 57
+answer is same in ../benchmarks/korf100/prob089 59
+answer is same in ../benchmarks/korf100/prob090 55
+answer is same in ../benchmarks/korf100/prob091 57
+answer is same in ../benchmarks/korf100/prob092 62
+answer is same in ../benchmarks/korf100/prob093 59
+answer is same in ../benchmarks/korf100/prob094 64
+answer is same in ../benchmarks/korf100/prob095 66
+answer is same in ../benchmarks/korf100/prob096 66
+answer is same in ../benchmarks/korf100/prob097 61
+answer is same in ../benchmarks/korf100/prob098 62
+answer is same in ../benchmarks/korf100/prob099 65
+../src/./15puzzle_block_parallel this solver is valid
+
+block parallel gpu in 15 puzzle
+249.021
+2106.27
+0.359554
+4.91605
+../benchmarks/yama24_50_med/prob000 44
+../benchmarks/yama24_50_med/prob001 30
+../benchmarks/yama24_50_med/prob002 54
+../benchmarks/yama24_50_med/prob003 45
+../benchmarks/yama24_50_med/prob004 33
+../benchmarks/yama24_50_med/prob005 42
+../benchmarks/yama24_50_med/prob006 33
+../benchmarks/yama24_50_med/prob007 38
+../benchmarks/yama24_50_med/prob008 40
+../benchmarks/yama24_50_med/prob009 36
+../benchmarks/yama24_50_med/prob010 46
+../benchmarks/yama24_50_med/prob011 44
+../benchmarks/yama24_50_med/prob012 45
+../benchmarks/yama24_50_med/prob013 19
+../benchmarks/yama24_50_med/prob014 46
+../benchmarks/yama24_50_med/prob015 50
+../benchmarks/yama24_50_med/prob016 46
+../benchmarks/yama24_50_med/prob017 42
+../benchmarks/yama24_50_med/prob018 62
+../benchmarks/yama24_50_med/prob019 39
+../benchmarks/yama24_50_med/prob020 32
+../benchmarks/yama24_50_med/prob021 48
+../benchmarks/yama24_50_med/prob022 44
+../benchmarks/yama24_50_med/prob023 41
+../benchmarks/yama24_50_med/prob024 36
+../benchmarks/yama24_50_med/prob025 41
+../benchmarks/yama24_50_med/prob026 43
+../benchmarks/yama24_50_med/prob027 41
+../benchmarks/yama24_50_med/prob028 42
+../benchmarks/yama24_50_med/prob029 51
+../benchmarks/yama24_50_med/prob030 41
+../benchmarks/yama24_50_med/prob031 37
+../benchmarks/yama24_50_med/prob032 35
+../benchmarks/yama24_50_med/prob033 45
+../benchmarks/yama24_50_med/prob034 30
+../benchmarks/yama24_50_med/prob035 54
+../benchmarks/yama24_50_med/prob036 30
+../benchmarks/yama24_50_med/prob037 43
+../benchmarks/yama24_50_med/prob038 25
+../benchmarks/yama24_50_med/prob039 46
+../benchmarks/yama24_50_med/prob040 43
+../benchmarks/yama24_50_med/prob041 45
+../benchmarks/yama24_50_med/prob042 31
+../benchmarks/yama24_50_med/prob043 42
+../benchmarks/yama24_50_med/prob044 36
+../benchmarks/yama24_50_med/prob045 47
+../benchmarks/yama24_50_med/prob046 44
+../benchmarks/yama24_50_med/prob047 45
+../benchmarks/yama24_50_med/prob048 45
+../benchmarks/yama24_50_med/prob049 43
+../benchmarks/yama24_50_med/prob050 26
+../src/./24puzzle_block_parallel this solver is valid
+
+cpu in 24 puzzle
+psimple gpu in 24 puzzle
+cpu with pdb in 24 puzzle
+psimple with pdb gpu in 24 puzzle
+Traceback (most recent call last):
+  File "test_in_24puzzle.py", line 41, in <module>
+    simple_test("../src/./24puzzle_expand")
+  File "test_in_24puzzle.py", line 14, in simple_test
+    results = commands.getoutput(exec_file_name)
+  File "/usr/lib64/python2.7/commands.py", line 50, in getoutput
+    return getstatusoutput(cmd)[1]
+  File "/usr/lib64/python2.7/commands.py", line 60, in getstatusoutput
+    text = pipe.read()
+KeyboardInterrupt
+249.021
+319.198
+2106.27
+674.521
+0.359554
+4.91605
+1.0609
+../benchmarks/yama24_50_med/prob000 44 93860
+../benchmarks/yama24_50_med/prob001 30 501
+../benchmarks/yama24_50_med/prob002 54 187246400
+../benchmarks/yama24_50_med/prob003 45 997321
+../benchmarks/yama24_50_med/prob004 33 205497
+../benchmarks/yama24_50_med/prob005 42 8297810
+../benchmarks/yama24_50_med/prob006 33 79191
+../benchmarks/yama24_50_med/prob007 38 4120822
+../benchmarks/yama24_50_med/prob008 40 616065
+../benchmarks/yama24_50_med/prob009 36 86690
+../benchmarks/yama24_50_med/prob010 46 2761806
+../benchmarks/yama24_50_med/prob011 44 939304
+../benchmarks/yama24_50_med/prob012 45 25088542
+../benchmarks/yama24_50_med/prob013 19 92
+../benchmarks/yama24_50_med/prob014 46 94871
+../benchmarks/yama24_50_med/prob015 50 78912718
+../benchmarks/yama24_50_med/prob016 46 286740674
+../benchmarks/yama24_50_med/prob017 42 48652
+../benchmarks/yama24_50_med/prob018 62 1881123428
+../benchmarks/yama24_50_med/prob019 39 190672
+../benchmarks/yama24_50_med/prob020 32 170751
+../benchmarks/yama24_50_med/prob021 48 114442907
+../benchmarks/yama24_50_med/prob022 44 135659
+../benchmarks/yama24_50_med/prob023 41 207978
+../benchmarks/yama24_50_med/prob024 36 182462
+../benchmarks/yama24_50_med/prob025 41 1395734
+../benchmarks/yama24_50_med/prob026 43 2297759
+../benchmarks/yama24_50_med/prob027 41 725691
+../benchmarks/yama24_50_med/prob028 42 1097709
+../benchmarks/yama24_50_med/prob029 51 453431195
+../benchmarks/yama24_50_med/prob030 41 67171
+../benchmarks/yama24_50_med/prob031 37 176589
+../benchmarks/yama24_50_med/prob032 35 3417
+../benchmarks/yama24_50_med/prob033 45 277234
+../benchmarks/yama24_50_med/prob034 30 6939
+../benchmarks/yama24_50_med/prob035 54 12713422
+../benchmarks/yama24_50_med/prob036 30 35325
+../benchmarks/yama24_50_med/prob037 43 8082131
+../benchmarks/yama24_50_med/prob038 25 132
+../benchmarks/yama24_50_med/prob039 46 31347262
+../benchmarks/yama24_50_med/prob040 43 575141
+../benchmarks/yama24_50_med/prob041 45 3496984
+../benchmarks/yama24_50_med/prob042 31 7109
+../benchmarks/yama24_50_med/prob043 42 600229
+../benchmarks/yama24_50_med/prob044 36 3229
+../benchmarks/yama24_50_med/prob045 47 249165949
+../benchmarks/yama24_50_med/prob046 44 264230
+../benchmarks/yama24_50_med/prob047 45 15710956
+../benchmarks/yama24_50_med/prob048 45 2776
+../benchmarks/yama24_50_med/prob049 43 68867
+../benchmarks/yama24_50_med/prob050 26 26643
+../src/./24puzzle_expand this solver is valid
+
+cpu in 24 puzzle
+cpu expand in 24 puzzle
+psimple gpu in 24 puzzle
+block parallel gpu in 24 puzzle
+cpu with pdb in 24 puzzle
+psimple with pdb gpu in 24 puzzle
+block parallel with pdb gpu in 24 puzzle
+
+Compilation terminated.
+sh: ../src/./24puzzle_block_parallel_global: そのようなファイルやディレクトリはありません
+Traceback (most recent call last):
+  File "test_in_24puzzle.py", line 58, in <module>
+    simple_test("../src/./24puzzle_block_parallel_global")
+  File "test_in_24puzzle.py", line 25, in simple_test
+    if ans_hash[array[0]] != array[1]:
+KeyError: 'sh:'
+../benchmarks/yama24_50_med/prob000 44
+../benchmarks/yama24_50_med/prob001 30
+../benchmarks/yama24_50_med/prob002 54
+../benchmarks/yama24_50_med/prob003 45
+../benchmarks/yama24_50_med/prob004 33
+../benchmarks/yama24_50_med/prob005 42
+../benchmarks/yama24_50_med/prob006 33
+../benchmarks/yama24_50_med/prob007 38
+../benchmarks/yama24_50_med/prob008 40
+../benchmarks/yama24_50_med/prob009 36
+../benchmarks/yama24_50_med/prob010 46
+../benchmarks/yama24_50_med/prob011 44
+../benchmarks/yama24_50_med/prob012 45
+../benchmarks/yama24_50_med/prob013 19
+../benchmarks/yama24_50_med/prob014 46
+../benchmarks/yama24_50_med/prob015 50
+../benchmarks/yama24_50_med/prob016 46
+../benchmarks/yama24_50_med/prob017 42
+../benchmarks/yama24_50_med/prob018 62
+../benchmarks/yama24_50_med/prob019 39
+../benchmarks/yama24_50_med/prob020 32
+../benchmarks/yama24_50_med/prob021 48
+../benchmarks/yama24_50_med/prob022 44
+../benchmarks/yama24_50_med/prob023 41
+../benchmarks/yama24_50_med/prob024 36
+../benchmarks/yama24_50_med/prob025 41
+../benchmarks/yama24_50_med/prob026 43
+../benchmarks/yama24_50_med/prob027 41
+../benchmarks/yama24_50_med/prob028 42
+../benchmarks/yama24_50_med/prob029 51
+../benchmarks/yama24_50_med/prob030 41
+../benchmarks/yama24_50_med/prob031 37
+../benchmarks/yama24_50_med/prob032 35
+../benchmarks/yama24_50_med/prob033 45
+../benchmarks/yama24_50_med/prob034 30
+../benchmarks/yama24_50_med/prob035 54
+../benchmarks/yama24_50_med/prob036 30
+../benchmarks/yama24_50_med/prob037 43
+../benchmarks/yama24_50_med/prob038 25
+../benchmarks/yama24_50_med/prob039 46
+../benchmarks/yama24_50_med/prob040 43
+../benchmarks/yama24_50_med/prob041 45
+../benchmarks/yama24_50_med/prob042 31
+../benchmarks/yama24_50_med/prob043 42
+../benchmarks/yama24_50_med/prob044 36
+../benchmarks/yama24_50_med/prob045 47
+../benchmarks/yama24_50_med/prob046 44
+../benchmarks/yama24_50_med/prob047 45
+../benchmarks/yama24_50_med/prob048 45
+../benchmarks/yama24_50_med/prob049 43
+../benchmarks/yama24_50_med/prob050 26
+../src/./24puzzle_block_parallel_global this solver is valid
+
+../benchmarks/yama24_50_med/prob000 44
+../benchmarks/yama24_50_med/prob001 30
+../benchmarks/yama24_50_med/prob002 54
+../benchmarks/yama24_50_med/prob003 45
+../benchmarks/yama24_50_med/prob004 33
+../benchmarks/yama24_50_med/prob005 42
+../benchmarks/yama24_50_med/prob006 33
+../benchmarks/yama24_50_med/prob007 38
+../benchmarks/yama24_50_med/prob008 40
+../benchmarks/yama24_50_med/prob009 36
+../benchmarks/yama24_50_med/prob010 46
+../benchmarks/yama24_50_med/prob011 44
+../benchmarks/yama24_50_med/prob012 45
+../benchmarks/yama24_50_med/prob013 19
+../benchmarks/yama24_50_med/prob014 46
+../benchmarks/yama24_50_med/prob015 50
+../benchmarks/yama24_50_med/prob016 46
+../benchmarks/yama24_50_med/prob017 42
+../benchmarks/yama24_50_med/prob018 62
+../benchmarks/yama24_50_med/prob019 39
+../benchmarks/yama24_50_med/prob020 32
+../benchmarks/yama24_50_med/prob021 48
+../benchmarks/yama24_50_med/prob022 44
+../benchmarks/yama24_50_med/prob023 41
+../benchmarks/yama24_50_med/prob024 36
+../benchmarks/yama24_50_med/prob025 41
+../benchmarks/yama24_50_med/prob026 43
+../benchmarks/yama24_50_med/prob027 41
+../benchmarks/yama24_50_med/prob028 42
+../benchmarks/yama24_50_med/prob029 51
+../benchmarks/yama24_50_med/prob030 41
+../benchmarks/yama24_50_med/prob031 37
+../benchmarks/yama24_50_med/prob032 35
+../benchmarks/yama24_50_med/prob033 45
+../benchmarks/yama24_50_med/prob034 30
+../benchmarks/yama24_50_med/prob035 54
+../benchmarks/yama24_50_med/prob036 30
+../benchmarks/yama24_50_med/prob037 43
+../benchmarks/yama24_50_med/prob038 25
+../benchmarks/yama24_50_med/prob039 46
+../benchmarks/yama24_50_med/prob040 43
+../benchmarks/yama24_50_med/prob041 45
+../benchmarks/yama24_50_med/prob042 31
+../benchmarks/yama24_50_med/prob043 42
+../benchmarks/yama24_50_med/prob044 36
+../benchmarks/yama24_50_med/prob045 47
+../benchmarks/yama24_50_med/prob046 44
+../benchmarks/yama24_50_med/prob047 45
+../benchmarks/yama24_50_med/prob048 45
+../benchmarks/yama24_50_med/prob049 43
+../benchmarks/yama24_50_med/prob050 26
+../src/./24puzzle_block_parallel_with_pdb_global this so249.021
+743.019
+2106.27
+6.61853e-315
+673.733
+331.983
+0.359554
+1.43757
+4.91605
+1.0609
+1.00476
+7.44824e-315
+lver is valid
+
+cpu in 24 puzzle
+cpu expand in 24 puzzle
+psimple gpu in 24 puzzle
+block parallel gpu in 24 puzzle
+block parallel gpu dfs in 24 puzzle
+block parallel gpu dfs global in 24 puzzle
+cpu with pdb in 24 puzzle
+cpu expand with pdb in 24 puzzle
+psimple with pdb gpu in 24 puzzle
+block parallel with pdb gpu in 24 puzzle
+block parallel with pdb gpu dfs in 24 puzzle
+block parallel with pdb gpu dfs global in 24 puzzle
+../benchmarks/yama24_50_med/prob000 44
+../benchmarks/yama24_50_med/prob001 30
+../benchmarks/yama24_50_med/prob002 54
+../benchmarks/yama24_50_med/prob003 45
+../benchmarks/yama24_50_med/prob004 33
+../benchmarks/yama24_50_med/prob005 42
+../benchmarks/yama24_50_med/prob006 33
+../benchmarks/yama24_50_med/prob007 38
+../benchmarks/yama24_50_med/prob008 40
+../benchmarks/yama24_50_med/prob009 36
+../benchmarks/yama24_50_med/prob010 46
+../benchmarks/yama24_50_med/prob011 44
+../benchmarks/yama24_50_med/prob012 45
+../benchmarks/yama24_50_med/prob013 19
+../benchmarks/yama24_50_med/prob014 46
+../benchmarks/yama24_50_med/prob015 50
+../benchmarks/yama24_50_med/prob016 46
+../benchmarks/yama24_50_med/prob017 42
+../benchmarks/yama24_50_med/prob018 62
+../benchmarks/yama24_50_med/prob019 39
+../benchmarks/yama24_50_med/prob020 32
+../benchmarks/yama24_50_med/prob021 48
+../benchmarks/yama24_50_med/prob022 44
+../benchmarks/yama24_50_med/prob023 41
+../benchmarks/yama24_50_med/prob024 36
+../benchmarks/yama24_50_med/prob025 41
+../benchmarks/yama24_50_med/prob026 43
+../benchmarks/yama24_50_med/prob027 41
+../benchmarks/yama24_50_med/prob028 42
+../benchmarks/yama24_50_med/prob029 51
+../benchmarks/yama24_50_med/prob030 41
+../benchmarks/yama24_50_med/prob031 37
+../benchmarks/yama24_50_med/prob032 35
+../benchmarks/yama24_50_med/prob033 45
+../benchmarks/yama24_50_med/prob034 30
+../benchmarks/yama24_50_med/prob035 54
+../benchmarks/yama24_50_med/prob036 30
+../benchmarks/yama24_50_med/prob037 43
+../benchmarks/yama24_50_med/prob038 25
+../benchmarks/yama24_50_med/prob039 46
+../benchmarks/yama24_50_med/prob040 43
+../benchmarks/yama24_50_med/prob041 45
+../benchmarks/yama24_50_med/prob042 31
+../benchmarks/yama24_50_med/prob043 42
+../benchmarks/yama24_50_med/prob044 36
+../benchmarks/yama24_50_med/prob045 47
+../benchmarks/yama24_50_med/prob046 44
+../benchmarks/yama24_50_med/prob047 45
+../benchmarks/yama24_50_med/prob048 45
+../benchmarks/yama24_50_med/prob049 43
+../benchmarks/yama24_50_med/prob050 26
+../src/./24puzzle_block_parallel this solver is valid
+
+../benchmarks/yama24_50_med/prob000 44
+../benchmarks/yama24_50_med/prob001 30
+../benchmarks/yama24_50_med/prob002 54
+../benchmarks/yama24_50_med/prob003 45
+../benchmarks/yama24_50_med/prob004 33
+../benchmarks/yama24_50_med/prob005 42
+../benchmarks/yama24_50_med/prob006 33
+../benchmarks/yama24_50_med/prob007 38
+../benchmarks/yama24_50_med/prob008 40
+../benchmarks/yama24_50_med/prob009 36
+../benchmarks/yama24_50_med/prob010 46
+../benchmarks/yama24_50_med/prob011 44
+../benchmarks/yama24_50_med/prob012 45
+../benchmarks/yama24_50_med/prob013 19
+../benchmarks/yama24_50_med/prob014 46
+../benchmarks/yama24_50_med/prob015 50
+../benchmarks/yama24_50_med/prob016 46
+../benchmarks/yama24_50_med/prob017 42
+../benchmarks/yama24_50_med/prob018 62
+../benchmarks/yama24_50_med/prob019 39
+../benchmarks/yama24_50_med/prob020 32
+../benchmarks/yama24_50_med/prob021 48
+../benchmarks/yama24_50_med/prob022 44
+../benchmarks/yama24_50_med/prob023 41
+../benchmarks/yama24_50_med/prob024 36
+../benchmarks/yama24_50_med/prob025 41
+../benchmarks/yama24_50_med/prob026 43
+../benchmarks/yama24_50_med/prob027 41
+../benchmarks/yama24_50_med/prob028 42
+../benchmarks/yama24_50_med/prob029 51
+../benchmarks/yama24_50_med/prob030 41
+../benchmarks/yama24_50_med/prob031 37
+../benchmarks/yama24_50_med/prob032 35
+../benchmarks/yama24_50_med/prob033 45
+../benchmarks/yama24_50_med/prob034 30
+../benchmarks/yama24_50_med/prob035 54
+../benchmarks/yama24_50_med/prob036 30
+../benchmarks/yama24_50_med/prob037 43
+../benchmarks/yama24_50_med/prob038 25
+../benchmarks/yama24_50_med/prob039 46
+../benchmarks/yama24_50_med/prob040 43
+../benchmarks/yama24_50_med/prob041 45
+../benchmarks/yama24_50_med/prob042 31
+../benchmarks/yama24_50_med/prob043 42
+../benchmarks/yama24_50_med/prob044 36
+../benchmarks/yama24_50_med/prob045 47
+../benchmarks/yama24_50_med/prob046 44
+../benchmarks/yama24_50_med/prob047 45
+../benchmarks/yama24_50_med/prob048 45
+../benchmarks/yama24_50_med/prob049 43
+../benchmarks/yama24_50_med/prob050 26
+../src/./24puzzle_block_parallel_global this solver is valid
+
+c249.021
+743.019
+2106.27
+1.77785e-315
+673.684
+332.074
+0.359554
+1.43757
+4.91605
+1.0609
+1.00476
+129.429
+pu in 24 puzzle
+cpu expand in 24 puzzle
+psimple gpu in 24 puzzle
+block parallel gpu in 24 puzzle
+block parallel gpu dfs in 24 puzzle
+block parallel gpu dfs global in 24 puzzle
+cpu with pdb in 24 puzzle
+cpu expand with pdb in 24 puzzle
+psimple with pdb gpu in 24 puzzle
+block parallel with pdb gpu in 24 puzzle
+block parallel with pdb gpu dfs in 24 puzzle
+block parallel with pdb gpu dfs global in 24 puzzle

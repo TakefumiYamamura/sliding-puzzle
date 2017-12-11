@@ -32,22 +32,32 @@ def simple_test(exec_file_name):
 
 # os.system("g++ -std='c++11' -o ../src/15puzzle_speed ../src/15puzzle_speed.cc")
 # simple_test("../src/./15puzzle_speed")
+# os.system("g++ -std='c++11' -o ../src/15puzzle_expand ../src/15puzzle_expand.cc")
+# simple_test("../src/./15puzzle_expand")
 # os.system("/usr/local/cuda/bin/nvcc -std='c++11' -O3 -o ../src/15puzzle_psimple ../src/15puzzle_psimple.cu")
 # simple_test("../src/./15puzzle_psimple")
 # os.system("/usr/local/cuda/bin/nvcc -std='c++11' -O3 -o ../src/15puzzle_psimple_shared ../src/15puzzle_psimple_shared.cu")
 # simple_test("../src/./15puzzle_psimple_shared")
-os.system("/usr/local/cuda/bin/nvcc -std='c++11' -o ../src/15puzzle_block_parallel ../src/15puzzle_block_parallel.cu")
-simple_test("../src/./15puzzle_block_parallel")
+# os.system("/usr/local/cuda/bin/nvcc -std='c++11' -o ../src/15puzzle_block_parallel ../src/15puzzle_block_parallel.cu")
+# simple_test("../src/./15puzzle_block_parallel")
 
 os.system("g++ -std='c++11' -O3 -o calculate_executed_sum calculate_executed_sum.cpp")
 
-# print("cpu in 15 puzzle")
-# os.system("./calculate_executed_sum ../result/korf100_result_speed_100.csv 100")
-# print("psimple gpu in 15 puzzle")
-# os.system("./calculate_executed_sum ../result/korf100_psimple_result_50.csv 50")
-# print("psimple shared gpu in 15 puzzle")
-# os.system("./calculate_executed_sum ../result/korf100_psimple_result_50_shared.csv 50")
-# print("block parallel gpu in 15 puzzle")
-# os.system("./calculate_executed_sum ../result/korf100_block_parallel_result_with_staticlb_100.csv 100")
+print("cpu in 15 puzzle")
+os.system("./calculate_executed_sum ../result/korf100_result_speed_100.csv 100")
+print("cpu expand in 15 puzzle")
+os.system("./calculate_executed_sum ../result/korf100_result_expand_100.csv 100")
+print("psimple gpu in 15 puzzle")
+os.system("./calculate_executed_sum ../result/korf100_psimple_result_50.csv 50")
+print("psimple shared gpu in 15 puzzle")
+os.system("./calculate_executed_sum ../result/korf100_psimple_result_50_shared.csv 50")
+print("block parallel gpu in 15 puzzle")
+os.system("./calculate_executed_sum ../result/korf100_block_parallel_result_with_staticlb_dfs_100_2048.csv 100")
 print("block parallel gpu in 15 puzzle")
 os.system("./calculate_executed_sum ../result/korf100_block_parallel_result_with_staticlb_100_2048.csv 100")
+
+print("horie block parallel gpu in 15 puzzle")
+os.system("./calculate_executed_sum ../result/idas_smem.txt 100")
+
+
+

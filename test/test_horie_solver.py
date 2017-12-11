@@ -18,20 +18,21 @@ def calculate_executed_time(solver_name):
             file_number = file_number + "0" + str(x)
 
         start = time.time()
-        os.system("../src_horie/solver ../benchmarks/korf100/prob" + file_number)
+        os.system("../src_horie/./solver ../benchmarks/korf100/prob" + file_number)
         duration_time = time.time() - start
         print(duration_time)
-        duration_times.append(duration_time)
+        duration_times.append(str(duration_time) + "\n")
 
-    f = open(solver_name + ".txt", 'w')
+    f = open("../result/" +  solver_name + "64.txt", 'w')
     f.writelines(duration_times)
     f.close() 
 
 
 argvs = sys.argv
 argc = len(argvs)
-i = 0
+i = 1
 while i < argc:
+    print argvs[i]
     calculate_executed_time(argvs[i])
     i = i + 1
 
