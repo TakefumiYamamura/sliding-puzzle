@@ -15,8 +15,9 @@
 #include <sstream>
 #include <chrono>
 
-#define DEBUG
+// #define DEBUG
 // #define DFS
+// #define MANY_NODE
 
 template <typename T> std::string tostr(const T& t)
 {
@@ -164,9 +165,14 @@ bool create_root_set() {
     return false;
 }
 
+#ifdef MANY_NODE
+__global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_set, Node *global_st, int *dev_node_size) {
 
+#else
 
 __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_set, Node *global_st) {
+
+#endif
     __shared__ int shared_md[N2*N2];
     for (int i = threadIdx.x; i < N2*N2; i += blockDim.x)
     {
@@ -179,14 +185,21 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_s
     __syncthreads();
 
     __shared__ int index;
+    #ifdef MANY_NODE
+    index = 0;
+    __syncthreads();
+    int tmp_id = blockIdx.x * (THREAD_SIZE_PER_BLOCK / 4 ) + threadIdx.x / 4;
+    if(threadIdx.x % 4 == 0 && *dev_node_size > tmp_id) {
+        atomicAdd(&index, 1);
+        //printf("stack index : %d  root node index %d\n", threadIdx.x / 4, blockIdx.x * (THREAD_SIZE_PER_BLOCK / 4 ) + threadIdx.x / 4);
+        global_st[threadIdx.x / 4] = root_set[tmp_id];
+    }
+
+    #else
     index = 0;
     global_st[blockIdx.x * STACK_LIMIT + 0] = root_set[blockIdx.x];
-    // index = THREAD_SIZE_PER_BLOCK / 4 - 1;
-    // if(threadIdx.x % 4 == 0) {
-    //     index++;
-    // printf("stack index : %d  root node index %d\n", threadIdx.x / 4, blockIdx.x * (THREAD_SIZE_PER_BLOCK / 4 ) + threadIdx.x / 4);
-    // st[threadIdx.x / 4] = root_set[blockIdx.x * (THREAD_SIZE_PER_BLOCK / 4 ) + threadIdx.x / 4];
-    // }
+    #endif
+
     __syncthreads();
 
     int order[4] = {1, 0, 2, 3};
@@ -431,18 +444,34 @@ void ida_star() {
         cout << root_node_size << endl;
         #endif
 
+        #ifdef MANY_NODE
+        int *dev_node_size;
+        HANDLE_ERROR(cudaMalloc((void**)&dev_node_size, sizeof(int)));
+        cudaMemcpy(dev_node_size, &root_node_size, sizeof(int), cudaMemcpyHostToDevice);
+        dfs_kernel<<<root_node_size / (THREAD_SIZE_PER_BLOCK / 4 ), THREAD_SIZE_PER_BLOCK>>>(limit, dev_root_set, dev_flag, dev_load_set, global_st, dev_node_size);
+        #else
         dfs_kernel<<<root_node_size, THREAD_SIZE_PER_BLOCK>>>(limit, dev_root_set, dev_flag, dev_load_set, global_st);
+        #endif
 
         HANDLE_ERROR(cudaGetLastError());
         HANDLE_ERROR(cudaDeviceSynchronize());
         HANDLE_ERROR(cudaMemcpy(&flag, dev_flag, sizeof(int), cudaMemcpyDeviceToHost));
+        #ifdef MANY_NODE
+        HANDLE_ERROR(cudaMemcpy(&load_set, dev_load_set, root_node_size / (THREAD_SIZE_PER_BLOCK / 4 ) * sizeof(int), cudaMemcpyDeviceToHost));
+        #else
         HANDLE_ERROR(cudaMemcpy(&load_set, dev_load_set, root_node_size * sizeof(int), cudaMemcpyDeviceToHost));
+        #endif
+
+        #ifdef MANY_NODE
+        HANDLE_ERROR(cudaFree(dev_node_size));
+        #endif
 
         if(flag != -1) {
             cout << flag << endl;
             HANDLE_ERROR(cudaFree(dev_flag));
             HANDLE_ERROR(cudaFree(dev_root_set));
             HANDLE_ERROR(cudaFree(dev_load_set));
+
             return;
         }
 
@@ -531,15 +560,17 @@ void ida_star() {
 
  
 int main() {
+    int problems_num = 100;
     #ifndef DEBUG
     FILE *output_file;
-    output_file = fopen("../result/korf100_block_parallel_result_with_staticlb_100_2048_global.csv","w");
+    string output_file_str = "../result/korf100_block_parallel_result_with_staticlb_global" + tostr(problems_num) + "_" + tostr(BLOCK_NUM) + "_" + tostr(THREAD_SIZE_PER_BLOCK) + ".csv";
+    output_file = fopen(const_cast<char*>(output_file_str.c_str()),"w");
     #endif
 
     HANDLE_ERROR(cudaMalloc((void**)&global_st, MAX_BLOCK_SIZE * STACK_LIMIT * sizeof(Node) ) );
 
     set_md();
-    for (int i = 0; i < 100; ++i)
+    for (int i = 0; i < problems_num; ++i)
     {
         string input_file = "../benchmarks/korf100/prob";
         if(i < 10) {
