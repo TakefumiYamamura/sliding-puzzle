@@ -35,7 +35,7 @@ Iterative depth first A* search in GPU
 \bigskip\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip
 \Large %17
 \begin{center}
-広域システム化学系　広域科学専攻
+広域システム科学系　広域科学専攻
 \end{center}
 \Large %17
 \begin{center}
@@ -96,11 +96,15 @@ JADEでは適応戦略以外に，探索性能を強化するために過去の�
 \section{GPUとGPGPU}
 GPU(graphics processing unit)は2Dや3Dといったコンピューターグラフィックスの画像処理を行う為に従来使用され、それらの性能を向上することを追求してきた。
 GPUをグラフィックスのレンダリングのみならず、より汎用的な計算にも利用することを目的とした技術がGPGPU(General-purpose computing on graphics processing units)である。
-GPGPUが使われる分野として、物理シミュレーション、機械学習、音声処理、金融工学などのアプリケーションがあげられる。本論文では、GPUがどのような、アーキテクチャであるか、またGPGPUを行うためのプログラミングモデルの一つであるCUDAについての説明を行う。
+GPGPUが使われる分野として、物理シミュレーション、機械学習、音声処理、金融工学などのアプリケーションがあげられる。現代では、特に機械学習の需要が高まるとともに、欠かせない技術の一つとなっている。本論文では、GPUがどのような、アーキテクチャであるか、またGPGPUを行うためのプログラミングモデルの一つであるCUDAについての説明を行う。
 
 
 \subsection{GPUの構造}
-GPUの特徴とし
+GPUの大きな特徴の一つとしてCPUとは、異なるメモリ構造があげられる。GPUのデバイス側で使われるメモリは大きくGPU側のオンチップメモリと、CPU側のオフチップメモリの2つに別れる。オンチップメモリの方が、カーネル側からは高速なアクセスが可能である一方、そのサイズは小さくなる。大容量であるメモリのほとんどは、CPU側のオンチップメモリに存在し、容量と引き換えに、高遅延となっている。
+変数のスコープやライフタイムについても、それぞれのメモリで異なり、これらの特徴をまとめると、以下の図のようになっている。GPUを使用したプログラミングでは、これらのメモリの特徴を踏まえた上で、適したメモリを選択することが、高速化の肝となる。
+特にグローバルメモリと共有メモリについては本論文において重要な役割を果たすため、紹介する。
+グローバルメモリはCPU上において最も容量が大きい一方で遅延が最も大きいメモリである。カーネルとホストの両方からアクセ雨sすることが可能であり
+
 
 \subsection{CUDA}
 CUDA(Compute Unified Device Architecture)とは汎用的な並列コンピューティングプラットフォーム、プログラミングモデルであり、NVIDIA GPUの並列コンピュートエンジンを利用して多くの複雑なコンピューティング問題をより効率的に解決する。
@@ -122,19 +126,29 @@ CUDAではCPUとそのメモリを扱うホストと、GPUとそのメモリを�
 \begin{algorithmic}
 \STATE $opendList$
 \STATE 初期ノード$v_0$を$openList$に追加。
-\STATE closedList
+\STATE $closedList$
 \WHILE {$openList$が空ではない}
-    \STATE $v_{current}$ := pop from $openList$;
+    \STATE $v_{current}$ := $openList$から $f(v_{current})$　が最も小さいノードを取り出す。
     \IF {$v_{current} \in 終了状態$}
-        \STATE return $v_{current}$ and its parents as a shoretest path;
+        \STATE $v_{current}$ とその親ノードを最短経路として返す。
     \ENDIF
-    \FOR{$i=1$ to $N$}
-        \STATE $r := \rm{randi}[1,H]$
+    \FOR{each $v_{next}$ $\in$ $children(v_{current})$ do}
+        \IF {$v_{next}\in closedList$}
+            \STATE $g(v')\leftarrow g(v) + cost(v,v')$
+        \ENDIF
+        \IF {$v_{next}\in closedList$}
+            \STATE $g(v')\leftarrow g(v) + cost(v,v')$
+        \ENDIF
+        \IF {$v_{next}\in closedList$}
+            \STATE $g(v')\leftarrow g(v) + cost(v,v')$
+        \ENDIF
+
+        \STATE $v_{next} := \rm{randi}[1,H]$
         \STATE $F_i := \rm{randc}(M_F, 0.1)$ \\
         \STATE $CR_i := \rm{randn}(M_{CR}, 0.1)$ \\
         \STATE 突然変異戦略を用いて変異個体{$\vector{v}^i$}を生成;
         \STATE $\vector{x}^i$と$\vector{v}^i$に交叉を適用し，子個体$\vector{u}^i$を生成;
-     \ENDFOR
+    \ENDFOR
     \FOR{$i=1$ to $N$}
         \IF {$f(\vector{u}^i) \leqq f(\vector{x}^i)$}
             \STATE $\vector{x^i} \rightarrow {A}$;
@@ -154,6 +168,14 @@ CUDAではCPUとそのメモリを扱うホストと、GPUとそのメモリを�
 \newpage
 
 \section{IDA*探索}
+IDA*探索\cite{Korf 1985}はA*探索アルゴリズムのメモリ不足による探索失敗を回避するために提案された手法である。空間計算量がエッジの数と比例するA*探索に対し、IDA*探索では探索の深さに対して線形を保つことができる。IDA*ではA*と同様にヒューリスティック関数によってyotte状態の評価を行い、展開の順序を決定するアルゴリズムである。
+
+
+\chapter{GPUを使用した並列IDA*探索}
+\section{PSimple}
+
+\section{BLOCK PARALELL IDA*}
+GPUを使用したIDA*探索の並列化の一つにBlock-Parallel IDA*(BPIDA*)\cite{Horie17}がある。この手法では、同じBlockが1つのスタックを共有することでblock並列化を行っている。ブロックごとに並列化するメリットとしては、
 
 
 
@@ -200,6 +222,43 @@ $F_{15}$&1.02e+02(3.89e+00)&1.20e+02(1.19e+01) −&1.17e+02(9.64e+00) −&1.00e+
 \end{landscape}
 \newpage
 
+\begin{table}[]
+\centering
+\caption{Table 1: Total Runtimes for 50 24-Puzzle Instances}
+\label{my-label}
+\begin{tabular}{|l|c|}
+\hline
+configuration & \multicolumn{1}{l|}{total runtime(seconds)} \\ \hline
+\multicolumn{2}{|l|}{CPU-based sequential algorithms} \\ \hline
+IDA* (manhattan distance) & 743.019 \\
+IDA* (PDB) & 1.4446 \\ \hline
+\multicolumn{2}{|l|}{GPU-based parallel algorithms} \\ \hline
+PSimple (manhattan distance) & 2106.27 \\
+PSimple (PDB) & 4.91605 \\
+BPIDA* (manhattan distance) & 674.521 \\
+BPIDA* (PDB) & 0.994512 \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[]
+\centering
+\caption{Table 1: Total Runtimes for 50 24-Puzzle Instances}
+\label{my-label}
+\begin{tabular}{|l|c|}
+\hline
+configuration & \multicolumn{1}{l|}{total runtime(seconds)} \\ \hline
+\multicolumn{2}{|l|}{CPU-based sequential algorithms} \\ \hline
+IDA* (manhattan distance) & 743.019 \\
+IDA* (PDB) & 1.4446 \\ \hline
+\multicolumn{2}{|l|}{GPU-based parallel algorithms} \\ \hline
+PSimple (manhattan distance) & 2106.27 \\
+PSimple (PDB) & 4.91605 \\
+BPIDA* (manhattan distance) & 674.521 \\
+BPIDA*GLOBAL (manhattan distance) & 124.586 \\
+BPIDA* (PDB) & 0.994512 \\
+BPIDA*GLOBAL (PDB) & 0.401973 \\ \hline
+\end{tabular}
+\end{table}
 \chapter{終わりに}
 \section{まとめ}
 
@@ -207,9 +266,10 @@ $F_{15}$&1.02e+02(3.89e+00)&1.20e+02(1.19e+01) −&1.17e+02(9.64e+00) −&1.00e+
 
 %-----------------------------参考文献記述エリア---------------------------%
 \begin{thebibliography}{10}
+  \bibitem{Horie17} Satoru Horie and Alex Fukunaga. Block-Parallel IDA* for GPUs. In SOCS, 2017 
   \bibitem{Burns et al. 2012} Burns, E. A.; Hatem, M.; Leighton,  M. J.; and Ruml, W. 2012. Implementing fast heuristic search code. In SOCS.
   \bibitem{BHLR12}Ethan Andrew Burns, Matthew Hatem, Michael J Leighton, and Wheeler Ruml. Implementing fast heuristic search code. In SOCS, 2012.
-  \bibitem{Korf 1985]}Korf, R. E. 1985. Depth-first iterativedeepening: An optimal admissible tree search. Artificial intelligence 27(1):97-109.
+  \bibitem{Korf 1985}Korf, R. E. 1985. Depth-first iterativedeepening: An optimal admissible tree search. Artificial intelligence 27(1):97-109.
   \bibitem{Korf and Felner 2002}Korf, R. E., and Felner, A. 2002.
 Disjoint pattern database heuristics. Articial intelli-
 gence 134(1):9-22.
