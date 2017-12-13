@@ -125,7 +125,7 @@ CUDAではCPUとそのメモリを扱うホストと、GPUとそのメモリを�
 \caption{A*}
 \label{alg:pbnf}
 \begin{algorithmic}
-\STATE $opendList$を見積もり値$f(v)$を優先度としたプライオリティーキューとして定義
+\STATE $openList$を見積もり値$f(v)$を優先度としたプライオリティーキューとして定義
 \STATE 初期ノード$v_0$を$openList$に追加。
 \STATE $closedList$をハッシュテーブルとして定義
 \WHILE {$openList$が空ではない}
@@ -137,18 +137,17 @@ CUDAではCPUとそのメモリを扱うホストと、GPUとそのメモリを�
     \STATE $closedList$に$v_{cur}$を追加
     \FOR{each $v_{next}$ $\in$ $children(v_{cur})$ do}
         \STATE $f_{new}(v_{next}) \leftarrow g(v_{cur}) + cost(v_{cur}, v_{next}) + h(v_{next})$
-        \STATE
         \IF {$v_{next}\not\in openList \land v_{next}\not\in closedList$}
             \STATE $f(v_{next}) \leftarrow f_{new}(v_{next})$ 
             \STATE $openList$に$v_{next}$を追加
             \STATE $v_{next}$の親を$v_{cur}$として記録
         \ENDIF
-        \IF {$v_{next}\in openList \land　f_{new}(v_{next}) < f(v_{next})$}
+        \IF {$v_{next}\in openList \land f_{new}(v_{next}) < f(v_{next})$}
             \STATE $f(v_{next}) \leftarrow f_{new}(v_{next})$
             \STATE $openList$から$v_{next}$を削除し、再び$v_{next}$を追加することで、優先度を更新
             \STATE $v_{next}$の親を$v_{cur}$として記録
         \ENDIF
-        \IF {$v_{next}\in closedList \land　f_{new}(v_{next}) < f(v_{next})$}
+        \IF {$v_{next}\in closedList \land f_{new}(v_{next}) < f(v_{next})$}
             \STATE $f(v_{next}) \leftarrow f_{new}(v_{next})$
             \STATE $closedList$から$openList$に$v_{next}$を移動
             \STATE $v_{next}$の親を$v_{cur}$として記録
@@ -162,6 +161,38 @@ CUDAではCPUとそのメモリを扱うホストと、GPUとそのメモリを�
 
 \section{IDA*探索}
 IDA*探索\cite{Korf 1985}はA*探索アルゴリズムのメモリ不足による探索失敗を回避するために提案された手法である。空間計算量がエッジの数と比例するA*探索に対し、IDA*探索では探索の深さに対して線形を保つことができる。IDA*ではA*と同様にヒューリスティック関数によってyotte状態の評価を行い、展開の順序を決定するアルゴリズムである。
+
+\newpage
+\begin{algorithm}
+\caption{IDA*}
+\label{alg:pbnf}
+\begin{algorithmic}
+\STATE $limit_f \leftarrow 0$
+\WHILE {true}
+    \STATE $openList$を空のスタックとして初期化
+    \STATE 初期ノード$v_0$を$openList$に追加
+    \STATE $f_{next} \leftarrow \infty$
+    \STATE $f_{next}$は次回の$limit_f$更新時に利用される 
+    \WHILE {$openList$が空ではない}
+        \STATE $v_{cur}$ $\leftarrow$ $openList$から先頭ノードを取り出す
+        \STATE $openList$から$v_{cur}$を削除
+        \IF {$v_{cur} \in 終了状態$}
+            \STATE $v_0$から$v_{cur}$までの遷移と、移動コスト$g(v_{cur})$を解として出力して終了
+        \ENDIF
+        \FOR{each $v_{next}$ $\in$ $children(v_{cur})$ do}
+            \STATE $f_{new} \leftarrow g(v_{cur}) + cost(v_{cur}, v_{next}) + h(v_{next})$
+            \IF {$f_{new}(v_{next}) \leqq limit_f$}
+                \STATE $openList$に$v_{next}$を追加
+            \ELSE
+                \STATE $f_{next} \leftarrow min(f_{next}, f_{new})$
+            \ENDIF
+        \ENDFOR
+    \ENDWHILE
+    \STATE $update(limit_f)$
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+\newpage
 
 
 \chapter{GPUを使用した並列IDA*探索}
