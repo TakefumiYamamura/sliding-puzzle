@@ -103,7 +103,8 @@ GPGPUが使われる分野として、物理シミュレーション、機械学
 GPUの大きな特徴の一つとしてCPUとは、異なるメモリ構造があげられる。GPUのデバイス側で使われるメモリは大きくGPU側のオンチップメモリと、CPU側のオフチップメモリの2つに別れる。オンチップメモリの方が、カーネル側からは高速なアクセスが可能である一方、そのサイズは小さくなる。大容量であるメモリのほとんどは、CPU側のオンチップメモリに存在し、容量と引き換えに、高遅延となっている。
 変数のスコープやライフタイムについても、それぞれのメモリで異なり、これらの特徴をまとめると、以下の図のようになっている。GPUを使用したプログラミングでは、これらのメモリの特徴を踏まえた上で、適したメモリを選択することが、高速化の肝となる。
 特にグローバルメモリと共有メモリについては本論文において重要な役割を果たすため、紹介する。
-グローバルメモリはCPU上において最も容量が大きい一方で遅延が最も大きいメモリである。カーネルとホストの両方からアクセ雨sすることが可能であり
+グローバルメモリはCPU上において最も容量が大きい一方で遅延が最も大きいメモリである。すべてのスレッドとホストの両方からアクセスすることが可能であり、読み書きがかのうである。
+それに対して、共有メモリはオンチップメモリの一つであり、同じブロック同士でのみスコープを共有
 
 
 \subsection{CUDA}
@@ -124,45 +125,37 @@ CUDAではCPUとそのメモリを扱うホストと、GPUとそのメモリを�
 \caption{A*}
 \label{alg:pbnf}
 \begin{algorithmic}
-\STATE $opendList$
+\STATE $opendList$を見積もり値$f(v)$を優先度としたプライオリティーキューとして定義
 \STATE 初期ノード$v_0$を$openList$に追加。
-\STATE $closedList$
+\STATE $closedList$をハッシュテーブルとして定義
 \WHILE {$openList$が空ではない}
-    \STATE $v_{current}$ := $openList$から $f(v_{current})$　が最も小さいノードを取り出す。
-    \IF {$v_{current} \in 終了状態$}
-        \STATE $v_{current}$ とその親ノードを最短経路として返す。
+    \STATE $v_{cur}$ $\leftarrow$ $openList$の中で $f(v_{cur})$が最も小さいノード
+    \STATE $openList$から$v_{cur}$を削除
+    \IF {$v_{cur} \in 終了状態$}
+        \STATE $v_0$から$v_{cur}$までの遷移と、移動コスト$g(v_{cur})$を解として出力して終了
     \ENDIF
-    \FOR{each $v_{next}$ $\in$ $children(v_{current})$ do}
-        \IF {$v_{next}\in closedList$}
-            \STATE $g(v')\leftarrow g(v) + cost(v,v')$
+    \STATE $closedList$に$v_{cur}$を追加
+    \FOR{each $v_{next}$ $\in$ $children(v_{cur})$ do}
+        \STATE $f_{new}(v_{next}) \leftarrow g(v_{cur}) + cost(v_{cur}, v_{next}) + h(v_{next})$
+        \STATE
+        \IF {$v_{next}\not\in openList \land v_{next}\not\in closedList$}
+            \STATE $f(v_{next}) \leftarrow f_{new}(v_{next})$ 
+            \STATE $openList$に$v_{next}$を追加
+            \STATE $v_{next}$の親を$v_{cur}$として記録
         \ENDIF
-        \IF {$v_{next}\in closedList$}
-            \STATE $g(v')\leftarrow g(v) + cost(v,v')$
+        \IF {$v_{next}\in openList \land　f_{new}(v_{next}) < f(v_{next})$}
+            \STATE $f(v_{next}) \leftarrow f_{new}(v_{next})$
+            \STATE $openList$から$v_{next}$を削除し、再び$v_{next}$を追加することで、優先度を更新
+            \STATE $v_{next}$の親を$v_{cur}$として記録
         \ENDIF
-        \IF {$v_{next}\in closedList$}
-            \STATE $g(v')\leftarrow g(v) + cost(v,v')$
-        \ENDIF
-
-        \STATE $v_{next} := \rm{randi}[1,H]$
-        \STATE $F_i := \rm{randc}(M_F, 0.1)$ \\
-        \STATE $CR_i := \rm{randn}(M_{CR}, 0.1)$ \\
-        \STATE 突然変異戦略を用いて変異個体{$\vector{v}^i$}を生成;
-        \STATE $\vector{x}^i$と$\vector{v}^i$に交叉を適用し，子個体$\vector{u}^i$を生成;
-    \ENDFOR
-    \FOR{$i=1$ to $N$}
-        \IF {$f(\vector{u}^i) \leqq f(\vector{x}^i)$}
-            \STATE $\vector{x^i} \rightarrow {A}$;
-            \STATE {$\vector{x}^i := \vector{u}^i$};
-            \STATE $S_F := {F_i}, S_CR := {CR_i};$
+        \IF {$v_{next}\in closedList \land　f_{new}(v_{next}) < f(v_{next})$}
+            \STATE $f(v_{next}) \leftarrow f_{new}(v_{next})$
+            \STATE $closedList$から$openList$に$v_{next}$を移動
+            \STATE $v_{next}$の親を$v_{cur}$として記録
         \ENDIF
     \ENDFOR
-    \IF {$ S_F,S_{CR} \neq \emptyset$}
-        \STATE $M_{F,k}  :=  mean_L(S_F)$;
-        \STATE $M_{CR,k}  :=  mean_L(S_{CR})$;
-        \STATE $k = (k+1) \% H$;
-    \ENDIF
-    \STATE もしアーカイブがアーカイブサイズ$|A|$を超えていれば，超えた分だけランダムに削除;
 \ENDWHILE
+\STATE 初期状態から終了状態までのパスは存在しないと出力して終了
 \end{algorithmic}
 \end{algorithm}
 \newpage
