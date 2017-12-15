@@ -1,7 +1,7 @@
 \documentclass[a4paper,11pt,oneside,openany]{jsbook}
 \usepackage{graphicx,enumerate}
 \usepackage{algorithm}
-\usepackage{algorithmic}
+\usepackage{algpseudocode}
 \usepackage{float}
 \usepackage{amssymb}
 \usepackage{mathabx}
@@ -9,6 +9,15 @@
 \usepackage{supertabular}
 \usepackage{subfigure}
 \usepackage{lscape}
+
+% declaration of the new block
+\algblock{ParallelForByBlocks}{EndParallelForByBlocks}
+% customising the new block
+\algnewcommand\algorithmicparallelforbyblocks{\textbf{parallelForByBlocks}}
+\algnewcommand\algorithmicpardo{\textbf{do}}
+\algnewcommand\algorithmicendparallelforbyblocks{\textbf{end\ parallelForByBlocks}}
+\algrenewtext{ParallelForByBlocks}[1]{\algorithmicparallelforbyblocks\ #1\ \algorithmicpardo}
+\algrenewtext{EndParallelForByBlocks}{\algorithmicendparallelforbyblocks}
 
 \pagestyle{plain}
 \setlength{\textwidth}{\fullwidth}
@@ -53,39 +62,24 @@ Iterative depth first A* search in GPU
 
 \chapter{序論}
 \section{研究の背景}
-実数値最適化問題とは，ある$D$次元の実数値ベクトル$\vector{x} = (x_1, x_2, ..., x_D)$と，それを評価する関数$f(\vector{x})$が与えられた時に，その評価関数を最小もしくは最大化するような実数値ベクトル$\vector{x}$を求める問題である．
-対象問題が，局所解を複数持つ多峰性を有する場合，局所解を避け，大域的な最適解を求めることが実数値最適化問題において重要な課題の一つである．また多くの実問題については，対象問題が単峰性か，多峰性か，及び変数分離可か不可かなどといった情報を探索の事前に知ることは困難である.このような$\vector{x}$の目的関数値$f(\vector{x})$しか利用出来ない実数値最適化問題をblack-box optimizationと呼ぶ．
-そのような実数値最適化問題を対象とする確率的手法の一つとして，差分進化(Differential Evlolution:DE) \cite{Storn} が用いられる．DEはEvolutionary Algorithm(EA)のひとつであり，EAとは，変化と選択に基づく世代交代により解が進化していく計算の総称である．
-最初のDEは，1995年にStornとPriceらによって提案された．
-DEは単純なアルゴリズムでありながら，他の探索手法と比べても良好な性能を有することが報告されている
- \cite{Storn} \cite{ExDE} ．
-このためDEは実問題への多くの適用例が報告されている \cite{ExDE} ．
+
 
 \section{関連研究}
-DEの探索性能は用いる制御パラメタに大きく依存し，そのパラメタは集団数，スケール係数$F$，交叉率$CR$である．しかしこれらのパラメタの適切な値は使用する関数や問題設定によって異なり，実問題を解く上でこれらのパラメタをユーザーが試行錯誤する必要がある．
-これらのパラメタを探索中に適応的に変化させていく適応型のDEに関する研究が数多く行われている．
-それら適応型のDE手法としてはJADE \cite{JADE} ，SHADE \cite{SHADE} などが挙げられる．
-JADEでは適応戦略以外に，探索性能を強化するために過去の劣解を保持するアーカイブを使用する．
-変異ベクトル作成時にアーカイブに保存された劣解を用いることで，解集団における多様性の維持に役立つ．
 
-しかしアーカイブは問題設定などによっては，探索性能の向上にうまくつながらないこともある \cite{JADE} ．JADEにてその性能比較を行った先行研究では，次元数が高い時にアーカイブは解集団の探索性能を向上させた．一方で，次元数に対して十分な集団数をもつ場合，アーカイブ使用時の方がJADEにおいてその探索性能は低下した．これは，次元数や集団数によって，解集団が多様性を維持出来ない場合に，アーカイブがその多様性を向上させるためと述べられている．しかしながらアーカイブが解集団にどの程度多様性を与えているのか，そもそも多様性とは何か，なんらかの尺度による調査はなされていない．
-本論文では，アーカイブを使用することで解集団における多様性を確かに維持できているのか，次元数，集団数の違いが多様性維持にどのように影響を与えているのか解明するとともに，従来のアーカイブを改善した手法をいくつか提案する．
 
 \section{本研究の目的}
 本研究の目的は２つある．
 \begin{enumerate}
-\item アーカイブが多様性の維持にどのように役割をはたしているのか調査する
+\item ぶらぶら
 \vspace{3mm}
 \newline
-アーカイブには，生存選択の時に，劣解として，子個体に上書きされた親個体が保存される．変異ベクトル作成時にアーカイブに保存された劣解を用いることで，解集団における多様性の維持に役立つ．本研究では，アーカイブを使用することで，解集団における多様性を確かに維持できているのか，次元数，集団数の違いが多様性維持にどのように影響を与えているのか多様性評価指標$r_s$，$r_f$を基に調査する．
+ぶらぶらぶらぶらぶら
 \newline
 
-
-\item アーカイブを改良することで，探索性能を向上できないか新たな手法を提案する．
+\item ぶらぶらぶら
 \vspace{3mm}
 \newline
-アーカイブは多くの適応DEについて使われているにも関わらず，そのシステムについての改良は他の制御パラメタであるスケール係数$F$や交叉率$CR$に比べ試みられていない．
-アーカイブ性能の分析をふまえた上で，その改善をはかるための新たな手法を提案する．
+ぶらぶらぶらぶら
 \end{enumerate}
 
 
@@ -119,42 +113,56 @@ CUDAではCPUとそのメモリを扱うホストと、GPUとそのメモリを�
 \section{ヒューリスティック探索}
 
 \section{A*探索}
+A*探索\cite{HNR68}はヒューリスティック関数と呼ばれる、ある状態からゴール状態までの見積もりを道しるべに使用したグラフ探索の手法の一つである。
+初期状態から現在までの移動コストと、現在から終了状態までのコストの見積もり値が小さなノードから順に探索を行うことで、ゴール状態までの経路を探索することができる。
+終了状態までの見積もりであるヒューリスティック関数による値が、実際にゴール状態に至るまでの最短移動コスト以下であるとき、このようなヒューリスティック関数をadmissibleであると呼ぶ。
+admissibleなヒューリスティック関数を使用した場合、A*探索では必ず最短経路を発見することが保証される。
+また本研究で使用するManhattan DistanceやPattern Data Baseはこのadmissibleなヒューリスティックである。
+A*探索の探索効率は、このヒューリスティック関数に依存し、ヒューリスティック関数が常に正しい値を返すことができる場合、分岐をすることなく最短経路を発見することができる。このような場合をパーフェクトヒューリスティックと呼ぶ。
+またヒューリスティック値が常に0である時、A*探索はダイクストラ探索と同じアルゴリズムとなる。
+A*探索は適切なヒューリスティック関数を用いることでダイクストラ法よりも効率良く、最短経路問題を解くことが可能である一方、メモリの使用量の大きさがネックとなる。
+ヒューリスティック関数
+closedlistによる重複検知
+admissible
+ダイクストラ
+ダイクストラのヒューリスティック値0
+探索効率はhの正確性に左右
 
 \newpage
 \begin{algorithm}
 \caption{A*}
 \label{alg:pbnf}
-\begin{algorithmic}
-\STATE $openList$を見積もり値$f(v)$を優先度としたプライオリティーキューとして定義
-\STATE 初期ノード$v_0$を$openList$に追加。
-\STATE $closedList$をハッシュテーブルとして定義
-\WHILE {$openList$が空ではない}
-    \STATE $v_{cur}$ $\leftarrow$ $openList$の中で $f(v_{cur})$が最も小さいノード
-    \STATE $openList$から$v_{cur}$を削除
-    \IF {$v_{cur} \in 終了状態$}
-        \STATE $v_0$から$v_{cur}$までの遷移と、移動コスト$g(v_{cur})$を解として出力して終了
-    \ENDIF
-    \STATE $closedList$に$v_{cur}$を追加
-    \FOR{each $v_{next}$ $\in$ $children(v_{cur})$ do}
-        \STATE $f_{new}(v_{next}) \leftarrow g(v_{cur}) + cost(v_{cur}, v_{next}) + h(v_{next})$
-        \IF {$v_{next}\not\in openList \land v_{next}\not\in closedList$}
-            \STATE $f(v_{next}) \leftarrow f_{new}(v_{next})$ 
-            \STATE $openList$に$v_{next}$を追加
-            \STATE $v_{next}$の親を$v_{cur}$として記録
-        \ENDIF
-        \IF {$v_{next}\in openList \land f_{new}(v_{next}) < f(v_{next})$}
-            \STATE $f(v_{next}) \leftarrow f_{new}(v_{next})$
-            \STATE $openList$から$v_{next}$を削除し、再び$v_{next}$を追加することで、優先度を更新
-            \STATE $v_{next}$の親を$v_{cur}$として記録
-        \ENDIF
-        \IF {$v_{next}\in closedList \land f_{new}(v_{next}) < f(v_{next})$}
-            \STATE $f(v_{next}) \leftarrow f_{new}(v_{next})$
-            \STATE $closedList$から$openList$に$v_{next}$を移動
-            \STATE $v_{next}$の親を$v_{cur}$として記録
-        \ENDIF
-    \ENDFOR
-\ENDWHILE
-\STATE 初期状態から終了状態までのパスは存在しないと出力して終了
+\begin{algorithmic}[1]
+\State $openList$を見積もり値$f(v)$を優先度としたプライオリティーキューとして定義
+\State 初期ノード$v_0$を$openList$に追加。
+\State $closedList$をハッシュテーブルとして定義
+\While {$openList$が空ではない}
+    \State $v_{cur}$ $\leftarrow$ $openList$の中で $f(v_{cur})$が最も小さいノード
+    \State $openList$から$v_{cur}$を削除
+    \If {$v_{cur} \in 終了状態$}
+        \State $v_0$から$v_{cur}$までの遷移と、移動コスト$g(v_{cur})$を解として出力して終了
+    \EndIf
+    \State $closedList$に$v_{cur}$を追加
+    \For{each $v_{next}$ $\in$ $children(v_{cur})$ do}
+        \State $f_{new}(v_{next}) \leftarrow g(v_{cur}) + cost(v_{cur}, v_{next}) + h(v_{next})$
+        \If {$v_{next}\not\in openList \land v_{next}\not\in closedList$}
+            \State $f(v_{next}) \leftarrow f_{new}(v_{next})$ 
+            \State $openList$に$v_{next}$を追加
+            \State $v_{next}$の親を$v_{cur}$として記録
+        \EndIf
+        \If {$v_{next}\in openList \land f_{new}(v_{next}) < f(v_{next})$}
+            \State $f(v_{next}) \leftarrow f_{new}(v_{next})$
+            \State $openList$から$v_{next}$を削除し、再び$v_{next}$を追加することで、優先度を更新
+            \State $v_{next}$の親を$v_{cur}$として記録
+        \EndIf
+        \If {$v_{next}\in closedList \land f_{new}(v_{next}) < f(v_{next})$}
+            \State $f(v_{next}) \leftarrow f_{new}(v_{next})$
+            \State $closedList$から$openList$に$v_{next}$を移動
+            \State $v_{next}$の親を$v_{cur}$として記録
+        \EndIf
+    \EndFor
+\EndWhile
+\State 初期状態から終了状態までのパスは存在しないと出力して終了
 \end{algorithmic}
 \end{algorithm}
 \newpage
@@ -166,41 +174,83 @@ IDA*探索\cite{Korf 1985}はA*探索アルゴリズムのメモリ不足によ�
 \begin{algorithm}
 \caption{IDA*}
 \label{alg:pbnf}
-\begin{algorithmic}
-\STATE $limit_f \leftarrow 0$
-\WHILE {true}
-    \STATE $openList$を空のスタックとして初期化
-    \STATE 初期ノード$v_0$を$openList$に追加
-    \STATE $f_{next} \leftarrow \infty$
-    \STATE $f_{next}$は次回の$limit_f$更新時に利用される 
-    \WHILE {$openList$が空ではない}
-        \STATE $v_{cur}$ $\leftarrow$ $openList$から先頭ノードを取り出す
-        \STATE $openList$から$v_{cur}$を削除
-        \IF {$v_{cur} \in 終了状態$}
-            \STATE $v_0$から$v_{cur}$までの遷移と、移動コスト$g(v_{cur})$を解として出力して終了
-        \ENDIF
-        \FOR{each $v_{next}$ $\in$ $children(v_{cur})$ do}
-            \STATE $f_{new} \leftarrow g(v_{cur}) + cost(v_{cur}, v_{next}) + h(v_{next})$
-            \IF {$f_{new}(v_{next}) \leqq limit_f$}
-                \STATE $openList$に$v_{next}$を追加
-            \ELSE
-                \STATE $f_{next} \leftarrow min(f_{next}, f_{new})$
-            \ENDIF
-        \ENDFOR
-    \ENDWHILE
-    \STATE $update(limit_f)$
-\ENDWHILE
+\begin{algorithmic}[1]
+\State $limit_f \leftarrow 0$
+\While {true}
+    \State $openList$を空のスタックとして初期化
+    \State 初期ノード$v_0$を$openList$に追加
+    \State $f_{next} \leftarrow \infty$
+    \State $f_{next}$は次回の$limit_f$更新時に利用される 
+    \While {$openList$が空ではない}
+        \State $v_{cur}$ $\leftarrow$ $openList$から先頭ノードを取り出す
+        \State $openList$から$v_{cur}$を削除
+        \If {$v_{cur} \in 終了状態$}
+            \State $v_0$から$v_{cur}$までの遷移と、移動コスト$g(v_{cur})$を解として出力して終了
+        \EndIf
+        \For{each $v_{next}$ $\in$ $children(v_{cur})$ do}
+            \State $f_{new} \leftarrow g(v_{cur}) + cost(v_{cur}, v_{next}) + h(v_{next})$
+            \If {$f_{new}(v_{next}) \leqq limit_f$}
+                \State $openList$に$v_{next}$を追加
+            \Else
+                \State $f_{next} \leftarrow min(f_{next}, f_{new})$
+            \EndIf
+        \EndFor
+    \EndWhile
+    \State $update(limit_f)$
+\EndWhile
 \end{algorithmic}
 \end{algorithm}
 \newpage
 
 
+
 \chapter{GPUを使用した並列IDA*探索}
 \section{PSimple}
 
-\section{BLOCK PARALELL IDA*}
-GPUを使用したIDA*探索の並列化の一つにBlock-Parallel IDA*(BPIDA*)\cite{Horie17}がある。この手法では、同じBlockが1つのスタックを共有することでblock並列化を行っている。ブロックごとに並列化するメリットとしては、
+\section{Block Parallel IDA*}
+GPUを使用したIDA*探索の並列化の一つにBlock-Parallel IDA*(BPIDA*)\cite{Horie17}がある。この手法では、同じBlockが1つのスタックを共有することでblock並列化を行っている。一つのスタックを共有するため、スタックからノードを取り出す、および追加する操作はそれぞれ、並列に行わなければならない。特にスタックにノードを追加する操作、AtomicPutでは、スタックにロックをかけ、原子性を保ちながら行わなければならない。
 
+\newpage
+\begin{algorithm}
+\caption{Block Parallel IDA*}
+\label{alg:pbnf}
+\begin{algorithmic}[1]
+\Function{BPDFS}{$root, goals, limit_f$}
+    \State $openList$を空のスタックとして初期化し共有メモリにおく
+    \State 初期ノード$root$を$openList$に追加
+    \State $f_{next} \leftarrow \infty$
+    \State $f_{next}$は次回の$limit_f$更新時に利用される 
+    \While {$openList$が空ではない}
+        \State $v_{cur}$ $\leftarrow$ ${ParallelPop}(openList)$
+        \If {$v_{cur} \in goals$}
+            \State $root$から$v_{cur}$までの遷移と、移動コスト$g(v_{cur})$を解として出力して終了
+        \EndIf
+        \State $v_{next} \gets $$v_{cur}$を($threadId$を行為数で割った余り)番目の行為で遷移した時の状態
+        \State $f_{new} \leftarrow g(v_{cur}) + cost(v_{cur}, v_{next}) + h(v_{next})$
+        \If {$f_{new}(v_{next}) \leqq limit_f$}
+            \State ${AtomicPut}(openList, v_{next})$ \Comment{openListに$v_{next}$を原子性を保ちつつ追加}
+        \Else
+            \State $f_{next} \leftarrow min(f_{next}, f_{new})$
+        \EndIf
+    \EndWhile
+    \State $update(limit_f)$
+
+    \State \Return $a$
+\EndFunction
+\Function{BPIDA*}{$start, goals$}
+    \State $rootSet \gets {CreateRootSet}(start, goals)$
+    \State $limit_f \leftarrow {DecideFirstLimit}(rootSet)$
+    \While {最短距離が発見されるまで}
+        \ParallelForByBlocks{$each root \in rootSet do$}
+            \State $limit_f, stat \gets {BPDFS}(root, goals, limit_f)$
+        \EndParallelForByBlocks
+        \State $UpdateRootSet(rootSet, stat)$
+    \EndWhile
+\EndFunction
+
+\end{algorithmic}
+\end{algorithm}
+\newpage
 
 
 
@@ -283,6 +333,27 @@ BPIDA* (PDB) & 0.994512 \\
 BPIDA*GLOBAL (PDB) & 0.401973 \\ \hline
 \end{tabular}
 \end{table}
+
+\begin{table}[]
+\centering
+\caption{Table 1: Total Runtimes for 50 24-Puzzle Instances}
+\label{my-label}
+\begin{tabular}{|l|c|}
+\hline
+configuration & \multicolumn{1}{l|}{total runtime(seconds)} \\ \hline
+\multicolumn{2}{|l|}{CPU-based sequential algorithms} \\ \hline
+IDA* (manhattan distance) & 743.019 \\
+IDA* (PDB) & 1.4446 \\ \hline
+\multicolumn{2}{|l|}{GPU-based parallel algorithms} \\ \hline
+PSimple (manhattan distance) & 2106.27 \\
+PSimple (PDB) & 4.91605 \\
+BPIDA* (manhattan distance) & 674.521 \\
+BPIDA*GLOBAL (manhattan distance) & 124.586 \\
+BPIDA* (PDB) & 0.994512 \\
+BPIDA*GLOBAL (PDB) & 0.401973 \\ \hline
+\end{tabular}
+\end{table}
+
 \chapter{終わりに}
 \section{まとめ}
 
@@ -294,9 +365,8 @@ BPIDA*GLOBAL (PDB) & 0.401973 \\ \hline
   \bibitem{Burns et al. 2012} Burns, E. A.; Hatem, M.; Leighton,  M. J.; and Ruml, W. 2012. Implementing fast heuristic search code. In SOCS.
   \bibitem{BHLR12}Ethan Andrew Burns, Matthew Hatem, Michael J Leighton, and Wheeler Ruml. Implementing fast heuristic search code. In SOCS, 2012.
   \bibitem{Korf 1985}Korf, R. E. 1985. Depth-first iterativedeepening: An optimal admissible tree search. Artificial intelligence 27(1):97-109.
-  \bibitem{Korf and Felner 2002}Korf, R. E., and Felner, A. 2002.
-Disjoint pattern database heuristics. Articial intelli-
-gence 134(1):9-22.
+  \bibitem{Korf and Felner 2002}Korf, R. E., and Felner, A. 2002. Disjoint pattern database heuristics. Artificial intelligence 134(1):9-22.
+  \bibitem{HNR68}Peter E Hart, Nils J Nilsson, and Bertram Raphael. A formal basis for the heuristic determination of minimum cost paths. IEEE transactions on Systems Science and Cybernetics, Vol. 4, No. 2, pp. 100-107, 1968. 
 
 \end{thebibliography}
 %---------------------------------必須エリア-------------------------------%
