@@ -62,7 +62,13 @@ Iterative depth first A* search in GPU
 
 \chapter{序論}
 \section{研究の背景}
+本研究では、ヒューリスティック探索の一つであるIDA*探索\cite{Kor85}をGPUを利用した並列化手法についての研究に取り組んだ。
+IDA*探索についてGPUを利用した高速な並列アルゴリズムのひとつにBPIDA*探索\cite{HA17}がある。この手法では、IDA*探索を一つのブロックに対してノードを一つ割り当て、このノードを根とするf値制限深さ優先探索を行うことで、warp divergenceを隠蔽し、並列化を行った。これによって直列実行時と比べて5倍ほどのスピードアップに成功した。
 
+堀江らの研究\cite{HA17}におけるBPIDA*探索では、ヒューリスティック関数としてマンハッタン距離を使用し、これを共有メモリにおいて使用していた。共有メモリは、GPUカーネル側に置くことのできるオンチップメモリであり、カーネル側から高速にアクセスすることができる一方、そのメモリ容量は、64Kbyteと比較的小さい。
+
+ヒューリスティック探索の探索性能は、ヒューリスティック関数の精度に依存する。N-puzzle問題における、ヒューリスティック関数のうちマンハッタン距離より精度の高いものとして、パターンデータベースがあげられる。パターンデータベースは例えば$N=24$の時のN-puzzle問題では、250Mbyteほどの容量を必要とし、マンハッタン距離に比べ、かなり多くのメモリを使用する必要がある。共有メモリの大きさが64Kbyteであることを考慮すると、パターンデータベースをBPIDA*探索で使用するには、当然より大きなメモリ領域を使用しなければならない。
+本研究では、パターンデータベースを共有メモリよりも、容量が大きく、低速なグローバルメモリに置くことで、直列実行時のIDA*探索と、BPIDA*探索のスピードアップの比較を行った。これにより、共有メモリではなくグローバルメモリを使用することによる遅延がBPIDA*探索の探索時間にどのような変化をしめすのか検証した。
 
 \section{関連研究}
 
@@ -168,7 +174,7 @@ admissible
 \newpage
 
 \section{IDA*探索}
-IDA*探索\cite{Korf 1985}はA*探索アルゴリズムのメモリ不足による探索失敗を回避するために提案された手法である。空間計算量がエッジの数と比例するA*探索に対し、IDA*探索では探索の深さに対して線形を保つことができる。IDA*ではA*と同様にヒューリスティック関数によってyotte状態の評価を行い、展開の順序を決定するアルゴリズムである。
+IDA*探索\cite{Kor85}はA*探索アルゴリズムのメモリ不足による探索失敗を回避するために提案された手法である。空間計算量がエッジの数と比例するA*探索に対し、IDA*探索では探索の深さに対して線形を保つことができる。IDA*ではA*と同様にヒューリスティック関数によってyotte状態の評価を行い、展開の順序を決定するアルゴリズムである。
 
 \newpage
 \begin{algorithm}
@@ -209,6 +215,10 @@ IDA*探索\cite{Korf 1985}はA*探索アルゴリズムのメモリ不足によ�
 
 \section{Block Parallel IDA*}
 GPUを使用したIDA*探索の並列化の一つにBlock-Parallel IDA*(BPIDA*)\cite{Horie17}がある。この手法では、同じBlockが1つのスタックを共有することでblock並列化を行っている。一つのスタックを共有するため、スタックからノードを取り出す、および追加する操作はそれぞれ、並列に行わなければならない。特にスタックにノードを追加する操作、AtomicPutでは、スタックにロックをかけ、原子性を保ちながら行わなければならない。
+
+同一ブロック内の全てのスレッドが共有する一つのスタックが$openList$である。このスタックには二つの並列な操作、$parallelPop$と$atomicPut$を行う。$parallelPop$では、openListから1ブロック内のスレッド数を行為の数で割った数だけのノードを一度に取り出す。$atomicPut$では$v_{next}$を$openList$に同時に挿入する。この操作を行う際には、挿入をする前に$openList$にロックをかけ、挿入後そのロックを外すことで原子性をたもつ。
+BPDFS関数は標準的なf値制限深さ優先探索とにている。
+
 
 \newpage
 \begin{algorithm}
@@ -361,11 +371,11 @@ BPIDA*GLOBAL (PDB) & 0.401973 \\ \hline
 
 %-----------------------------参考文献記述エリア---------------------------%
 \begin{thebibliography}{10}
-  \bibitem{Horie17} Satoru Horie and Alex Fukunaga. Block-Parallel IDA* for GPUs. In SOCS, 2017 
+  \bibitem{HA17} Satoru Horie and Alex Fukunaga. Block-Parallel IDA* for GPUs. In SOCS, 2017 
   \bibitem{Burns et al. 2012} Burns, E. A.; Hatem, M.; Leighton,  M. J.; and Ruml, W. 2012. Implementing fast heuristic search code. In SOCS.
   \bibitem{BHLR12}Ethan Andrew Burns, Matthew Hatem, Michael J Leighton, and Wheeler Ruml. Implementing fast heuristic search code. In SOCS, 2012.
-  \bibitem{Korf 1985}Korf, R. E. 1985. Depth-first iterativedeepening: An optimal admissible tree search. Artificial intelligence 27(1):97-109.
-  \bibitem{Korf and Felner 2002}Korf, R. E., and Felner, A. 2002. Disjoint pattern database heuristics. Artificial intelligence 134(1):9-22.
+  \bibitem{Kor85}Korf, R. E. 1985. Depth-first iterativedeepening: An optimal admissible tree search. Artificial intelligence 27(1):97-109.
+  \bibitem{KF02}Korf, R. E., and Felner, A. 2002. Disjoint pattern database heuristics. Artificial intelligence 134(1):9-22.
   \bibitem{HNR68}Peter E Hart, Nils J Nilsson, and Bertram Raphael. A formal basis for the heuristic determination of minimum cost paths. IEEE transactions on Systems Science and Cybernetics, Vol. 4, No. 2, pp. 100-107, 1968. 
 
 \end{thebibliography}
