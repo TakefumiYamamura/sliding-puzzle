@@ -34,11 +34,11 @@
 \end{center}
 \bigskip\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip %7
 \begin{center} %8
-GPUを利用したIDA*探索について
+PDBを用いたGPU上の並列IDA*探索
 \end{center}
 \large %11
 \begin{center}
-Iterative depth first A* search in GPU
+Parallel IDA* search using PDB for GPUs 
 \end{center}
 \bigskip\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip
 \bigskip\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip
@@ -61,45 +61,52 @@ Iterative depth first A* search in GPU
 %---------------------------------本文エリア-------------------------------%
 
 \chapter{序論}
-\section{研究の背景}
+\section{研究の概要}
 本研究では、ヒューリスティック探索の一つであるIDA*探索\cite{Kor85}をGPUを利用した並列化手法についての研究に取り組んだ。
-IDA*探索についてGPUを利用した高速な並列アルゴリズムのひとつにBPIDA*探索\cite{HA17}がある。この手法では、IDA*探索を一つのブロックに対してノードを一つ割り当て、このノードを根とするf値制限深さ優先探索を行うことで、warp divergenceを隠蔽し、並列化を行った。これによって直列実行時と比べて5倍ほどのスピードアップに成功した。
+IDA*探索についてGPUを利用した高速な並列アルゴリズムのひとつにBPIDA*探索\cite{HA17}がある。この手法では、IDA*探索を一つのブロックに対してノードを一つ割り当て、このノードを根とするf値制限深さ優先探索を行うことで、warp divergenceを隠蔽し、高速な並列化を行った。これによって直列実行時と比べて5倍ほどのスピードアップに成功している。
 
 堀江らの研究\cite{HA17}におけるBPIDA*探索では、ヒューリスティック関数としてマンハッタン距離を使用し、これを共有メモリにおいて使用していた。共有メモリは、GPUカーネル側に置くことのできるオンチップメモリであり、カーネル側から高速にアクセスすることができる一方、そのメモリ容量は、64Kbyteと比較的小さい。
 
 ヒューリスティック探索の探索性能は、ヒューリスティック関数の精度に依存する。N-puzzle問題における、ヒューリスティック関数のうちマンハッタン距離より精度の高いものとして、パターンデータベースがあげられる。パターンデータベースは例えば$N=24$の時のN-puzzle問題では、250Mbyteほどの容量を必要とし、マンハッタン距離に比べ、かなり多くのメモリを使用する必要がある。共有メモリの大きさが64Kbyteであることを考慮すると、パターンデータベースをBPIDA*探索で使用するには、当然より大きなメモリ領域を使用しなければならない。
 本研究では、パターンデータベースを共有メモリよりも、容量が大きく、低速なグローバルメモリに置くことで、直列実行時のIDA*探索と、BPIDA*探索のスピードアップの比較を行った。これにより、共有メモリではなくグローバルメモリを使用することによる遅延がBPIDA*探索の探索時間にどのような変化をしめすのか検証した。
 
-\section{関連研究}
+% またこの検証結果を踏まえ、BPIDA*探索における共有メモリに置くことで一つのブロックで共有していたスタックをグローバルメモリへ移動させたところ、当初の予想と反し、5.41倍高速化を行うことができた。また同時にグローバルメモリに
 
 
-\section{本研究の目的}
-本研究の目的は２つある．
-\begin{enumerate}
-\item ぶらぶら
-\vspace{3mm}
-\newline
-ぶらぶらぶらぶらぶら
-\newline
+% \section{本研究の目的}
+% 本研究の目的はぶらぶらぶら
+% \begin{enumerate}
+% \item ぶらぶら
+% \vspace{3mm}
+% \newline
+% ぶらぶらぶらぶらぶら
+% \newline
 
-\item ぶらぶらぶら
-\vspace{3mm}
-\newline
-ぶらぶらぶらぶら
-\end{enumerate}
+% \item ぶらぶらぶら
+% \vspace{3mm}
+% \newline
+% ぶらぶらぶらぶら
+% \end{enumerate}
 
 
 \section{本論文の構成}
-本論文は以下の通りに構成される。2 章でDEの詳細と適応DE，アーカイブの使用例について説明する．3 章ではアーカイブの性能を多様性評価指標$r_s$，$r_f$の値をもとに調査する．4章ではアーカイブの改善を試みた二つの手法について説明する．5章では本研究における知見をまとめる．
+本論文は以下の通りに構成される。
+2章で、本研究の背景としてGPUおよび、GPU上でのプログラミングに必要なプラットフォームであるCUDAについての説明を行った後、本研究で取り扱うグラフ探索問題について問題の定義と、それを取り扱う古典的なアルゴリズムについて説明する。
+3章では、本研究と関連した先行研究について紹介をする。
+4章では、本研究においてベースラインとなる直列環境および並列環境における、先行研究についての再現実験について説明する。
+5章では、グローバルメモリにPattern Databaseをおいた直列環境および並列環境におけるIDA*探索について説明する。
+6章では、5章での知見をふまえ、共有メモリが大きな領域を確保した際にBPIDA*探索がどのような影響をうけるか説明する。
+7章では、本研究における知見をまとめる。
 
-\chapter{GPUとグラフ探索アルゴリズムについて}
+
+\chapter{GPUとグラフ探索アルゴリズム}
 \section{GPUとGPGPU}
 GPU(graphics processing unit)は2Dや3Dといったコンピューターグラフィックスの画像処理を行う為に従来使用され、それらの性能を向上することを追求してきた。
 GPUをグラフィックスのレンダリングのみならず、より汎用的な計算にも利用することを目的とした技術がGPGPU(General-purpose computing on graphics processing units)である。
 GPGPUが使われる分野として、物理シミュレーション、機械学習、音声処理、金融工学などのアプリケーションがあげられる。現代では、特に機械学習の需要が高まるとともに、欠かせない技術の一つとなっている。本論文では、GPUがどのような、アーキテクチャであるか、またGPGPUを行うためのプログラミングモデルの一つであるCUDAについての説明を行う。
 
 
-\subsection{GPUの構造}
+\subsection{GPUのメモリ構造}
 GPUの大きな特徴の一つとしてCPUとは、異なるメモリ構造があげられる。GPUのデバイス側で使われるメモリは大きくGPU側のオンチップメモリと、CPU側のオフチップメモリの2つに別れる。オンチップメモリの方が、カーネル側からは高速なアクセスが可能である一方、そのサイズは小さくなる。大容量であるメモリのほとんどは、CPU側のオンチップメモリに存在し、容量と引き換えに、高遅延となっている。
 変数のスコープやライフタイムについても、それぞれのメモリで異なり、これらの特徴をまとめると、以下の図のようになっている。GPUを使用したプログラミングでは、これらのメモリの特徴を踏まえた上で、適したメモリを選択することが、高速化の肝となる。
 特にグローバルメモリと共有メモリについては本論文において重要な役割を果たすため、紹介する。
@@ -214,9 +221,9 @@ IDA*探索\cite{Kor85}はA*探索アルゴリズムのメモリ不足による�
 \section{PSimple}
 
 \section{Block Parallel IDA*}
-GPUを使用したIDA*探索の並列化の一つにBlock-Parallel IDA*(BPIDA*)\cite{Horie17}がある。この手法では、同じBlockが1つのスタックを共有することでblock並列化を行っている。一つのスタックを共有するため、スタックからノードを取り出す、および追加する操作はそれぞれ、並列に行わなければならない。特にスタックにノードを追加する操作、AtomicPutでは、スタックにロックをかけ、原子性を保ちながら行わなければならない。
+GPUを使用したIDA*探索の並列化の一つにBlock-Parallel IDA*(BPIDA*)\cite{Horie17}がある。この手法では、同じBlockが1つのスタックを共有することでblock並列化を行っている。一つのスタックを共有するため、スタックからノードを取り出す、および追加する操作はそれぞれ、並列に行わなければならない。特にスタックにノードを追加する操作、AtomicPutでは、スタックにロックをかけ、原子性を保ちながら行う。
 
-同一ブロック内の全てのスレッドが共有する一つのスタックが$openList$である。このスタックには二つの並列な操作、$parallelPop$と$atomicPut$を行う。$parallelPop$では、openListから1ブロック内のスレッド数を行為の数で割った数だけのノードを一度に取り出す。$atomicPut$では$v_{next}$を$openList$に同時に挿入する。この操作を行う際には、挿入をする前に$openList$にロックをかけ、挿入後そのロックを外すことで原子性をたもつ。
+同一ブロック内の全てのスレッドが共有する一つのスタックが$sharedOpenList$である。このスタックには二つの並列な操作、$parallelPop$と$atomicPut$を行う。$parallelPop$では、sharedOpenListから1ブロック内のスレッド数を行為の数で割った数だけのノードを一度に取り出す。$atomicPut$では$v_{next}$を$sharedOpenList$に同時に挿入する。この操作を行う際には、挿入をする前に$sharedOpenList$にロックをかけ、挿入後そのロックを外すことで原子性をたもつ。
 BPDFS関数は標準的なf値制限深さ優先探索とにている。
 
 
@@ -226,19 +233,19 @@ BPDFS関数は標準的なf値制限深さ優先探索とにている。
 \label{alg:pbnf}
 \begin{algorithmic}[1]
 \Function{BPDFS}{$root, goals, limit_f$}
-    \State $openList$を空のスタックとして初期化し共有メモリにおく
-    \State 初期ノード$root$を$openList$に追加
+    \State $sharedOpenList$を空のスタックとして初期化し共有メモリにおく
+    \State 初期ノード$root$を$sharedOpenList$に追加
     \State $f_{next} \leftarrow \infty$
     \State $f_{next}$は次回の$limit_f$更新時に利用される 
-    \While {$openList$が空ではない}
-        \State $v_{cur}$ $\leftarrow$ ${ParallelPop}(openList)$
+    \While {$sharedOpenList$が空ではない}
+        \State $v_{cur}$ $\leftarrow$ ${ParallelPop}(sharedOpenList)$
         \If {$v_{cur} \in goals$}
             \State $root$から$v_{cur}$までの遷移と、移動コスト$g(v_{cur})$を解として出力して終了
         \EndIf
         \State $v_{next} \gets $$v_{cur}$を($threadId$を行為数で割った余り)番目の行為で遷移した時の状態
         \State $f_{new} \leftarrow g(v_{cur}) + cost(v_{cur}, v_{next}) + h(v_{next})$
         \If {$f_{new}(v_{next}) \leqq limit_f$}
-            \State ${AtomicPut}(openList, v_{next})$ \Comment{openListに$v_{next}$を原子性を保ちつつ追加}
+            \State ${AtomicPut}(sharedOpenList, v_{next})$ \Comment{openListに$v_{next}$を原子性を保ちつつ追加}
         \Else
             \State $f_{next} \leftarrow min(f_{next}, f_{new})$
         \EndIf
