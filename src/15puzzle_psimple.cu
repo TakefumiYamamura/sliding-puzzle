@@ -23,9 +23,12 @@ template <typename T> std::string tostr(const T& t)
 #define N 4
 #define N2 16
 #define STACK_LIMIT 64 * 8
-#define CORE_NUM 1536
 #define WARP_SIZE 32
-#define BLOCK_NUM 48
+// #define WARP_SIZE 1024
+// #define BLOCK_NUM 48
+#define BLOCK_NUM 2048
+#define CORE_NUM (BLOCK_NUM * WARP_SIZE)
+#define DEBUG
 
 using namespace std;
 
@@ -53,11 +56,11 @@ static const int order[4] = {1, 0, 2, 3};
  
 struct Node
 {
-    int puzzle[N2];
-    int space;
-    int md;
-    int depth;
-    int pre;
+    unsigned char puzzle[N2];
+    char space;
+    char md;
+    char depth;
+    char pre;
     bool operator < (const Node& n) const {
         return depth + md < n.depth + n.md;
     }
@@ -118,7 +121,7 @@ __constant__ int md[N2*N2];
 int ans;
 priority_queue<Node, vector<Node>, greater<Node> > pq;
 
-int get_md_sum(int *puzzle) {
+int get_md_sum(unsigned char *puzzle) {
     int sum = 0;
     for (int i = 0; i < N2; ++i)
     {
@@ -253,7 +256,6 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
     local_stack<Node, STACK_LIMIT> st;
     st.push(root_set[idx]);
 
-    int order[4] = {1, 0, 2, 3};
     int dx[4] = {0, -1, 0, 1};
     int dy[4] = {1, 0, -1, 0};
 
@@ -268,9 +270,8 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag) {
         if(cur_n.depth + cur_n.md > limit) continue;
         int s_x = cur_n.space / N;
         int s_y = cur_n.space % N;
-        for (int operator_order = 0; operator_order < 4; ++operator_order)
+        for (int i = 0; i < 4; ++i)
         {
-            int i = order[operator_order];
             Node next_n = cur_n;
             int new_x = s_x + dx[i];
             int new_y = s_y + dy[i];
@@ -357,11 +358,10 @@ void ida_star() {
 
  
 int main() {
-    // string output_file = "../result/korf100_psimple_result.csv";
-    // ofstream writing_file;
-    // writing_file.open(output_file, std::ios::out);
+    #ifdef DEBUG
     FILE *output_file;
     output_file = fopen("../result/korf100_psimple_result_50.csv","w");
+    #endif
 
     set_md();
     for (int i = 0; i < 50; ++i)
@@ -385,9 +385,11 @@ int main() {
         // clock_t end = clock();
         auto end = std::chrono::system_clock::now();
         auto diff = end - start;
+        #ifdef DEBUG
         fprintf(output_file,"%f\n", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / (double)1000000000.0);
-
-        // writing_file << (double)(end - start) / CLOCKS_PER_SEC << endl;
+        #endif
     }
+    #ifdef DEBUG
     fclose(output_file);
+    #endif
 }
