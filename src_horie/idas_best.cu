@@ -1409,6 +1409,7 @@ main(int argc, char *argv[])
                                             d_h_diff_table, d_movable_table);
         CUDA_CHECK(
             cudaGetLastError()); /* asm trap is called when find solution */
+        CUDA_CHECK(cudaDeviceSynchronize());
 
         CUDA_CHECK(cudaMemcpy(stat, d_stat, STAT_SIZE, cudaMemcpyDeviceToHost));
 
@@ -1445,7 +1446,7 @@ main(int argc, char *argv[])
                                        : (stat[i].loads - 1) / loads_av + 1;
 
             int buf_len_old = buf_len;
-            if (policy > 1 && stat[i].loads > 10)
+            if (policy > 1 && stat[i].loads > 10 && n_roots + increased < MAX_DISTRIBUTION)
                 increased += input_devide(input, stat, i, policy,
                                           n_roots + increased, &buf_len);
 
