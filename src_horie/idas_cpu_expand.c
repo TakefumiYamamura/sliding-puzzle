@@ -225,7 +225,7 @@ state_move(Direction dir)
 
 bool found;
 
-void bool
+void
 idas_internal(int f_limit, long long *ret_nodes_expanded)
 {
     uchar     dir            = 0;
