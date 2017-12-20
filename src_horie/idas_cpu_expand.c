@@ -299,7 +299,7 @@ idas_kernel(uchar *input)
         for (;; f_limit += 2)
         {
             nodes_expanded = 0;
-            found          = idas_internal(f_limit, &nodes_expanded);
+            idas_internal(f_limit, &nodes_expanded);
             printf("f_limit=%3d, expanded nodes = %lld\n", f_limit,
                    nodes_expanded);
 
