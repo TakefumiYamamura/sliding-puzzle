@@ -16,7 +16,10 @@
 #include <chrono>
 
 // #define DEBUG
+// #define TRAP
 // #define DFS
+#define SEARCH_ALL
+#define BEST
 
 template <typename T> std::string tostr(const T& t)
 {
@@ -30,7 +33,7 @@ template <typename T> std::string tostr(const T& t)
 #define MAX_BLOCK_SIZE 64535
 
 #define WARP_SIZE 32 
-#define THREAD_SIZE_PER_BLOCK 32
+#define THREAD_SIZE_PER_BLOCK 64
 #define BLOCK_NUM 2048
 #define CORE_NUM (BLOCK_NUM * THREAD_SIZE_PER_BLOCK)
 
@@ -183,6 +186,17 @@ bool create_root_set() {
     return false;
 }
 
+// __device__ static inline void
+// stack_put(Node *st, d_State *state, bool put)
+// {
+//     if (put)
+//     {
+//         unsigned int i = atomicInc( &stack->n, UINT_MAX); /* slow? especially in old CC environment */
+//         st = *state;
+//     }
+//     __syncthreads();
+// }
+
 __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_set) {
     // __shared__ int shared_md[N2*N2];
     // for (int i = threadIdx.x; i < N2*N2; i += blockDim.x)
@@ -190,7 +204,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_s
     //     shared_md[i] = md[i];
     // }
 
-    __syncthreads();
+    // __syncthreads();
 
     __shared__ Node st[STACK_LIMIT];
     __shared__ int index;
@@ -208,7 +222,11 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_s
     while(true) {
         bool stack_is_empty = (index <= -1);
         __syncthreads();
+        #ifdef SEARCH_ALL
+        if(stack_is_empty) break;
+        #else
         if(stack_is_empty || *dev_flag != -1) break;
+        #endif
         loop_count++;
 
         Node cur_n;
@@ -229,10 +247,17 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_s
         if(find_cur_n) {
             if(cur_n.md == 0) {
                 *dev_flag = cur_n.depth;
+                #ifdef TRAP
+                asm("trap;");
+                #endif
                 goto LOOP;
                 // return;
             }
+            #ifdef SEARCH_ALL
             if(cur_n.depth + cur_n.md > limit) goto LOOP;
+            #else
+            if(cur_n.depth + cur_n.md > limit || *dev_flag != -1) goto LOOP;
+            #endif
             int s_x = cur_n.space / N;
             int s_y = cur_n.space % N; 
             int i = threadIdx.x % 4; 
@@ -258,9 +283,16 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_s
             next_n.pre = i;
             if(next_n.md == 0) {
                 *dev_flag = next_n.depth;
+                #ifdef TRAP
+                asm("trap;");
+                #endif
                 //return;
                 goto LOOP;
             }
+            #ifdef BEST
+            int tmp = atomicAdd((int *)&index, 1);
+            st[tmp + 1] = next_n;
+            #else
             for (int j = 0; j < WARP_SIZE; ++j)
             {
                 if(j == (threadIdx.x % WARP_SIZE) ) {
@@ -268,14 +300,21 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_s
                     index++;
                     st[index] = next_n;
                     atomicExch(&mutex, 0);
-                    assert(index < STACK_LIMIT);
+                    // assert(index < STACK_LIMIT);
                 }
             }
+            #endif
 
         }
         LOOP:
 
+        #ifndef SEARCH_ALL
+        if(*dev_flag != -1) break;
+        #endif
+
+        // #ifndef BEST
         __syncthreads();
+        // #endif
     }
     loop_set[blockIdx.x] = loop_count; 
     return;
@@ -529,7 +568,7 @@ void ida_star() {
 int main() {
     #ifndef DEBUG
     FILE *output_file;
-    output_file = fopen("../result/korf100_block_parallel_result_with_staticlb_100_2048.csv","w");
+    output_file = fopen("../result/korf100_block_parallel_result_with_staticlb_100_2048_all_true.csv","w");
     #endif
 
     set_md();
