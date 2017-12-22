@@ -295,17 +295,17 @@ int main() {
     // string output_file = "../result/korf50_result.csv";
     pd = new PatternDataBase();
     // string output_file = "../result/yama24_result_pdb_wo_cuda.csv";
-    string output_file = "../result/yama24_med_result_pdb_expand.csv";
+    string output_file = "../result/yama24_hard_new_result_pdb_expand.csv";
     ofstream writing_file;
     writing_file.open(output_file, std::ios::out);
     // vector<int> test_array = {25, 32};
 //1, 5, 13, 25, 30, 32, 37, 38, 40, 44
-    for (int i = 0; i <= 50; ++i)
+    for (int i = 0; i < 50; ++i)
     // for (auto i : test_array)
     {
 // string input_file = "../benchmarks/korf50_24puzzle/";
 // string input_file = "../benchmarks/yama24_50/prob";
-        string input_file = "../benchmarks/yama24_50_med/prob";
+        string input_file = "../benchmarks/yama24_50_hard_new/prob";
         if(i < 10) {
         input_file += "00";
         } else if(i < 100) {
