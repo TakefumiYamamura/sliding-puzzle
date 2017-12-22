@@ -17,10 +17,12 @@
 
 #define DEBUG
 // #define DFS
+// #define FAKE
+// #define SHARED_ST
 // #define SHARED
-// #define USE_LOCK
 #define BEST
 #define SEARCH_ALL
+
 
 template <typename T> std::string tostr(const T& t)
 {
@@ -29,7 +31,9 @@ template <typename T> std::string tostr(const T& t)
  
 #define N 5
 #define N2 25
-#define STACK_LIMIT 76 * 4
+// #define STACK_LIMIT 5000
+#define STACK_LIMIT 76 * 16
+// #define STACK_LIMIT 16 * 17
 #define MAX_CORE_NUM 65000
 #define MAX_BLOCK_SIZE 64535
 // #define MAX_CORE_NUM 524288
@@ -112,6 +116,8 @@ int tmp_md[N2*N2];
 __constant__ int md[N2*N2];
 int ans;
 priority_queue<Node, vector<Node>, greater<Node> > pq;
+Node *global_st;
+Node *local_st;
 
 int get_md_sum(unsigned char *puzzle) {
     int sum = 0;
@@ -196,15 +202,8 @@ bool create_root_set() {
     return false;
 }
 
-#ifdef USE_LOCK
 
-__global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, Lock *lock, int *loop_set) {
-
-#else
-
-__global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_set) {
-
-#endif
+__global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_set, Node *global_st) {
     #ifdef SHARED
     __shared__ int shared_md[N2*N2];
     for (int i = threadIdx.x; i < N2*N2; i += blockDim.x)
@@ -215,11 +214,19 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_s
 
     __syncthreads();
 
-    __shared__ Node st[STACK_LIMIT];
+    #ifdef FAKE
+    __shared__ Node fake_st[STACK_LIMIT];
+    fake_st[0] = root_set[blockIdx.x];
+    #endif
+
+    #ifdef SHARED_ST
+    __shared__ Node sh_st[STACK_LIMIT];
+    sh_st[0] = root_set[blockIdx.x];
+    #endif
 
     __shared__ int index;
     index = 0;
-    st[0] = root_set[blockIdx.x];
+    global_st[blockIdx.x * STACK_LIMIT + 0] = root_set[blockIdx.x];
     #ifndef BEST 
     __shared__ int mutex;
     mutex = 0;
@@ -228,7 +235,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_s
     // if(threadIdx.x % 4 == 0) {
     //     index++;
     // printf("stack index : %d  root node index %d\n", threadIdx.x / 4, blockIdx.x * (WARP_SIZE / 4 ) + threadIdx.x / 4);
-    // st[threadIdx.x / 4] = root_set[blockIdx.x * (WARP_SIZE / 4 ) + threadIdx.x / 4];
+    // global_st[blockIdx.x * STACK_LIMIT + threadIdx.x / 4] = root_set[blockIdx.x * (WARP_SIZE / 4 ) + threadIdx.x / 4];
     // }
     __syncthreads();
 
@@ -251,7 +258,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_s
         bool find_cur_n = false;
         int cur_n_idx = index - (threadIdx.x / 4);
         if(cur_n_idx >= 0) {
-            cur_n = st[cur_n_idx];
+            cur_n = global_st[blockIdx.x * STACK_LIMIT + cur_n_idx];
             find_cur_n = true;
         }
 
@@ -305,14 +312,18 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_s
             }
             #ifdef BEST
             int tmp = atomicAdd((int *)&index, 1);
-            st[tmp + 1] = next_n;
+            global_st[blockIdx.x * STACK_LIMIT + tmp + 1] = next_n;
+            assert(index < STACK_LIMIT);
             #else
             for (int j = 0; j < WARP_SIZE; ++j)
             {
                 if(j == (threadIdx.x % WARP_SIZE) ) {
                     while( atomicCAS(&mutex, 0, 1 ) != 0 );
                     index++;
-                    st[index] = next_n;
+                    global_st[blockIdx.x * STACK_LIMIT + index] = next_n;
+                    #ifdef SHARED_ST
+                    sh_st[index] = next_n;
+                    #endif
                     atomicExch(&mutex, 0);
                     assert(index < STACK_LIMIT);
                 }
@@ -320,7 +331,6 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_s
             #endif
 
         }
-
 
         LOOP:
         __syncthreads();
@@ -453,8 +463,6 @@ void ida_star() {
         root_set[idx] = n;
         idx++;
     }
-
-
     for (int limit = s_node.md; limit < 100; ++limit, ++limit)
     {
         #ifdef DEBUG
@@ -478,15 +486,6 @@ void ida_star() {
         HANDLE_ERROR(cudaMalloc((void**)&dev_flag, sizeof(int)));
         cudaMemcpy(dev_flag, &flag, sizeof(int), cudaMemcpyHostToDevice);
 
-        #ifdef USE_LOCK
-        Lock    lock[BLOCK_NUM];
-        Lock    *dev_lock;
-        HANDLE_ERROR( cudaMalloc( (void**)&dev_lock,
-                              BLOCK_NUM * sizeof( Lock ) ) );
-        HANDLE_ERROR( cudaMemcpy( dev_lock, lock,
-                              BLOCK_NUM * sizeof( Lock ),
-                              cudaMemcpyHostToDevice ) );
-        #endif
 
         HANDLE_ERROR(cudaMalloc((void**)&dev_load_set, root_node_size * sizeof(int)));
         HANDLE_ERROR(cudaMemset(dev_load_set, 0, root_node_size * sizeof(int)));
@@ -495,11 +494,7 @@ void ida_star() {
         cout << "f_limit : " << limit << endl;
         #endif
 
-        #ifdef USE_LOCK
-        dfs_kernel<<<root_node_size, WARP_SIZE>>>(limit, dev_root_set, dev_flag, dev_lock, dev_load_set);
-        #else
-        dfs_kernel<<<root_node_size, WARP_SIZE>>>(limit, dev_root_set, dev_flag, dev_load_set);
-        #endif
+        dfs_kernel<<<root_node_size, WARP_SIZE>>>(limit, dev_root_set, dev_flag, dev_load_set, global_st);
 
 
         HANDLE_ERROR(cudaGetLastError());
@@ -509,13 +504,12 @@ void ida_star() {
 
         HANDLE_ERROR(cudaFree(dev_flag));
         HANDLE_ERROR(cudaFree(dev_root_set));
-        #ifdef USE_LOCK
-        HANDLE_ERROR(cudaFree(dev_lock));
-        #endif
+
         HANDLE_ERROR(cudaFree(dev_load_set));
 
         if(flag != -1) {
             cout << flag << endl;
+
             return;
         }
 
@@ -611,8 +605,13 @@ void ida_star() {
 int main() {
     #ifndef DEBUG
     FILE *output_file;
-    output_file = fopen("../result/yama24_med_block_parallel_result_with_staticlb_dfs_100_2048.csv","w");
+    output_file = fopen("../result/yama24_med_block_parallel_result_with_staticlb_dfs_100_2048_global.csv","w");
     #endif
+
+    local_st = (Node *)malloc(MAX_BLOCK_SIZE * STACK_LIMIT * sizeof(Node));
+    HANDLE_ERROR(cudaMalloc((void**)&global_st, MAX_BLOCK_SIZE * STACK_LIMIT * sizeof(Node) ) );
+    HANDLE_ERROR(cudaMemcpy(global_st, local_st, MAX_BLOCK_SIZE * STACK_LIMIT * sizeof(Node), cudaMemcpyHostToDevice) );
+    free(local_st);
 
     set_md();
     for (int i = 0; i < 50; ++i)
@@ -639,6 +638,7 @@ int main() {
         printf("%f\n", std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() / (double)1000000000.0);
         #endif
     }
+    HANDLE_ERROR(cudaFree(global_st));
 
     #ifndef DEBUG
     fclose(output_file);
