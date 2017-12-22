@@ -15,10 +15,12 @@
 #include <sstream>
 #include <chrono>
 
-// #define DEBUG
+#define DEBUG
 // #define DFS
 // #define SHARED
 // #define USE_LOCK
+#define BEST
+#define SEARCH_ALL
 
 template <typename T> std::string tostr(const T& t)
 {
@@ -68,11 +70,11 @@ static const int order[4] = {1, 0, 2, 3};
  
 struct Node
 {
-    int puzzle[N2];
-    int space;
-    int md;
-    int depth;
-    int pre;
+    unsigned char puzzle[N2];
+    char space;
+    char md;
+    char depth;
+    char pre;
     bool operator < (const Node& n) const {
         return (depth + md) < (n.depth + n.md);
     }
@@ -111,7 +113,7 @@ __constant__ int md[N2*N2];
 int ans;
 priority_queue<Node, vector<Node>, greater<Node> > pq;
 
-int get_md_sum(int *puzzle) {
+int get_md_sum(unsigned char *puzzle) {
     int sum = 0;
     for (int i = 0; i < N2; ++i)
     {
@@ -218,6 +220,10 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_s
     __shared__ int index;
     index = 0;
     st[0] = root_set[blockIdx.x];
+    #ifndef BEST 
+    __shared__ int mutex;
+    mutex = 0;
+    #endif
     // index = WARP_SIZE / 4 - 1;
     // if(threadIdx.x % 4 == 0) {
     //     index++;
@@ -234,7 +240,11 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_s
     while(true) {
         bool stack_is_empty = (index <= -1);
         __syncthreads();
+        #ifdef SEARCH_ALL
+        if(stack_is_empty) break;
+        #else
         if(stack_is_empty || *dev_flag != -1) break;
+        #endif
         loop_count++;
 
         Node cur_n;
@@ -293,33 +303,26 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_s
                 //return;
                 goto LOOP;
             }
+            #ifdef BEST
+            int tmp = atomicAdd((int *)&index, 1);
+            st[tmp + 1] = next_n;
+            #else
             for (int j = 0; j < WARP_SIZE; ++j)
             {
-                if(j == threadIdx.x) {
-                    // lock[blockIdx.x].lock();
-                    atomicAdd(&index, 1);
-                    // printf("%d:%d:%d\n", index, next_n.depth, next_n.pre);
+                if(j == (threadIdx.x % WARP_SIZE) ) {
+                    while( atomicCAS(&mutex, 0, 1 ) != 0 );
+                    index++;
                     st[index] = next_n;
-                    // lock[blockIdx.x].unlock();
+                    atomicExch(&mutex, 0);
+                    assert(index < STACK_LIMIT);
                 }
             }
+            #endif
 
         }
-        // for (int j = 0; j < WARP_SIZE; ++j)
-        // {
-        //     if(j == threadIdx.x) {
-        //         // lock[blockIdx.x].lock();
-        //         atomicAdd(&index, 1);
-        //         // printf("%d:%d:%d\n", index, next_n.depth, next_n.pre);
-        //         st[index] = next_n;
-        //         // lock[blockIdx.x].unlock();
-        //     }
-        // }
+
 
         LOOP:
-
-        // loop_count++;
-
         __syncthreads();
     }
     loop_set[blockIdx.x] = loop_count; 
@@ -612,7 +615,7 @@ int main() {
     #endif
 
     set_md();
-    for (int i = 0; i <= 50; ++i)
+    for (int i = 0; i < 50; ++i)
     {           
         string input_file = "../benchmarks/yama24_50_med/prob";
         if(i < 10) {
