@@ -19,6 +19,8 @@
 // #define DFS
 // #define SHARED
 // #define USE_LOCK
+#define BEST
+#define SEARCH_ALL
 
 template <typename T> std::string tostr(const T& t)
 {
@@ -28,7 +30,7 @@ template <typename T> std::string tostr(const T& t)
 #define N 5
 #define N2 25
 #define PDB_TABLESIZE 244140625
-#define STACK_LIMIT 55 * 4
+#define STACK_LIMIT 76 * 8
 #define MAX_CORE_NUM 65000
 #define MAX_BLOCK_SIZE 64535
 // #define MAX_CORE_NUM 524288
@@ -62,22 +64,22 @@ static void HandleError( cudaError_t err,
                                     __FILE__, __LINE__ ); \
                             exit( EXIT_FAILURE );}}
  
-static const int dx[4] = {0, -1, 0, 1};
-static const int dy[4] = {1, 0, -1, 0};
+static const char dx[4] = {0, -1, 0, 1};
+static const char dy[4] = {1, 0, -1, 0};
 // static const char dir[4] = {'r', 'u', 'l', 'd'}; 
-static const int order[4] = {1, 0, 2, 3};
+static const char order[4] = {1, 0, 2, 3};
 
-static __device__ __constant__ const int dev_rf[] = {0,5,10,15,20,1,6,11,16,21,2,7,12,17,22,3,8,13,18,23,4,9,14,19,24};
-static __device__ __constant__ const int dev_rot90[] = {20,15,10,5,0,21,16,11,6,1,22,17,12,7,2,23,18,13,8,3,24,19,14,9,4};
-static __device__ __constant__ const int dev_rot90rf[] = {20,21,22,23,24,15,16,17,18,19,10,11,12,13,14,5,6,7,8,9,0,1,2,3,4};
-static __device__ __constant__ const int dev_rot180[] = {24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0};
-static __device__ __constant__ const int dev_rot180rf[] = {24,19,14,9,4,23,18,13,8,3,22,17,12,7,2,21,16,11,6,1,20,15,10,5,0};
+static __device__ __constant__ const char dev_rf[] = {0,5,10,15,20,1,6,11,16,21,2,7,12,17,22,3,8,13,18,23,4,9,14,19,24};
+static __device__ __constant__ const char dev_rot90[] = {20,15,10,5,0,21,16,11,6,1,22,17,12,7,2,23,18,13,8,3,24,19,14,9,4};
+static __device__ __constant__ const char dev_rot90rf[] = {20,21,22,23,24,15,16,17,18,19,10,11,12,13,14,5,6,7,8,9,0,1,2,3,4};
+static __device__ __constant__ const char dev_rot180[] = {24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0};
+static __device__ __constant__ const char dev_rot180rf[] = {24,19,14,9,4,23,18,13,8,3,22,17,12,7,2,21,16,11,6,1,20,15,10,5,0};
 
-static  const int rf[] = {0,5,10,15,20,1,6,11,16,21,2,7,12,17,22,3,8,13,18,23,4,9,14,19,24};
-static  const int rot90[] = {20,15,10,5,0,21,16,11,6,1,22,17,12,7,2,23,18,13,8,3,24,19,14,9,4};
-static  const int rot90rf[] = {20,21,22,23,24,15,16,17,18,19,10,11,12,13,14,5,6,7,8,9,0,1,2,3,4};
-static  const int rot180[] = {24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0};
-static  const int rot180rf[] = {24,19,14,9,4,23,18,13,8,3,22,17,12,7,2,21,16,11,6,1,20,15,10,5,0};
+static  const char rf[] = {0,5,10,15,20,1,6,11,16,21,2,7,12,17,22,3,8,13,18,23,4,9,14,19,24};
+static  const char rot90[] = {20,15,10,5,0,21,16,11,6,1,22,17,12,7,2,23,18,13,8,3,24,19,14,9,4};
+static  const char rot90rf[] = {20,21,22,23,24,15,16,17,18,19,10,11,12,13,14,5,6,7,8,9,0,1,2,3,4};
+static  const char rot180[] = {24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0};
+static  const char rot180rf[] = {24,19,14,9,4,23,18,13,8,3,22,17,12,7,2,21,16,11,6,1,20,15,10,5,0};
 
 
 __device__ unsigned char dev_h0[PDB_TABLESIZE];
@@ -90,13 +92,13 @@ unsigned char h1[PDB_TABLESIZE];
 
 struct Node
 {
-    int puzzle[N2];
-    int inv_puzzle[N2];
-    int space;
-    // int md;
-    int h;
-    int depth;
-    int pre;
+    char puzzle[N2];
+    char inv_puzzle[N2];
+    char space;
+    // char md;
+    char h;
+    char depth;
+    char pre;
     bool operator < (const Node& n) const {
         return (depth + h) < (n.depth + n.h);
     }
@@ -147,15 +149,15 @@ public:
     void init();
     void input_h0(const char *filename);
     void input_h1(const char *filename);
-    unsigned int hash0(const int *inv);
-    unsigned int hash1(const int *inv);
-    unsigned int hash2(const int *inv);
-    unsigned int hash3(const int *inv);
-    unsigned int hashref0(const int *inv);
-    unsigned int hashref1(const int *inv);
-    unsigned int hashref2(const int *inv);
-    unsigned int hashref3(const int *inv);
-    unsigned int get_hash_value(const int *inv);
+    unsigned int hash0(const char *inv);
+    unsigned int hash1(const char *inv);
+    unsigned int hash2(const char *inv);
+    unsigned int hash3(const char *inv);
+    unsigned int hashref0(const char *inv);
+    unsigned int hashref1(const char *inv);
+    unsigned int hashref2(const char *inv);
+    unsigned int hashref3(const char *inv);
+    unsigned int get_hash_value(const char *inv);
     // unsigned char get_h0_value(int i);
     // unsigned char get_h1_value(int i);
 };
@@ -230,19 +232,19 @@ void PatternDataBase::input_h1(const char *filename) {
     fclose(infile);
 }
 
-unsigned int PatternDataBase::hash0(const int *inv) {
+unsigned int PatternDataBase::hash0(const char *inv) {
     int hashval;
     hashval = ((((inv[1]*N2+inv[2])*N2+inv[5])*N2+inv[6])*N2+inv[7])*N2+inv[12];
     return h0[hashval];
 }
 
-unsigned int PatternDataBase::hash1(const int *inv) {
+unsigned int PatternDataBase::hash1(const char *inv) {
     int hashval;
     hashval = ((((inv[3]*N2+inv[4])*N2+inv[8])*N2+inv[9])*N2+inv[13])*N2+inv[14];
     return (h1[hashval]);
 }
 
-unsigned int PatternDataBase::hash2(const int *inv) {
+unsigned int PatternDataBase::hash2(const char *inv) {
     int hashval;
     hashval = ((((rot180[inv[21]] * N2
               + rot180[inv[20]]) * N2
@@ -253,7 +255,7 @@ unsigned int PatternDataBase::hash2(const int *inv) {
     return (h1[hashval]);
 }
 
-unsigned int PatternDataBase::hash3(const int *inv) {
+unsigned int PatternDataBase::hash3(const char *inv) {
     int hashval;
     hashval = ((((rot90[inv[19]] * N2
               + rot90[inv[24]]) * N2
@@ -264,7 +266,7 @@ unsigned int PatternDataBase::hash3(const int *inv) {
     return (h1[hashval]);
 }
 
-unsigned int PatternDataBase::hashref0(const int *inv) {
+unsigned int PatternDataBase::hashref0(const char *inv) {
     int hashval;
     hashval = (((((rf[inv[5]] * N2
                + rf[inv[10]]) * N2
@@ -275,7 +277,7 @@ unsigned int PatternDataBase::hashref0(const int *inv) {
     return (h0[hashval]);
 }
 
-unsigned int PatternDataBase::hashref1(const int *inv) {
+unsigned int PatternDataBase::hashref1(const char *inv) {
     int hashval;
     hashval = (((((rf[inv[15]] * N2
                + rf[inv[20]]) * N2
@@ -285,7 +287,7 @@ unsigned int PatternDataBase::hashref1(const int *inv) {
            + rf[inv[22]]);
     return (h1[hashval]);
 }
-unsigned int PatternDataBase::hashref2(const int *inv) {
+unsigned int PatternDataBase::hashref2(const char *inv) {
     int hashval;
     hashval = (((((rot180rf[inv[9]] * N2
                + rot180rf[inv[4]]) * N2
@@ -296,7 +298,7 @@ unsigned int PatternDataBase::hashref2(const int *inv) {
     return (h1[hashval]);
 }
 
-unsigned int PatternDataBase::hashref3(const int *inv) {
+unsigned int PatternDataBase::hashref3(const char *inv) {
     int hashval;
     hashval = (((((rot90rf[inv[23]] * N2
                + rot90rf[inv[24]]) * N2
@@ -307,7 +309,7 @@ unsigned int PatternDataBase::hashref3(const int *inv) {
     return (h1[hashval]);
 }
 
-unsigned int PatternDataBase::get_hash_value(const int *inv) {
+unsigned int PatternDataBase::get_hash_value(const char *inv) {
     return max( hash0(inv) + hash1(inv) + hash2(inv) + hash3(inv), 
         hashref0(inv) + hashref1(inv) + hashref2(inv) + hashref3(inv) ); 
 }
@@ -329,15 +331,15 @@ class local_pdb
 //     unsigned char h1[PDB_TABLESIZE];
 public:
     local_pdb();
-    __device__ unsigned int hash0(const int *inv);
-    __device__ unsigned int hash1(const int *inv);
-    __device__ unsigned int hash2(const int *inv);
-    __device__ unsigned int hash3(const int *inv);
-    __device__ unsigned int hashref0(const int *inv);
-    __device__ unsigned int hashref1(const int *inv);
-    __device__ unsigned int hashref2(const int *inv);
-    __device__ unsigned int hashref3(const int *inv);
-    __device__ unsigned int get_hash_value(const int *inv);
+    __device__ unsigned int hash0(const char *inv);
+    __device__ unsigned int hash1(const char *inv);
+    __device__ unsigned int hash2(const char *inv);
+    __device__ unsigned int hash3(const char *inv);
+    __device__ unsigned int hashref0(const char *inv);
+    __device__ unsigned int hashref1(const char *inv);
+    __device__ unsigned int hashref2(const char *inv);
+    __device__ unsigned int hashref3(const char *inv);
+    __device__ unsigned int get_hash_value(const char *inv);
 
 };
 
@@ -347,19 +349,19 @@ local_pdb::local_pdb() {
 }
 
 
-__device__ unsigned int local_pdb::hash0(const int *inv) {
+__device__ unsigned int local_pdb::hash0(const char *inv) {
     int hashval;
     hashval = ((((inv[1]*N2+inv[2])*N2+inv[5])*N2+inv[6])*N2+inv[7])*N2+inv[12];
     return dev_h0[hashval];
 }
 
-__device__ unsigned int local_pdb::hash1(const int *inv) {
+__device__ unsigned int local_pdb::hash1(const char *inv) {
     int hashval;
     hashval = ((((inv[3]*N2+inv[4])*N2+inv[8])*N2+inv[9])*N2+inv[13])*N2+inv[14];
     return (dev_h1[hashval]);
 }
 
-__device__ unsigned int local_pdb::hash2(const int *inv) {
+__device__ unsigned int local_pdb::hash2(const char *inv) {
     int hashval;
     hashval = ((((dev_rot180[inv[21]] * N2
               + dev_rot180[inv[20]]) * N2
@@ -370,7 +372,7 @@ __device__ unsigned int local_pdb::hash2(const int *inv) {
     return (dev_h1[hashval]);
 }
 
-__device__ unsigned int local_pdb::hash3(const int *inv) {
+__device__ unsigned int local_pdb::hash3(const char *inv) {
     int hashval;
     hashval = ((((dev_rot90[inv[19]] * N2
               + dev_rot90[inv[24]]) * N2
@@ -381,7 +383,7 @@ __device__ unsigned int local_pdb::hash3(const int *inv) {
     return (dev_h1[hashval]);
 }
 
-__device__ unsigned int local_pdb::hashref0(const int *inv) {
+__device__ unsigned int local_pdb::hashref0(const char *inv) {
     int hashval;
     hashval = (((((dev_rf[inv[5]] * N2
                + dev_rf[inv[10]]) * N2
@@ -392,7 +394,7 @@ __device__ unsigned int local_pdb::hashref0(const int *inv) {
     return (dev_h0[hashval]);
 }
 
-__device__ unsigned int local_pdb::hashref1(const int *inv) {
+__device__ unsigned int local_pdb::hashref1(const char *inv) {
     int hashval;
     hashval = (((((dev_rf[inv[15]] * N2
                + dev_rf[inv[20]]) * N2
@@ -402,7 +404,7 @@ __device__ unsigned int local_pdb::hashref1(const int *inv) {
            + dev_rf[inv[22]]);
     return (dev_h1[hashval]);
 }
-__device__ unsigned int local_pdb::hashref2(const int *inv) {
+__device__ unsigned int local_pdb::hashref2(const char *inv) {
     int hashval;
     hashval = (((((dev_rot180rf[inv[9]] * N2
                + dev_rot180rf[inv[4]]) * N2
@@ -413,7 +415,7 @@ __device__ unsigned int local_pdb::hashref2(const int *inv) {
     return (dev_h1[hashval]);
 }
 
-__device__ unsigned int local_pdb::hashref3(const int *inv) {
+__device__ unsigned int local_pdb::hashref3(const char *inv) {
     int hashval;
     hashval = (((((dev_rot90rf[inv[23]] * N2
                + dev_rot90rf[inv[24]]) * N2
@@ -424,7 +426,7 @@ __device__ unsigned int local_pdb::hashref3(const int *inv) {
     return (dev_h1[hashval]);
 }
 
-__device__ unsigned int local_pdb::get_hash_value(const int *inv) {
+__device__ unsigned int local_pdb::get_hash_value(const char *inv) {
     return max( hash0(inv) + hash1(inv) + hash2(inv) + hash3(inv), 
         hashref0(inv) + hashref1(inv) + hashref2(inv) + hashref3(inv) ); 
 }
@@ -494,7 +496,7 @@ bool create_root_set() {
 #ifdef DEBUG
 __constant__ int md[N2*N2];
 int tmp_md[N2*N2];
-__device__ int get_md_sum(int *puzzle) {
+__device__ int get_md_sum(char *puzzle) {
     int sum = 0;
     for (int i = 0; i < N2; ++i)
     {
@@ -557,7 +559,11 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_s
     while(true) {
         bool stack_is_empty = (index <= -1);
         __syncthreads();
+        #ifdef SEARCH_ALL
+        if(stack_is_empty) break;
+        #else
         if(stack_is_empty || *dev_flag != -1) break;
+        #endif
         loop_count++;
 
         Node cur_n;
@@ -619,6 +625,11 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_s
                 //return;
                 goto LOOP;
             }
+            #ifdef BEST
+            int tmp = atomicAdd((int *)&index, 1);
+            global_st[blockIdx.x * STACK_LIMIT + tmp + 1] = next_n;
+            assert(index < STACK_LIMIT);
+            #else
             for (int j = 0; j < WARP_SIZE; ++j)
             {
                 if(j == threadIdx.x) {
@@ -629,6 +640,7 @@ __global__ void dfs_kernel(int limit, Node *root_set, int *dev_flag, int *loop_s
                     // lock[blockIdx.x].unlock();
                 }
             }
+            #endif
 
         }
 
@@ -922,7 +934,7 @@ void ida_star() {
 int main() {
     #ifndef DEBUG
     FILE *output_file;
-    output_file = fopen("../result/yama24_med_block_parallel_result_with_pdb_2048_global.csv","w");
+    output_file = fopen("../result/yama24_hard_new_block_parallel_result_with_pdb_2048_global.csv","w");
     #endif
 
     #ifdef DEBUG
@@ -944,9 +956,9 @@ int main() {
 
     HANDLE_ERROR(cudaMemcpyToSymbol(dev_h0, &h0, PDB_TABLESIZE * sizeof(unsigned char)));
     HANDLE_ERROR(cudaMemcpyToSymbol(dev_h1, &h1, PDB_TABLESIZE * sizeof(unsigned char)));
-    for (int i = 0; i <= 50; ++i)
+    for (int i = 0; i < 50; ++i)
     {           
-        string input_file = "../benchmarks/yama24_50_med/prob";
+        string input_file = "../benchmarks/yama24_50_hard_new/prob";
         if(i < 10) {
             input_file += "00";
         } else if(i < 100) {
