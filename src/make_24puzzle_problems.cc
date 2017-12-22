@@ -33,15 +33,22 @@ class Npuzzle
 {
 private:
 	ofstream writing_file;
+	vector<vector<int> > md;
+	int limit;
 
 public:
-	Npuzzle(string output_file);
+	Npuzzle(string output_file, int _limit);
 	void rand_proceed();
+	int get_md_sum(Node n);
+	void set_md();
 };
 
 
-Npuzzle::Npuzzle(string output_file) {
+Npuzzle::Npuzzle(string output_file, int _limit) {
 	writing_file.open(output_file, std::ios::out);
+	limit = _limit;
+	md = vector<vector<int> >(N2, vector<int>(N2, 0));
+	set_md();
 }
 
 void Npuzzle::rand_proceed() {
@@ -51,7 +58,7 @@ void Npuzzle::rand_proceed() {
 		cur.puzzle[i/N][i%N] = i;
 	}
 	cur.space = pair<int, int>(0, 0);
-	for (int i = 0; i < 100; ++i)
+	for (int i = 0; i < 150 || get_md_sum(cur) < limit; ++i)
 	{
 		int rnd = rand() % 4;
 		pair<int, int> next = pair<int, int>(cur.space.first + dx[rnd], cur.space.second + dy[rnd]);
@@ -60,6 +67,7 @@ void Npuzzle::rand_proceed() {
 		swap(cur.puzzle[cur.space.first][cur.space.second], cur.puzzle[next.first][next.second]);
 		cur.space = next;
 	}
+	cout << get_md_sum(cur) << " " << limit << endl;
 	for (int i = 0; i < N2; ++i)
 	{
 		writing_file << cur.puzzle[i/N][i%N] << " ";
@@ -67,12 +75,35 @@ void Npuzzle::rand_proceed() {
 	writing_file << endl;
 	writing_file.close();
 }
+void Npuzzle::set_md() {
+    for (int i = 0; i < N2; ++i)
+    {
+        for (int j = 0; j < N2; ++j)
+        {
+            md[i][j] = abs(i / N - j / N) + abs(i % N - j % N);
+        }
+    }
+}
+
+int Npuzzle::get_md_sum(Node n) {
+    int sum = 0;
+    for (int i = 0; i < N; ++i)
+    {
+    	for (int j = 0; j < N; ++j)
+    	{
+    		if(n.puzzle[i][j] == 0) continue;
+    		sum += md[i * N + j][n.puzzle[i][j]];
+    	}
+
+    }
+    return sum;
+}
 
 
 int main() {
-	for (int i = 1; i <= 50; ++i)
+	for (int i = 0; i <= 50; ++i)
 	{
-		string output_file = "../benchmarks/yama24_50/prob";
+		string output_file = "../benchmarks/yama24_50_hard/prob";
 		if(i < 10) {
 			output_file += "00";
 		} else if(i < 100) {
@@ -82,7 +113,7 @@ int main() {
 
 		cout << output_file << endl;
 
-		Npuzzle np = Npuzzle(output_file);
+		Npuzzle np = Npuzzle(output_file, 35 + i/5);
 		np.rand_proceed();
 	}
 }
