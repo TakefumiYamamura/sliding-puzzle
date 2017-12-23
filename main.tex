@@ -9,6 +9,7 @@
 \usepackage{supertabular}
 \usepackage{subfigure}
 \usepackage{lscape}
+\usepackage[toc,page]{appendix}
 
 % declaration of the new block
 \algblock{ParallelForByBlocks}{EndParallelForByBlocks}
@@ -357,6 +358,12 @@ N-puzzle問題は、Nが増えるにつれてその探索空間は大きくな�
 
 先行研究であるGPUにおけるIDA*探索のBlock並列化\cite{HA17}では$N=15$の時における15-puzzle問題が評価の対象として使用されていた。
 本研究では、探索空間が15-puzzle問題のおよそ$10^12$倍ほど大きく、より大きなスタック領域を必要とする24-puzzleを性能評価に使用する。
+\begin{figure}[htbp]
+\begin{center}
+\includegraphics[width=5cm, bb=0 0 300 400]{24puzzle.pdf}
+\caption{24-puzzle(http://mypuzzle.org/app/sliding/slide-5x5.jpgより引用)}
+\end{center}
+\end{figure}
 
 
 \subsection{実験の設定}
@@ -402,27 +409,6 @@ N-puzzle問題は、Nが増えるにつれてその探索空間は大きくな�
 
 % 自身の研究のベースラインとして、直列実行のIDA*探索のソルバ、Horieらの研究\cite{HA17}で提案されたPsimpleおよび、BPIDA*探索のソルバを作成した。Psimpleは並列IDA*探索の素朴な実装であり、プログラム開始時に根集合を一度だけ作成し、各スレッドに根集合から一つずつ根を割り当ててf値制限深さ優先探索を行う。このとき静的なロードバーランスや動的なロードバランスを何も行わないといったものである。
 
-
-
-
-\chapter{PDBをグローバルメモリにスタックをおいたBPIDA*探索の実装と評価}
-
-\subsection{評価}
-本実験では、前回の実験で用いた50問の24-puzzleの問題集を使用し、これを評価の対象として使用した。
-従来のBPIDA*探索では、共有メモリにおいていたスタック
-
-問題はおおむね難易度順に並んでいる。問題集については本論文の付録に追加する。マンハッタン距離をヒューリスティック関数に使用した、IDA*探索、およびBPIDA*探索\cite{HA17}のアルゴリズムを使用し、15-puzzleより探索空間の広い問題集を解くのに必要な実行時間がどれほどであるかを検証する。
-また実験ではAWSのGPUインスタンスであるg2.2xlargeインスタンスを使用した。CPUはIntel Xeon E5-2670であり、GPU
-は NVIDIA GRID K520を搭載している。GPU環境の要約は以下のとおりである。
-\begin{itemize}
- \item global RAM: 4GiB
- \item shared RAM/block: 48KiB
- \item CUDA cores: 1536
- \item warp size: 32
- \item GPU clock rate: 0.80GHz
-\end{itemize}
-
-\subsection{実験の結果}
 
 \chapter{Globalメモリを使用したBPIDA*探索と共有メモリの評価}
 
@@ -478,8 +464,29 @@ N-puzzle問題は、Nが増えるにつれてその探索空間は大きくな�
 \end{algorithm}
 \newpage
 
+\section{評価}
 
+
+\chapter{PDBをグローバルメモリにおいたBPIDA*探索の実装と評価}
 \section{patttern data base}
+
+\section{PDBを使用した並列IDA*探索について}
+\subsection{評価}
+本実験では、前回の実験で用いた50問の24-puzzleの問題集を使用し、これを評価の対象として使用した。
+従来のBPIDA*探索では、共有メモリにおいていたスタック
+
+問題はおおむね難易度順に並んでいる。問題集については本論文の付録に追加する。マンハッタン距離をヒューリスティック関数に使用した、IDA*探索、およびBPIDA*探索\cite{HA17}のアルゴリズムを使用し、15-puzzleより探索空間の広い問題集を解くのに必要な実行時間がどれほどであるかを検証する。
+また実験ではAWSのGPUインスタンスであるg2.2xlargeインスタンスを使用した。CPUはIntel Xeon E5-2670であり、GPU
+は NVIDIA GRID K520を搭載している。GPU環境の要約は以下のとおりである。
+\begin{itemize}
+ \item global RAM: 4GiB
+ \item shared RAM/block: 48KiB
+ \item CUDA cores: 1536
+ \item warp size: 32
+ \item GPU clock rate: 0.80GHz
+\end{itemize}
+
+\subsection{実験の結果}
 
 \section{}
 
@@ -550,10 +557,37 @@ BPIDA*GLOBAL (PDB) & 0.401973 \\ \hline
 \end{table}
 
 
+
+\chapter{終わりに}
+\section{まとめ}
+
+
+
+%-----------------------------参考文献記述エリア---------------------------%
+\begin{thebibliography}{10}
+  \bibitem{HA17} Satoru Horie and Alex Fukunaga. Block-Parallel IDA* for GPUs. In SOCS, 2017 
+  \bibitem{Burns et al. 2012} Burns, E. A.; Hatem, M.; Leighton,  M. J.; and Ruml, W. 2012. Implementing fast heuristic search code. In SOCS.
+  \bibitem{BHLR12}Ethan Andrew Burns, Matthew Hatem, Michael J Leighton, and Wheeler Ruml. Implementing fast heuristic search code. In SOCS, 2012.
+  \bibitem{Kor85}Korf, R. E. 1985. Depth-first iterativedeepening: An optimal admissible tree search. Artificial intelligence 27(1):97-109.
+  \bibitem{KF02}Korf, R. E., and Felner, A. 2002. Disjoint pattern database heuristics. Artificial intelligence 134(1):9-22.
+  \bibitem{HNR68}Peter E Hart, Nils J Nilsson, and Bertram Raphael. A formal basis for the heuristic determination of minimum cost paths. IEEE transactions on Systems Science and Cybernetics, Vol. 4, No. 2, pp. 100-107, 1968. 
+  \bibitem{Rus92}Russell, S. 1992. Efficient memory-bounded search methods. In Neumann, B. Proceedings of the 10th European Conference on Artificial intelligence. Vienna, Austria: John Wiley \& Sons, New York, NY. pp. 1–5.
+
+\end{thebibliography}
+
+\appendix
+\chapter{実験の詳細}
+今回、性能評価のために使用した、自己生成した24-puzzleの問題集の詳細および、それを解いた各種アルゴリズムの実行時間を付録に添付する。
+
+24-puzzleの問題集については、パズルの初期状態、最短経路、マンハッタン距離もしくはPDBをヒューリスティック関数に使用した際にIDA*探索が、全ての最短経路を見つけるのに必要な、展開ノードの数について表記する。
+
+
+
 \begin{table}[]
 \centering
 \caption{24-Puzzle problems}
 \label{my-label}
+\scalebox{0.6}{
 \begin{tabular}{|c|c|c|c|c|}
 \hline
 問題ID & 初期状態 & 最短経路　&　展開ノード数(マンハッタン距離)　& 展開ノード数(PDB) \\ \hline
@@ -608,25 +642,8 @@ BPIDA*GLOBAL (PDB) & 0.401973 \\ \hline
 48 & 11 6 1 9 3 7 2 12 4 13 5 0 15 8 14 10 20 19 22 18 17 23 16 21 24  & 61 & 41181598155 & 9787204 \\
 49 & 6 10 11 7 4 0 5 17 8 1 15 2 12 9 19 20 13 16 14 3 22 18 21 23 24  & 63 & 47946481385 & 147577959 \\ \hline
 \end{tabular}
+}
 \end{table}
-\chapter{終わりに}
-\section{まとめ}
 
 
-
-%-----------------------------参考文献記述エリア---------------------------%
-\begin{thebibliography}{10}
-  \bibitem{HA17} Satoru Horie and Alex Fukunaga. Block-Parallel IDA* for GPUs. In SOCS, 2017 
-  \bibitem{Burns et al. 2012} Burns, E. A.; Hatem, M.; Leighton,  M. J.; and Ruml, W. 2012. Implementing fast heuristic search code. In SOCS.
-  \bibitem{BHLR12}Ethan Andrew Burns, Matthew Hatem, Michael J Leighton, and Wheeler Ruml. Implementing fast heuristic search code. In SOCS, 2012.
-  \bibitem{Kor85}Korf, R. E. 1985. Depth-first iterativedeepening: An optimal admissible tree search. Artificial intelligence 27(1):97-109.
-  \bibitem{KF02}Korf, R. E., and Felner, A. 2002. Disjoint pattern database heuristics. Artificial intelligence 134(1):9-22.
-  \bibitem{HNR68}Peter E Hart, Nils J Nilsson, and Bertram Raphael. A formal basis for the heuristic determination of minimum cost paths. IEEE transactions on Systems Science and Cybernetics, Vol. 4, No. 2, pp. 100-107, 1968. 
-  \bibitem{Rus92}Russell, S. 1992. Efficient memory-bounded search methods. In Neumann, B. Proceedings of the 10th European Conference on Artificial intelligence. Vienna, Austria: John Wiley \& Sons, New York, NY. pp. 1–5.
-
-\end{thebibliography}
-%---------------------------------必須エリア-------------------------------%
 \end{document}
-
-
-%----------------------------ファイルはここまで----------------------------%
