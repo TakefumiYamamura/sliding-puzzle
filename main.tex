@@ -9,6 +9,7 @@
 \usepackage{supertabular}
 \usepackage{subfigure}
 \usepackage{lscape}
+\usepackage{url}
 \usepackage[toc,page]{appendix}
 
 % declaration of the new block
@@ -466,9 +467,32 @@ N-puzzle問題は、Nが増えるにつれてその探索空間は大きくな�
 
 \section{評価}
 
+\chapter{PDBを使用した並列IDA*探索}
+\section{patttern database}
+pattern database(PDB)\cite{CS98}とはN-puzzle問題を解く際のヒューリスティック関数の一つである。
+PDBでは、事前にN-puzzleをいくつかの部分問題として分割し、各グループに属するタイルが、終了状態の位置まで移動する際の最短経路を計算した表を作成する。
+各グループにおける最短経路の和をとることで、これが実際の移動コストの下界となり、admissibleなヒューリスティック値を示す。
+また各グループを1枚ずつのタイルとして分ける場合、これはマンハッタン距離を用いたヒューリスティックと同じとなる。より大きな状態空間を事前計算しておけば、PDBを用いたヒューリスティック関数の精度は上がる一方、必要となるメモリの量は増える。
 
-\chapter{PDBをグローバルメモリにおいたBPIDA*探索の実装と評価}
-\section{patttern data base}
+% それぞれの部分問題における最適解までの距離を事前に計算した表を用いて、
+本論文ではKorfらの研究\cite{KF02}で提案された24-puzzleにおけるPDBの分割方法を紹介する。
+Korfらの研究\cite{KF02}では図5.1の2種類の分割方法が提案された。この分割方法では各グループ6枚のタイルで4つのグループに24-puzzleを分割する。4つのグループのうち、3つは$2*3$の同じ形状の分割をしている。
+同じ形状の分割では、1つの表を使い回すことでヒューリスティック値を計算することが可能である。そのため、実質2つの形状の表を使用することで、それぞれの部分問題におけるヒューリスティック値を計算することが可能であり、必要なメモリを減らすことができる。
+
+また図5.1では2種類の分割方法であるが、これは片方の分割方法が、もう片方の分割方法の反射となっているため、同じく表を使うことでヒューリスティック値の計算が可能である。
+本論文におけるPDBの実装では、この2種類の分割方法で計算したヒューリスティック値のうち大きな方を採用することで、f値を計算した。
+
+
+
+
+
+\begin{figure}[htbp]
+\begin{center}
+\includegraphics[width=5cm, bb=0 0 300 400]{pdb.pdf}
+\caption{24-puzzleにおけるPDBの分割(\cite{PDB}より引用)}
+\end{center}
+\end{figure}
+
 
 \section{PDBを使用した並列IDA*探索について}
 \subsection{評価}
@@ -572,6 +596,8 @@ BPIDA*GLOBAL (PDB) & 0.401973 \\ \hline
   \bibitem{KF02}Korf, R. E., and Felner, A. 2002. Disjoint pattern database heuristics. Artificial intelligence 134(1):9-22.
   \bibitem{HNR68}Peter E Hart, Nils J Nilsson, and Bertram Raphael. A formal basis for the heuristic determination of minimum cost paths. IEEE transactions on Systems Science and Cybernetics, Vol. 4, No. 2, pp. 100-107, 1968. 
   \bibitem{Rus92}Russell, S. 1992. Efficient memory-bounded search methods. In Neumann, B. Proceedings of the 10th European Conference on Artificial intelligence. Vienna, Austria: John Wiley \& Sons, New York, NY. pp. 1–5.
+  \bibitem{CS98}Joseph C Culberson and Jonathan Schaeffer. Pattern databases. Computational Intelligence, Vol. 14, No. 3, pp. 318-334, 1998.
+  \bibitem{PDB}Ariel Felner1 and Amir Adler Solving the 24 Puzzle with Instance Dependent Pattern Databases, International Symposium on Abstraction, Reformulation, and Approximation SARA 2005: Abstraction, Reformulation and Approximation pp 248-260
 
 \end{thebibliography}
 
