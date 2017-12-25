@@ -68,7 +68,6 @@ int main() {
 	{
 		cout << probs[i].exec << " " << probs[i].id << endl;
 	}
-	// return 0;
 
 
 
