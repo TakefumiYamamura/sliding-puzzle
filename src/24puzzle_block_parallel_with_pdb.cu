@@ -31,7 +31,8 @@ template <typename T> std::string tostr(const T& t)
 #define N 5
 #define N2 25
 #define PDB_TABLESIZE 244140625
-#define STACK_LIMIT 76 * 8
+// #define STACK_LIMIT 76 * 8
+#define STACK_LIMIT 326
 #define MAX_CORE_NUM 65000
 #define MAX_BLOCK_SIZE 64535
 // #define MAX_CORE_NUM 524288
