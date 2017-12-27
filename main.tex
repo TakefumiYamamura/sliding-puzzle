@@ -388,7 +388,7 @@ N-puzzle問題は、Nが増えるにつれてその探索空間は大きくな�
 \begin{figure}[hbtp]
 \begin{center}
 \includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, scale=0.5]{result1.png}
-\caption{直列実行のIDA*とBPIDA*の実行時間の比較}
+\caption{IDA*CPUとBPIDA*の実行時間の比較}
 \end{center}
 \end{figure}
 
@@ -417,7 +417,7 @@ N-puzzle問題は、Nが増えるにつれてその探索空間は大きくな�
 
 % またHorieらの研究で実装されたBPIDA*探索のソルバをソルバBPIDA*(origin)とする。
 
-% 自身の研究のベースラインとして、直列実行のIDA*探索のソルバ、Horieらの研究\cite{HA17}で提案されたPsimpleおよび、BPIDA*探索のソルバを作成した。Psimpleは並列IDA*探索の素朴な実装であり、プログラム開始時に根集合を一度だけ作成し、各スレッドに根集合から一つずつ根を割り当ててf値制限深さ優先探索を行う。このとき静的なロードバーランスや動的なロードバランスを何も行わないといったものである。
+% 自身の研究のベースラインとして、IDA*CPU探索のソルバ、Horieらの研究\cite{HA17}で提案されたPsimpleおよび、BPIDA*探索のソルバを作成した。Psimpleは並列IDA*探索の素朴な実装であり、プログラム開始時に根集合を一度だけ作成し、各スレッドに根集合から一つずつ根を割り当ててf値制限深さ優先探索を行う。このとき静的なロードバーランスや動的なロードバランスを何も行わないといったものである。
 
 
 \chapter{Globalメモリを使用したBPIDA*探索と共有メモリの評価}
@@ -425,7 +425,7 @@ N-puzzle問題は、Nが増えるにつれてその探索空間は大きくな�
 \section{BPIDA*GLOBAL}
 従来のBPIDA*探索\cite{HA17}では、各ブロックごとにf値制限深さ優先探索を行う際、使用するスタックを共有メモリにおいた。本研究では、BPIDA*探索で使用するスタックを共有メモリではなく、グローバルメモリにおいた手法を提案する。共有メモリに比べ、グローバルメモリではメモリアクセスの遅延が大きいものの、そのメモリ容量は共有メモリよりはるかに大きな領域を確保できる。また前章でより探索空間の大きな問題においてBPIDA*探索で十分な高速化を行うことができなかった。
 
-% 本章では、前章までで提案したBPIDA*GLOBAL、およびBPIDA*、直列実行のIDA*であるソルバCに、pattern data baseを使用し、速度の比較を行った。
+% 本章では、前章までで提案したBPIDA*GLOBAL、およびBPIDA*、IDA*CPUであるソルバCに、pattern data baseを使用し、速度の比較を行った。
 % pattern data base はmanhattane距離より精度が高い一方、より大きなメモリを必要とする。mahattan距離のテーブルは共有メモリに乗せることが容易だが、pdb
 
 -スタックが足りなくなるような最適解までの深さ、状態表現の大きい問題も解くことが可能になる。
@@ -475,7 +475,7 @@ N-puzzle問題は、Nが増えるにつれてその探索空間は大きくな�
 \newpage
 
 \subsection{評価}
-図4.1は3章の実験の結果に50問の問題集を順に解いた際の、ソルアBPIDA*GLOBALの実行時間の結果を追加したものである。縦軸は秒単位の実行時間、横軸は問題の番号である。
+図4.1は3章の実験の結果にランダムに自作した50問の問題集を順に解いた際の、ソルバBPIDA*GLOBALの実行時間の結果を追加したものである。縦軸は秒単位の実行時間、横軸は問題の番号である。
 
 % ソルバIDA*(CPU)とソルバBPIDA*の実行時間を表したものである。
 50問の問題集を全て解くのにソルバBPIDA*GLOBALでは1321.75秒ほどかかった。これはソルバIDA*(CPU)の4.58倍、ソルバBPIDA*の1.25倍ほど高速である。
@@ -486,7 +486,7 @@ N-puzzle問題は、Nが増えるにつれてその探索空間は大きくな�
 \begin{figure}[hbtp]
 \begin{center}
 \includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, clip, scale=0.5]{result2.png}
-\caption{直列実行のIDA*、BPIDA*、BPIDA*GLOBALの実行時間の比較}
+\caption{IDA*CPU、BPIDA*、BPIDA*GLOBALの実行時間の比較}
 \end{center}
 \end{figure}
 
@@ -496,12 +496,30 @@ N-puzzle問題は、Nが増えるにつれてその探索空間は大きくな�
 
 \section{共有メモリの領域と、探索効率}
 \subsection{評価}
+図4.2は、自作した50問の問題集に対して、異なる大きさの領域を共有メモリに確保した際のBPIDA*GLOBALの実行時間である。縦軸は秒単位の実行時間、横軸は問題の番号である。
+
 \begin{figure}[hbtp]
 \begin{center}
 \includegraphics[keepaspectratio, width=7cm, bb=0 0 624 466, scale=0.5]{result3.png}
-\caption{直列実行のIDA*、BPIDA*、BPIDA*GLOBALの実行時間の比較}
+\caption{共有メモリに異なるサイズの領域を確保した際のBPIDA*GLOBALの実行時間の比較}
 \end{center}
 \end{figure}
+
+\begin{table}[]
+\centering
+\caption{Total Runtimes for 50 24-Puzzle Instances}
+\label{my-label}
+\begin{tabular}{|l|c|}
+\hline
+configuration & \multicolumn{1}{l|}{total runtime(seconds)} \\ \hline
+\multicolumn{2}{|l|}{GPU-based parallel algorithms} \\ \hline
+BPIDA*GLOBAL (4412byte) & 1822.08  \\
+BPIDA*GLOBAL (8820byte) &  3345.17 \\
+BPIDA*GLOBAL (13228byte) & 5401.92 \\
+BPIDA*GLOBAL (17636byte) & 8066.62 \\
+BPIDA*GLOBAL (35268byte) & 16104.5 \\ \hline
+\end{tabular}
+\end{table}
 
 \subsection{考察}
 
@@ -535,7 +553,39 @@ Korfらの研究\cite{KF02}では図5.1の2種類の分割方法が提案され�
 
 
 \section{PDBを使用した並列IDA*探索について}
-\subsection{評価}
+\section{評価}
+3章と同じ問題集、同じGPU環境を使用し、ヒューリスティック関数としてPDBを使用した際のBPIDA*探索、BPIDA*Global、CPU上でのIDA*探索の性能評価を行った。
+またそれぞれのソルバをソルバBPIDA*(PDB)、ソルバBPIDA*GLOBAL(PDB)、ソルバIDA*CPU(PDB)と呼ぶ。
+
+\subsection{実行時間の評価}
+
+図5.2はソルバBPIDA*(PDB)、ソルバBPIDA*GLOBAL(PDB)、ソルバIDA*CPU(PDB)の3つのソルバにおける問題ごとの実行時間のグラフである。縦軸は秒単位の実行時間、横軸は問題の番号を表す。
+
+50問の問題集を全て解くのにソルバIDA*CPU(PDB)では34.1312秒、ソルバBPIDA*(PDB)では16.2875秒、ソルバBPIDA*GLOBAL(PDB)では6.45871秒かかった。
+
+直列な実装であるソルバIDA*CPU(PDB)とそれぞれの並列アルゴリズムを比較すると、ソルバBPIDA*(PDB)がおよそ2.10倍、
+ソルバBPIDA*GLOBAL(PDB)がおよそ5.28倍高速である。
+
+\subsection{ヒューリスティック関数として、マンハッタン距離使用時とPDB使用時の実行時間の比較}
+
+
+
+図5.2はソルバBPIDA*(PDB)、ソルバBPIDA*GLOBAL(PDB)、ソルバIDA*CPU(PDB)の3つのソルバにおける問題ごとの実行時間のグラフである。縦軸は秒単位の実行時間、横軸は問題の番号を表す。
+
+50問の問題集を全て解くのにソルバIDA*CPU(PDB)では34.1312秒、ソルバBPIDA*(PDB)では16.2875秒、ソルバBPIDA*GLOBAL(PDB)では6.45871秒かかった。
+
+直列な実装であるソルバIDA*CPU(PDB)とそれぞれの並列アルゴリズムを比較すると、ソルバBPIDA*(PDB)がおよそ2.10倍、
+ソルバBPIDA*GLOBAL(PDB)がおよそ5.28倍高速である。
+
+
+\subsection{考察}
+
+
+またBPIDA*GLOBALでの共有メモリの使用量は4byteほどであった。これはグローバルメモリにおいたスタックにアクセスする際に、スタックのインデックスを共有メモリにおいたためである。
+これに対して、BPIDA*では固定長の配列をスタックとして共有メモリに置き、その用量は17636byteであった。
+
+
+
 本実験では、前回の実験で用いたものと同じ、50問の24-puzzleの問題集を使用し、PDBをヒューリスティック値に用いたBPIDA*探索、BPIDA*Global、CPU上でのIDA*探索の実行時間の計測を行った。
 
 これを評価の対象として使用した。
@@ -552,7 +602,53 @@ Korfらの研究\cite{KF02}では図5.1の2種類の分割方法が提案され�
  \item GPU clock rate: 0.80GHz
 \end{itemize}
 
-\subsection{実験の結果}
+
+\begin{figure}[hbtp]
+\begin{center}
+\includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, clip, scale=0.5]{result4.png}
+\caption{ヒューリスティック関数にPDBを使用したIDA*CPU、BPIDA*、BPIDA*GLOBALの実行時間の比較}
+\end{center}
+\end{figure}
+
+
+\begin{figure}[hbtp]
+\begin{center}
+\includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, clip, scale=0.5]{cpuPDBspeedup.png}
+\caption{ヒューリスティック関数にPDBを使用したIDA*CPU、BPIDA*、BPIDA*GLOBALの実行時間の比較}
+\end{center}
+\end{figure}
+
+
+\begin{figure}[hbtp]
+\begin{center}
+\includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, clip, scale=0.5]{bpidaPDBspeedup.png}
+\caption{ヒューリスティック関数にPDBを使用したIDA*CPU、BPIDA*、BPIDA*GLOBALの実行時間の比較}
+\end{center}
+\end{figure}
+
+\begin{figure}[hbtp]
+\begin{center}
+\includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, clip, scale=0.5]{bpidaglobalPDBspeedup.png}
+\caption{ヒューリスティック関数にPDBを使用したIDA*CPU、BPIDA*、BPIDA*GLOBALの実行時間の比較}
+\end{center}
+\end{figure}
+
+
+\begin{figure}[hbtp]
+\begin{center}
+\includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, clip, scale=0.5]{ratio1.png}
+\caption{ヒューリスティック関数にPDBを使用したIDA*CPU、BPIDA*、BPIDA*GLOBALの実行時間の比較}
+\end{center}
+\end{figure}
+
+\begin{figure}[hbtp]
+\begin{center}
+\includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, clip, scale=0.5]{ratio2.png}
+\caption{ヒューリスティック関数にPDBを使用したIDA*CPU、BPIDA*、BPIDA*GLOBALの実行時間の比較}
+\end{center}
+\end{figure}
+
+\subsection{考察}
 
 \section{}
 
@@ -625,7 +721,11 @@ BPIDA*GLOBAL (PDB) & 0.401973 \\ \hline
 
 
 \chapter{終わりに}
-\section{まとめ}
+\section{本研究の成果のまとめ}
+
+\section{今後の課題}
+今後の課題としては、以下のようなことが挙げられる。
+
 
 
 
