@@ -556,6 +556,7 @@ Korfらの研究\cite{KF02}では図5.1の2種類の分割方法が提案され�
 \section{評価}
 3章と同じ問題集、同じGPU環境を使用し、ヒューリスティック関数としてPDBを使用した際のBPIDA*探索、BPIDA*Global、CPU上でのIDA*探索の性能評価を行った。
 またそれぞれのソルバをソルバBPIDA*(PDB)、ソルバBPIDA*GLOBAL(PDB)、ソルバIDA*CPU(PDB)と呼ぶ。
+これらのソルバは最適解を全て探索するため、同じヒューリスティック関数を使用し同じ問題を解いた場合、展開順序にかかわらず、その時の展開ノードの数は等しくなる。
 
 \subsection{実行時間の評価}
 
@@ -569,13 +570,31 @@ Korfらの研究\cite{KF02}では図5.1の2種類の分割方法が提案され�
 \subsection{ヒューリスティック関数として、マンハッタン距離使用時とPDB使用時の実行時間の比較}
 
 
+% 図5.2はソルバBPIDA*(PDB)、ソルバBPIDA*GLOBAL(PDB)、ソルバIDA*CPU(PDB)の3つのソルバにおける問題ごとの実行時間のグラフである。縦軸は秒単位の実行時間、横軸は問題の番号を表す。
 
-図5.2はソルバBPIDA*(PDB)、ソルバBPIDA*GLOBAL(PDB)、ソルバIDA*CPU(PDB)の3つのソルバにおける問題ごとの実行時間のグラフである。縦軸は秒単位の実行時間、横軸は問題の番号を表す。
+% 50問の問題集を全て解くのにソルバIDA*CPU(PDB)では34.1312秒、ソルバBPIDA*(PDB)では16.2875秒、ソルバBPIDA*GLOBAL(PDB)では6.45871秒かかった。
 
-50問の問題集を全て解くのにソルバIDA*CPU(PDB)では34.1312秒、ソルバBPIDA*(PDB)では16.2875秒、ソルバBPIDA*GLOBAL(PDB)では6.45871秒かかった。
+% 直列な実装であるソルバIDA*CPU(PDB)とそれぞれの並列アルゴリズムを比較すると、ソルバBPIDA*(PDB)がおよそ2.10倍、
+% ソルバBPIDA*GLOBAL(PDB)がおよそ5.28倍高速である。
 
-直列な実装であるソルバIDA*CPU(PDB)とそれぞれの並列アルゴリズムを比較すると、ソルバBPIDA*(PDB)がおよそ2.10倍、
-ソルバBPIDA*GLOBAL(PDB)がおよそ5.28倍高速である。
+
+またマンハッタン距離を使用したソルバIDA*CPU
+図5.3、図5.4、図5.5はそれぞれ前章までの実験で測定したマンハッタン距離を使用したソルバIDA*CPU、ソルバBPIDA*GLOBAL、ソルバIDA*CPUの問題単位の実行時間を、PDBを用いたソルバIDA*CPU(PDB)、ソルバBPIDA*GLOBAL(PDB)、ソルバIDA*CPU(PDB)の問題単位の実行時間で割った割合を示している。
+これらをそれぞれcpuPDBspeedup、bpida*PDBspeedup、bpida*globalPDBspeedupと定義する。
+この三つは、マンハッタン距離使用時と比べ、PDBがどれほどそれぞれのアルゴリズムにおいて高速化を実現できるかを示す指標となる。
+
+図5.3のcpuPDBspeedupに注目すると、最も高速化した45番の問題では3997倍の高速化に成功してる。また概ね問題集の難易度が高くなる後半の問題ほど、高速化の割合は大きくなっている。
+
+図5.4のbpida*PDBspeedupに注目すると、最も高速化した問題は45番であり、4432倍の高速化である。直列実行時のcpuPDBspeedupと同様に、後半の難易度の高い問題で高速化の割合が大きくなっている。
+
+図5.5のbpida*globalPDBspeedupに注目すると、他のソルバと同様に最も高速化した問題は45番であり、2797倍である。前半の0~30番の問題では10~100倍ほどの高速化であるが、後半の40~49番の問題では、500~2800倍ほどの高速化に成功している。
+
+
+図5.6は各問題ごとに、bpida*PDBspeedupをcpuPDBspeedupで割った割合である。
+
+図5.7は各問題ごとに、bpida*globalPDBspeedupをcpuPDBspeedupで割った割合である。
+
+
 
 
 \subsection{考察}
@@ -606,55 +625,48 @@ Korfらの研究\cite{KF02}では図5.1の2種類の分割方法が提案され�
 \begin{figure}[hbtp]
 \begin{center}
 \includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, clip, scale=0.5]{result4.png}
-\caption{ヒューリスティック関数にPDBを使用したIDA*CPU、BPIDA*、BPIDA*GLOBALの実行時間の比較}
-\end{center}
-\end{figure}
-
-
-\begin{figure}[hbtp]
-\begin{center}
-\includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, clip, scale=0.5]{cpuPDBspeedup.png}
-\caption{ヒューリスティック関数にPDBを使用したIDA*CPU、BPIDA*、BPIDA*GLOBALの実行時間の比較}
-\end{center}
-\end{figure}
-
-
-\begin{figure}[hbtp]
-\begin{center}
-\includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, clip, scale=0.5]{bpidaPDBspeedup.png}
-\caption{ヒューリスティック関数にPDBを使用したIDA*CPU、BPIDA*、BPIDA*GLOBALの実行時間の比較}
+\caption{ヒューリスティック関数にPDBを使用したIDA*CPU、BPIDA*、BPIDA*GLOBALの問題ごとの実行時}
 \end{center}
 \end{figure}
 
 \begin{figure}[hbtp]
 \begin{center}
-\includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, clip, scale=0.5]{bpidaglobalPDBspeedup.png}
-\caption{ヒューリスティック関数にPDBを使用したIDA*CPU、BPIDA*、BPIDA*GLOBALの実行時間の比較}
+\includegraphics[keepaspectratio, width=5cm, bb=0 0 610 445, clip, scale=0.2]{cpuPDBspeedup.png}
+\caption{cpuPDBspeedup}
+\end{center}
+\end{figure}
+
+\begin{figure}[hbtp]
+\begin{center}
+\includegraphics[keepaspectratio, width=5cm, bb=0 0 610 445, clip, scale=0.2]{bpidaPDBspeedup.png}
+\caption{bpida*PDBspeedup}
+\end{center}
+\end{figure}
+
+\begin{figure}[hbtp]
+\begin{center}
+\includegraphics[keepaspectratio, width=5cm, bb=0 0 610 445, clip, scale=0.2]{bpidaglobalPDBspeedup.png}
+\caption{bpida*globalPDBspeedup}
 \end{center}
 \end{figure}
 
 
 \begin{figure}[hbtp]
+\begin{minipage}{0.5\hsize}
 \begin{center}
 \includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, clip, scale=0.5]{ratio1.png}
 \caption{ヒューリスティック関数にPDBを使用したIDA*CPU、BPIDA*、BPIDA*GLOBALの実行時間の比較}
 \end{center}
-\end{figure}
-
-\begin{figure}[hbtp]
+\end{minipage}
+\begin{minipage}{0.5\hsize}
 \begin{center}
 \includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, clip, scale=0.5]{ratio2.png}
 \caption{ヒューリスティック関数にPDBを使用したIDA*CPU、BPIDA*、BPIDA*GLOBALの実行時間の比較}
 \end{center}
+\end{minipage}
 \end{figure}
 
 \subsection{考察}
-
-\section{}
-
-
-
-
 
 
 
@@ -726,7 +738,21 @@ BPIDA*GLOBAL (PDB) & 0.401973 \\ \hline
 \section{今後の課題}
 今後の課題としては、以下のようなことが挙げられる。
 
+\subsection{N-puzzle以外の状態空間の問題への応用}
+堀江らの先行研究\cite{HA17}では、15-puzzleをbenchmarkとして使用していた。
+本研究では、24-puzzleをbenchamarkとして扱った。15-puzzleと比べて、24-puzzleの方が、探索空間ははるかに大きい一方、両者とも可能な遷移の数は同じ$2~4$である。BPIDA*探索は一つのブロックの中のスレッドの数を遷移の数で割った数だけ、オープンリストからノードを取り出す。そのため、遷移の数が異なる状態空間においては異なる性質や困難を持つかもしれない。
 
+
+\subsection{マルチGPUによる大規模並列化}
+本研究では一つのGPUにおけるBPIDA*探索のメモリの配置や、より大きなメモリを要するヒューリスティック関数を使用した際の探索性能についての調査を行った。現在このBPIDA*探索を複数のGPUをまたいだ上での手法は提案されていない。
+マルチGPUによる探索が可能になれば、より多くのブロック、より多くのスレッドを使用することができる。
+一方、マルチGPUでは、BPIDA*探索で行っていた根集合の分配など、GPUをまたいだ情報の共有によるオーバーヘッドが想定される。
+マルチGPUの強みを生かしつつ、情報共有のオーバーヘッドの少ないアルゴリズムを提案できればさらなる高速化を目指すことが可能ではと考えられる。
+
+\subsection{グローバルメモリを使用した並列IDA*における重複検出}
+本研究では、共有メモリにのせることの不可能なPDBをヒューリスティック関数をグローバルメモリにのせることで、探索性能を向上させることができた。
+また同様に、15-puzzleよりも大きな領域を必要とする24-puzzleにおいて、共有メモリにおいたスタックをグローバル領域に移すことで、探索性能の向上が可能であった。これらは、より良いヒューリスティック関数の使用や、l1キャッシュの領域を大きくすることによる高速化が、共有メモリではなく、グローバルメモリにアクセスすることによる遅延を隠蔽できることを示した。
+これらの知見をもとにすると、グローバルメモリを利用した重複検出による高速化が、グローバルメモリへのアクセスによる遅延を隠蔽し、さらなる高速化を行えるかもしれない。
 
 
 %-----------------------------参考文献記述エリア---------------------------%
