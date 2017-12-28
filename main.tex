@@ -530,8 +530,12 @@ BPIDA*で17636byteあった共有メモリの領域がBPIDA*GLOBALでは、4byte
 
 これらが、同じ領域の共有メモリを使用したソルバBPIDA*GLOBAL(18Kbyte)がソルバBPIDA*より遅延したことへの理由として言える。
 
-ソルバBPIDA*GLOBAL(4Kbyte)、ソルバBPIDA*GLOBAL(9Kbyte)、ソルバBPIDA*GLOBAL(13Kbyte)、ソルバBPIDA*GLOBAL(18Kbyte)、ソルバBPIDA*GLOBAL(35Kbyte)を比較すると、L1キャッシュの領域が減ることで探索効率が著しく劣化することが確認できる。これらのことから3章においてBPIDA*が十分な高速化を示すことができなかったことの一因としてとして共有メモリの使用領域が大きかったことが確かに言える。
+ソルバBPIDA*GLOBAL(4Kbyte)、ソルバBPIDA*GLOBAL(9Kbyte)、ソルバBPIDA*GLOBAL(13Kbyte)、ソルバBPIDA*GLOBAL(18Kbyte)、ソルバBPIDA*GLOBAL(35Kbyte)を比較すると、L1キャッシュの領域が減ることで探索効率が著しく劣化することが確認できる。
 
+ソルバBPIDA*と同程度の共有メモリを使用するソルバBPIDA*GLOBAL(18Kbyte)が、ソルバBPIDA*GLOBALより6.10倍遅くなっていることを見ると、3章においてBPIDA*が十分な高速化を示すことができなかったことの原因として共有メモリに置くスタックが増えたことが大きな原因であると言える。
+
+そのため、状態表現の大きな問題、最適解までの深さが大きく、共有メモリに大きなスタックを必要とする問題において、グローバルメモリにスタックを置くBPIDA*GLOBALが有効な手法であることが示せた。
+またBPIDA*GLOBALでは、共有メモリに収まりきらないほど大きなスタックもグロバールメモリにのせることができるため、BPIDA*探索では解くことのできなかった問題も解くことが可能になると考えられる。
 
 
 
