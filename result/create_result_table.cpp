@@ -18,7 +18,8 @@
 
 // #define RESULT1
 // #define RESULT2
-#define RESULT3
+// #define RESULT3
+#define RESULT4
 
 
 using namespace std;
@@ -43,6 +44,15 @@ int main() {
 	#endif
 
 	#ifdef RESULT3
+	ifstream ifs_cpu_pdb("yama24_hard_new_result_pdb_expand.csv");
+	ifstream ifs_bpida_pdb("yama24_hard_new_block_parallel_result_with_pdb_2048_dfs.csv");
+	ifstream ifs_bpida_global_pdb("yama24_hard_new_block_parallel_result_with_pdb_2048_global.csv");
+	#endif
+
+	#ifdef RESULT4
+	ifstream ifs_cpu("yama24_hard_new_expand_option_result.csv");
+	ifstream ifs_bpida("yama24_hard_new_block_parallel_result_with_staticlb_dfs_100_2048.csv");
+	ifstream ifs_bpida_global("yama24_hard_new_block_parallel_result_with_staticlb_dfs_100_2048_global.csv");
 	ifstream ifs_cpu_pdb("yama24_hard_new_result_pdb_expand.csv");
 	ifstream ifs_bpida_pdb("yama24_hard_new_block_parallel_result_with_pdb_2048_dfs.csv");
 	ifstream ifs_bpida_global_pdb("yama24_hard_new_block_parallel_result_with_pdb_2048_global.csv");
@@ -124,6 +134,29 @@ int main() {
 			writing_file << tmp << " \\\\" << endl;
 		}
 		#endif
+
+		#ifdef RESULT4
+		{
+			double tmp1, tmp2;
+			ifs_cpu >> tmp1;
+			ifs_cpu_pdb >> tmp2;
+			writing_file << tmp1 / tmp2 << " & ";
+		}
+
+		{
+			double tmp1, tmp2;
+			ifs_bpida >> tmp1;
+			ifs_bpida_pdb >> tmp2;
+			writing_file << tmp1 / tmp2 << " & ";
+		}
+
+		{
+			double tmp1, tmp2;
+			ifs_bpida_global >> tmp1;
+			ifs_bpida_global_pdb >> tmp2;
+			writing_file << tmp1 / tmp2 << " \\\\" << endl;
+		}
+		#endif
 	}
 	#ifdef RESULT1
 	ifs_cpu.close();
@@ -140,6 +173,15 @@ int main() {
 	#endif
 
 	#ifdef RESULT3
+	ifs_cpu_pdb.close();
+	ifs_bpida_pdb.close();
+	ifs_bpida_global_pdb.close();
+	#endif
+
+	#ifdef RESULT4
+	ifs_cpu.close();
+	ifs_bpida.close();
+	ifs_bpida_global.close();
 	ifs_cpu_pdb.close();
 	ifs_bpida_pdb.close();
 	ifs_bpida_global_pdb.close();
