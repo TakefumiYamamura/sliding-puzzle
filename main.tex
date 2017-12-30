@@ -21,6 +21,13 @@
 \algrenewtext{ParallelForByBlocks}[1]{\algorithmicparallelforbyblocks\ #1\ \algorithmicpardo}
 \algrenewtext{EndParallelForByBlocks}{\algorithmicendparallelforbyblocks}
 
+
+\algblock{ParallelForByThreads}{EndParallelForByThreads}
+\algnewcommand\algorithmicparallelforbythreads{\textbf{parallelForByThreads}}
+\algnewcommand\algorithmicendparallelforbythreads{\textbf{end\ parallelForByThreads}}
+\algrenewtext{ParallelForByThreads}[1]{\algorithmicparallelforbythreads\ #1\ \algorithmicpardo}
+\algrenewtext{EndParallelForByThreads}{\algorithmicendparallelforbythreads}
+
 \pagestyle{plain}
 \setlength{\textwidth}{\fullwidth}
 \setlength{\evensidemargin}{\oddsidemargin}
@@ -210,7 +217,7 @@ A*探索の問題点として、メモリ使用量の大きさがあげられる
 このような問題点を解決する手法として、後述のIDA*探索\cite{Kor85}、メモリが不足するとf値の大きなノードをオープンリストから消去して探索を行うSMA*探索\cite{Rus92}などがある。
 
 
-% \newpage
+\newpage
 \begin{algorithm}
 \caption{A*探索}
 \label{alg:pbnf}
@@ -259,6 +266,7 @@ IDA*探索の特徴として、メモリ使用量があげられる。空間計�
 これはA*探索が全ての探索済みの状態を保持したまま探索を進めていたのに対し、IDA*探索では、クローズドリストを用いず、重複展開を許容するためである。よってIDA*探索では、探索の深さに対して線形を保つことができ、A*探索ではメモリ不足で解けない問題においても解を発見することが可能である。
 一方、IDA*探索の欠点として、何度も同じ状態を展開するために、A*探索と比べて無駄な探索を行うことになってしまう。
 
+\newpage
 \begin{algorithm}
 \caption{IDA*探索}
 \label{alg:pbnf}
@@ -294,7 +302,59 @@ IDA*探索の特徴として、メモリ使用量があげられる。空間計�
 
 \chapter{24puzzle上でのBPIDA*探索について}
 \section{先行研究}
-\subsection{Block Parallel IDA*}
+堀江らの先行研究\cite{Horie17}では、GPUを使ったスレッドベースの並列化を行うParallel IDA*探索とブロックベースのBlock Parallel IDA*探索が提唱された。
+本節では、この二つ手法についてそれぞれ説明する。
+
+\subsection{Parallel IDA*}
+堀江らの研究\cite{Horie17}では、スレッドベースの並列化を行うParallel IDA*探索が
+
+\newpage
+\begin{algorithm}
+\caption{Parallel IDA*探索}
+\label{alg:pbnf}
+\begin{algorithmic}[1]
+\Function{DFS}{$root, goals, limit_f$}
+    \State $openList$を空のスタックとして初期化
+    \State 初期ノード$root$を$openList$に追加
+    \State $f_{next} \leftarrow \infty$
+    \State $f_{next}$は次回の$limit_f$更新時に利用される
+    \State ロードバランスを行うために探索の統計情報を$stat$として保持
+    \While {$openList$が空ではない}
+        \State $v_{cur}$ $\leftarrow$ ${ParallelPop}(openList)$
+        \If {$v_{cur} \in goals$}
+            \State $root$から$v_{cur}$までの遷移と、移動コスト$g(v_{cur})$を解として出力して終了
+        \EndIf
+        \If {$dynamic loab balance is triggered$}
+            \State $DynamicLoadBalance(stat)$
+        \EndIf
+        \For{each $v_{next}$ $\in$ $children(v_{cur})$ do}
+            \State $f_{new} \leftarrow g(v_{cur}) + cost(v_{cur}, v_{next}) + h(v_{next})$
+            \If {$f_{new}(v_{next}) \leqq limit_f$}
+                \State $openList$に$v_{next}$を追加
+            \Else
+                \State $f_{next} \leftarrow min(f_{next}, f_{new})$
+            \EndIf
+        \EndFor
+    \EndWhile
+    \State \Return $f_next, stat$
+\EndFunction
+\Function{Parallel IDA*}{$start, goals$}
+    \State $rootSet \gets {CreateRootSet}(start, goals)$
+    \State $limit_f \leftarrow {DecideFirstLimit}(rootSet)$
+    \While {最短距離が発見されるまで}
+        \ParallelForByThreads{$each root \in rootSet do$}
+            \State $limit_f, stat \gets {DFS}(root, goals, limit_f)$
+        \EndParallelForByThreads
+        \State $UpdateRootSet(rootSet, stat)$
+    \EndWhile
+\EndFunction
+
+\end{algorithmic}
+\end{algorithm}
+\newpage
+
+
+\subsection{Block Parallel IDA*探索}
 GPUを使用したIDA*探索の並列化の一つにBlock-Parallel IDA*(BPIDA*)\cite{Horie17}がある。この手法では、同じBlockが1つのスタックを共有することでblock並列化を行っている。一つのスタックを共有するため、スタックからノードを取り出す、および追加する操作はそれぞれ、並列に行わなければならない。特にスタックにノードを追加する操作、AtomicPutでは、スタックにロックをかけ、原子性を保ちながら行う。
 
 同一ブロック内の全てのスレッドが共有する一つのスタックが$sharedOpenList$である。このスタックには二つの並列な操作、$parallelPop$と$atomicPut$を行う。$parallelPop$では、sharedOpenListから1ブロック内のスレッド数を行為の数で割った数だけのノードを一度に取り出す。$atomicPut$では$v_{next}$を$sharedOpenList$に同時に挿入する。この操作を行う際には、挿入をする前に$sharedOpenList$にロックをかけ、挿入後そのロックを外すことで原子性をたもつ。
@@ -305,7 +365,7 @@ BPDFS関数は標準的なf値制限深さ優先探索とにている。
 
 \newpage
 \begin{algorithm}
-\caption{Block Parallel IDA*}
+\caption{Block Parallel IDA*探索}
 \label{alg:pbnf}
 \begin{algorithmic}[1]
 \Function{BPDFS}{$root, goals, limit_f$}
@@ -326,9 +386,7 @@ BPDFS関数は標準的なf値制限深さ優先探索とにている。
             \State $f_{next} \leftarrow min(f_{next}, f_{new})$
         \EndIf
     \EndWhile
-    \State $update(limit_f)$
-
-    \State \Return $a$
+    \State \Return $f_next, stat$
 \EndFunction
 \Function{BPIDA*}{$start, goals$}
     \State $rootSet \gets {CreateRootSet}(start, goals)$
@@ -391,6 +449,20 @@ N-puzzle問題は、Nが増えるにつれてその探索空間は大きくな�
 \caption{IDA*CPUとBPIDA*の実行時間の比較}
 \end{center}
 \end{figure}
+
+\begin{table}[]
+\centering
+\caption{Total Runtimes for 50 24-Puzzle Instances}
+\label{my-label}
+\begin{tabular}{|l|c|}
+\hline
+configuration & \multicolumn{1}{l|}{total runtime(seconds)} \\ \hline
+\multicolumn{2}{|l|}{CPU-based sequential algorithms} \\ \hline
+IDA*(CPU) & 6050.81 \\ \hline
+\multicolumn{2}{|l|}{GPU-based parallel algorithms} \\ \hline
+BPIDA* & 4854.75 \\ \hline
+\end{tabular}
+\end{table}
 
 
 \subsection{考察}
@@ -490,6 +562,22 @@ N-puzzle問題は、Nが増えるにつれてその探索空間は大きくな�
 \end{center}
 \end{figure}
 
+\begin{table}[]
+\centering
+\caption{Total Runtimes for 50 24-Puzzle Instances}
+\label{my-label}
+\begin{tabular}{|l|c|}
+\hline
+configuration & \multicolumn{1}{l|}{total runtime(seconds)} \\ \hline
+\multicolumn{2}{|l|}{CPU-based sequential algorithms} \\ \hline
+IDA*(CPU) & 6050.81 \\ \hline
+\multicolumn{2}{|l|}{GPU-based parallel algorithms} \\ \hline
+BPIDA* & 4854.75 \\
+BPIDA* & 1321.75 \\  \hline
+\end{tabular}
+\end{table}
+
+
 \subsection{考察}
 BPIDA*で17636byteあった共有メモリの領域がBPIDA*GLOBALでは、4byteに減った。これは、共有メモリが減ったことで、共有メモリと64Kbyteの領域を共有するL1キャッシュの領域が増えたことを意味する。L1キャッシュは、グローバルメモリやレジスタへのアクセスを隠蔽できる。そのため、共有メモリの領域が減ったことはBPIDA*GLOBALの探索性能の向上に寄与できると考えられる。
 
@@ -534,8 +622,9 @@ BPIDA*で17636byteあった共有メモリの領域がBPIDA*GLOBALでは、4byte
 
 ソルバBPIDA*と同程度の共有メモリを使用するソルバBPIDA*GLOBAL(18Kbyte)が、ソルバBPIDA*GLOBALより6.10倍遅くなっていることを見ると、3章においてBPIDA*が十分な高速化を示すことができなかったことの原因として共有メモリに置くスタックが増えたことが大きな原因であると言える。
 
-そのため、状態表現の大きな問題、最適解までの深さが大きく、共有メモリに大きなスタックを必要とする問題において、グローバルメモリにスタックを置くBPIDA*GLOBALが有効な手法であることが示せた。
-またBPIDA*GLOBALでは、共有メモリに収まりきらないほど大きなスタックもグロバールメモリにのせることができるため、BPIDA*探索では解くことのできなかった問題も解くことが可能になると考えられる。
+そのため、状態表現の大きな問題、最適解までの深さが大きく、共有メモリに大きなスタックを必要とする問題において、グローバルメモリにスタックを置くBPIDA*GLOBAL探索が有効な手法であることが示せた。
+またBPIDA*GLOBAL探索では、共有メモリに収まりきらないほど大きなスタックもグロバールメモリにのせることができるため、BPIDA*探索では解くことのできなかった問題も解くことが可能になると考えられる。
+
 
 
 
@@ -554,7 +643,7 @@ BPIDA*で17636byteあった共有メモリの領域がBPIDA*GLOBALでは、4byte
 \hline
 configuration & \multicolumn{1}{l|}{total runtime(seconds)} \\ \hline
 \multicolumn{2}{|l|}{GPU-based parallel algorithms} \\ \hline
-BPIDA*GLOBAL (4byte)    & 1321.75  \\
+BPIDA*GLOBAL    & 1321.75  \\
 BPIDA*GLOBAL (4412byte) & 1822.08  \\
 BPIDA*GLOBAL (8820byte) &  3345.17 \\
 BPIDA*GLOBAL (13228byte) & 5401.92 \\
@@ -754,7 +843,7 @@ BPIDA*GLOBAL (PDB) & 0.401973 \\ \hline
 
 \begin{table}[]
 \centering
-\caption{Table 1: Total Runtimes for 50 24-Puzzle Instances}
+\caption{Total Runtimes for 50 24-Puzzle Instances}
 \label{my-label}
 \begin{tabular}{|l|c|}
 \hline
