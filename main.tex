@@ -10,6 +10,7 @@
 \usepackage{subfigure}
 \usepackage{lscape}
 \usepackage{url}
+\usepackage{here}
 \usepackage[toc,page]{appendix}
 
 % declaration of the new block
@@ -20,6 +21,13 @@
 \algnewcommand\algorithmicendparallelforbyblocks{\textbf{end\ parallelForByBlocks}}
 \algrenewtext{ParallelForByBlocks}[1]{\algorithmicparallelforbyblocks\ #1\ \algorithmicpardo}
 \algrenewtext{EndParallelForByBlocks}{\algorithmicendparallelforbyblocks}
+
+
+\algblock{ParallelForByThreads}{EndParallelForByThreads}
+\algnewcommand\algorithmicparallelforbythreads{\textbf{parallelForByThreads}}
+\algnewcommand\algorithmicendparallelforbythreads{\textbf{end\ parallelForByThreads}}
+\algrenewtext{ParallelForByThreads}[1]{\algorithmicparallelforbythreads\ #1\ \algorithmicpardo}
+\algrenewtext{EndParallelForByThreads}{\algorithmicendparallelforbythreads}
 
 \pagestyle{plain}
 \setlength{\textwidth}{\fullwidth}
@@ -75,20 +83,6 @@ IDA*探索についてGPUを利用した高速な並列アルゴリズムのひ�
 
 またこの検証結果を踏まえ、共有メモリに異なる大きさの記憶領域を確保した際に、探索効率がどのように変わるのか、より詳細な検証を行った。
 
-% \section{本研究の目的}
-% 本研究の目的はぶらぶらぶら
-% \begin{enumerate}
-% \item ぶらぶら
-% \vspace{3mm}
-% \newline
-% ぶらぶらぶらぶらぶら
-% \newline
-
-% \item ぶらぶらぶら
-% \vspace{3mm}
-% \newline
-% ぶらぶらぶらぶら
-% \end{enumerate}
 
 
 \section{本論文の構成}
@@ -210,7 +204,7 @@ A*探索の問題点として、メモリ使用量の大きさがあげられる
 このような問題点を解決する手法として、後述のIDA*探索\cite{Kor85}、メモリが不足するとf値の大きなノードをオープンリストから消去して探索を行うSMA*探索\cite{Rus92}などがある。
 
 
-% \newpage
+\newpage
 \begin{algorithm}
 \caption{A*探索}
 \label{alg:pbnf}
@@ -259,6 +253,7 @@ IDA*探索の特徴として、メモリ使用量があげられる。空間計�
 これはA*探索が全ての探索済みの状態を保持したまま探索を進めていたのに対し、IDA*探索では、クローズドリストを用いず、重複展開を許容するためである。よってIDA*探索では、探索の深さに対して線形を保つことができ、A*探索ではメモリ不足で解けない問題においても解を発見することが可能である。
 一方、IDA*探索の欠点として、何度も同じ状態を展開するために、A*探索と比べて無駄な探索を行うことになってしまう。
 
+\newpage
 \begin{algorithm}
 \caption{IDA*探索}
 \label{alg:pbnf}
@@ -293,19 +288,105 @@ IDA*探索の特徴として、メモリ使用量があげられる。空間計�
 
 
 \chapter{24puzzle上でのBPIDA*探索について}
-\section{先行研究}
-\subsection{Block Parallel IDA*}
-GPUを使用したIDA*探索の並列化の一つにBlock-Parallel IDA*(BPIDA*)\cite{Horie17}がある。この手法では、同じBlockが1つのスタックを共有することでblock並列化を行っている。一つのスタックを共有するため、スタックからノードを取り出す、および追加する操作はそれぞれ、並列に行わなければならない。特にスタックにノードを追加する操作、AtomicPutでは、スタックにロックをかけ、原子性を保ちながら行う。
+\section{GPUを使った並列IDA*探索における先行研究}
+堀江らの先行研究\cite{HA17}では、GPUを使ったスレッドベースの並列化を行うParallel IDA*探索とブロックベースのBlock Parallel IDA*探索が提唱された。
+本節では、この二つ手法についてそれぞれ説明する。
 
-同一ブロック内の全てのスレッドが共有する一つのスタックが$sharedOpenList$である。このスタックには二つの並列な操作、$parallelPop$と$atomicPut$を行う。$parallelPop$では、sharedOpenListから1ブロック内のスレッド数を行為の数で割った数だけのノードを一度に取り出す。$atomicPut$では$v_{next}$を$sharedOpenList$に同時に挿入する。この操作を行う際には、挿入をする前に$sharedOpenList$にロックをかけ、挿入後そのロックを外すことで原子性をたもつ。
-BPDFS関数は標準的なf値制限深さ優先探索とにている。
+\subsection{Parallel IDA*探索}
+堀江らの研究\cite{HA17}では、スレッドベースの並列化を行うParallel IDA*探索が提案された。この手法での処理の大まかな流れは以下のようになる。
+\begin{enumerate}
+ \item CPU側で根集合を作成する。
+ \item GPU側でスレッドごとに根集合の要素を初期状態としたf値制限深さ優先探索を並列に行う。この並列な探索の途中で適宜動的なロードバランスを行う。それぞれの探索の結果をCPU側に返す。
+ \item 解が見つかった場合にはそれを答えとして出力しプログラムを終了する。解が見つからなかった場合、GPU側での各f値制限深さ優先探索における統計情報を元に、根集合の再構成を行う。これが静的なロードバランスである。f値の上限を更新し、2に戻る。
+ \item 解が見つかるまで2-3の処理を繰り返す。
+\end{enumerate}
 
+GPUの性能をうまく引きだすには、各スレッドごとの仕事量の偏りを減らすことが必要である。Parallel IDA*探索では、静的なロードバランスと動的なロードバランスの二つを行う。
+
+{\bf 静的なロードバランス}とは根集合をうまく生成することで、各スレッドの仕事量の偏りを減らす処理である。
+
+{\bf 動的なロードバランス}とはスレッドごとのf値制限深さ優先探索を行っている途中に、残っている仕事量が均等になるように再分配を行う処理である。
+
+先行研究\cite{HA17}におけるGPU上のParallel IDA*探索のソルバは、CPU上の直列実行のIDA*探索のソルバより低速であり、十分な高速化を行うことができなかった。これはGPUの同一のブロック内のスレッドがそれぞれ独立したf値制限深さ優先探索を行うため、ワープダイバージェンスが大きく、GPUの性能をうまく引き出すことができなかったためである。そこで、同一ブロック内のスレッドの仕事量の偏りを避け、ワープダイバージェンスを抑える手法として、Block Parallel IDA*(BPIDA*)探索\cite{HA17}が提案された。次の節ではこのBPIDA*探索について紹介する。
+
+\newpage
+\begin{algorithm}[H]
+\caption{Parallel IDA*探索}
+\label{alg:pbnf}
+\begin{algorithmic}[1]
+\Function{DFS}{$root, goals, limit_f$}
+    \State $openList$を空のスタックとして初期化
+    \State 初期ノード$root$を$openList$に追加
+    \State $f_{next} \leftarrow \infty$
+    \State $f_{next}$は次回の$limit_f$更新時に利用される
+    \State ロードバランスを行うために探索の統計情報を$stat$として保持
+    \While {$openList$が空ではない}
+        \State $v_{cur}$ $\leftarrow$ ${ParallelPop}(openList)$
+        \If {$v_{cur} \in goals$}
+            \State $root$から$v_{cur}$までの遷移と、移動コスト$g(v_{cur})$を解として出力して終了
+        \EndIf
+        \If {$dynamic loab balance is triggered$}
+            \State $DynamicLoadBalance(stat)$
+        \EndIf
+        \For{each $v_{next}$ $\in$ $children(v_{cur})$ do}
+            \State $f_{new} \leftarrow g(v_{cur}) + cost(v_{cur}, v_{next}) + h(v_{next})$
+            \If {$f_{new}(v_{next}) \leqq limit_f$}
+                \State $openList$に$v_{next}$を追加
+            \Else
+                \State $f_{next} \leftarrow min(f_{next}, f_{new})$
+            \EndIf
+        \EndFor
+    \EndWhile
+    \State \Return $f_next, stat$
+\EndFunction
+\Function{Parallel IDA*}{$start, goals$}
+    \State $rootSet \gets {CreateRootSet}(start, goals)$
+    \State $limit_f \leftarrow {DecideFirstLimit}(rootSet)$
+    \While {最短距離が発見されるまで}
+        \ParallelForByThreads{$each root \in rootSet do$}
+            \State $limit_f, stat \gets {DFS}(root, goals, limit_f)$
+        \EndParallelForByThreads
+        \State $UpdateRootSet(rootSet, stat)$
+    \EndWhile
+\EndFunction
+
+\end{algorithmic}
+\end{algorithm}
+\newpage
+
+
+\subsection{Block Parallel IDA*探索}
+GPUを使用したIDA*探索の並列化の一つにBlock-Parallel IDA*(BPIDA*)探索\cite{HA17}がある。前節の並列化手法では、一つのスレッドに対して一つの頂点を割り当て、その頂点を根とするf値制限深さ優先探索を並列に行い、処理を分割した。それに対し、BPIDA*探索では、一つのブロックに対して一つの頂点を割り当て、その頂点を根とするf値制限深さ優先探索を行う。
+この手法はオセロのゲーム木探索において、64個の着手可能性を同一ブロック内のそれぞれのスレッドで判定し、盤面の評価を行うRockiらの研究\cite{RS09}から着想を得たものである。
+各スレッドが独立したスタックを持ちf値制限深さ優先探索を行う場合より、BPIDA*探索では単純な処理の繰り返しとなるため、ワープダイバージェンスが発生しにくい。またブロック間のスレッドが一つのスタックを共有するため、明示的に動的なロードバランス処理を行わなくても、同一ブロック内のスレッドで仕事量の偏りを減らすことが可能である。
+
+これによって先行研究\cite{HA17}におけるGPU上のBPIDA*探索のソルバは、CPU上の直列実行のIDA*探索のソルバより6.78倍の高速化を行うことが可能となった。
+
+Algorithm 4はBPIDA*探索の疑似コードである。このアルゴリズムは一部の操作をのぞいて、前節のParallel IDA*探索と類似している。Parallel IDA*探索と異なる点は以下の3つである。
+
+\begin{enumerate}
+ \item スタックを共有メモリにおき、スタックに対して$parallelPop$と$atomicPut$の二つの処理を行う。
+ \item 明示的には、動的なロードバランスを行わない。
+ \item 繰り返しの回数を仕事量の見積もりとした静的なロードバランスを行う。
+\end{enumerate}
+
+異なる点として、まずスタックがあげられる。同一ブロック内の全てのスレッドが共有する一つのスタックが$sharedOpenList$である。このスタックには二つの並列な操作、$parallelPop$と$atomicPut$を行う。$parallelPop$では、$sharedOpenList$から1ブロック内のスレッド数を行為の数で割った数だけのノードを一度に取り出す。$atomicPut$では$v_{next}$を$sharedOpenList$に並列に挿入する。ただしこの操作はある順序で直列に実行された場合と同様の振る舞いをする。
+
+次に異なる点として、頂点の展開処理である。
+
+動的なロードバランスを明示的に行わないのは、ブロック間のスレッドが一つのスタックを共有するため、Parallel IDA*探索のときのような明示的な処理は行わなくても仕事量の偏りを減らせるからである。
+
+静的なロードバランスについては、6-18行目の繰り返しの回数を仕事量の見積もりとみなすことで、
+
+% 探索同じBlockが1つのスタックを共有することでblock並列化を行っている。一つのスタックを共有するため、スタックからノードを取り出す、および追加する操作はそれぞれ、並列に行わなければならない。特にスタックにノードを追加する操作、AtomicPutでは、スタックにロックをかけ、原子性を保ちながら行う。
+
+% 同一ブロック内の全てのスレッドが共有する一つのスタックが$sharedOpenList$である。このスタックには二つの並列な操作、$parallelPop$と$atomicPut$を行う。$parallelPop$では、sharedOpenListから1ブロック内のスレッド数を行為の数で割った数だけのノードを一度に取り出す。$atomicPut$では$v_{next}$を$sharedOpenList$に並列に挿入する。ただしこの操作はある順序で直列に実行された場合と同様の振る舞いをする。
 
 
 
 \newpage
-\begin{algorithm}
-\caption{Block Parallel IDA*}
+\begin{algorithm}[H]
+\caption{Block Parallel IDA*探索}
 \label{alg:pbnf}
 \begin{algorithmic}[1]
 \Function{BPDFS}{$root, goals, limit_f$}
@@ -314,21 +395,19 @@ BPDFS関数は標準的なf値制限深さ優先探索とにている。
     \State $f_{next} \leftarrow \infty$
     \State $f_{next}$は次回の$limit_f$更新時に利用される 
     \While {$sharedOpenList$が空ではない}
-        \State $v_{cur}$ $\leftarrow$ ${ParallelPop}(sharedOpenList)$
+        \State $v_{cur}$ $\leftarrow$ ${parallelPop}(sharedOpenList)$
         \If {$v_{cur} \in goals$}
             \State $root$から$v_{cur}$までの遷移と、移動コスト$g(v_{cur})$を解として出力して終了
         \EndIf
         \State $v_{next} \gets $$v_{cur}$を($threadId$を行為数で割った余り)番目の行為で遷移した時の状態
         \State $f_{new} \leftarrow g(v_{cur}) + cost(v_{cur}, v_{next}) + h(v_{next})$
         \If {$f_{new}(v_{next}) \leqq limit_f$}
-            \State ${AtomicPut}(sharedOpenList, v_{next})$ \Comment{sharedOpenListに$v_{next}$を原子性を保ちつつ追加}
+            \State ${AtomicPut}(sharedOpenList, v_{next})$ \Comment{sharedOpenListに$v_{next}$に追加}
         \Else
             \State $f_{next} \leftarrow min(f_{next}, f_{new})$
         \EndIf
     \EndWhile
-    \State $update(limit_f)$
-
-    \State \Return $a$
+    \State \Return $f_next, stat$
 \EndFunction
 \Function{BPIDA*}{$start, goals$}
     \State $rootSet \gets {CreateRootSet}(start, goals)$
@@ -345,20 +424,20 @@ BPDFS関数は標準的なf値制限深さ優先探索とにている。
 \end{algorithm}
 \newpage
 
-\section{24-puzzleを用いたIDA*探索、およびBPIDA*探索の性能評価}
-先行研究におけるBPIDA*探索\cite{Horie17}では、15-puzzleを使用することで、その性能を評価していた。BPIDA*探索ではブロック間で共有するスタックを64Kbyteの領域しかもたない、共有メモリ上におく。堀江らの研究では、15-puzzleを解くのに必要なスタックのメモリの大きさは3Kbyte程度で済んだ。
+\section{実験1: 24-puzzleを用いたIDA*探索、およびBPIDA*探索の性能評価}
+先行研究におけるBPIDA*探索\cite{HA17}では、15-puzzleを使用することで、その性能を評価していた。BPIDA*探索ではブロック間で共有するスタックを64Kbyteの領域しかもたない、共有メモリ上におく。堀江らの研究では、15-puzzleを解くのに必要なスタックのメモリの大きさは3Kbyte程度で済んだ。
 必要なスタックのサイズは状態表現や、解の深さに比例し、問題によってはより大きなメモリを必要とする。
 
-本研究では、探索空間が15-puzzle問題のおよそ$10^12$倍ほど大きい24-puzzle問題を使い、より大きな共有メモリが必要な問題に対して、BPIDA*探索がどのような性能を示すか調査を行った。
+本研究では、探索空間が15-puzzle問題のおよそ$10^{12}$倍ほど大きい24-puzzle問題を使い、より大きな共有メモリが必要な問題に対して、BPIDA*探索がどのような性能を示すか調査を行った。
 
 
 \subsection{sliding puzzle}
 sliding puzzleとはケースの中に収められたブロックをスペースに隣接するブロックを動かすことで、任意の配置から目的の配置を目指すパズルである。特に$k * k$の正方形の中に、$ k * k - 1$枚のブロックと一つのスペースが存在するようなsliding puzzleをN-puzzleと呼ぶ。可能な遷移の数はスペースの配置によって決まり、$2~4$である。
-N-puzzle問題は、Nが増えるにつれてその探索空間は大きくなり、$N=15$のときで、盤面の数は$10^13$ほどであり、$N=25$では、盤面の数は$10^25$である。
+N-puzzle問題は、Nが増えるにつれてその探索空間は大きくなり、$N=15$のときで、盤面の数は$10^{13}$ほどであり、$N=25$では、盤面の数は$10{25}$である。
 またヒューリスティック関数として、マンハッタン距離やPattern Databseなどがあり、問題の性質などが十分研究されている。
 
 先行研究であるGPUにおけるIDA*探索のBlock並列化\cite{HA17}では$N=15$の時における15-puzzle問題が評価の対象として使用されていた。
-本研究では、探索空間が15-puzzle問題のおよそ$10^12$倍ほど大きく、より大きなスタック領域を必要とする24-puzzleを性能評価に使用する。
+本研究では、探索空間が15-puzzle問題のおよそ$10^{12}$倍ほど大きく、より大きなスタック領域を必要とする24-puzzleを性能評価に使用する。
 \begin{figure}[htbp]
 \begin{center}
 \includegraphics[width=5cm, bb=0 0 300 400]{24puzzle.pdf}
@@ -388,13 +467,27 @@ N-puzzle問題は、Nが増えるにつれてその探索空間は大きくな�
 \begin{figure}[hbtp]
 \begin{center}
 \includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, scale=0.5]{result1.png}
-\caption{直列実行のIDA*とBPIDA*の実行時間の比較}
+\caption{IDA*CPUとBPIDA*の実行時間の比較}
 \end{center}
 \end{figure}
 
+\begin{table}[hbtp]
+\centering
+\caption{Total Runtimes for 50 24-Puzzle Instances}
+\label{my-label}
+\begin{tabular}{|l|c|}
+\hline
+configuration & \multicolumn{1}{l|}{total runtime(seconds)} \\ \hline
+\multicolumn{2}{|l|}{CPU-based sequential algorithms} \\ \hline
+IDA*(CPU) & 6050.81 \\ \hline
+\multicolumn{2}{|l|}{GPU-based parallel algorithms} \\ \hline
+BPIDA* & 4854.75 \\ \hline
+\end{tabular}
+\end{table}
+
 
 \subsection{考察}
-15-puzzleを用いた堀江らの研究では、BPIDA*探索はCPU上でのIDA*探索のおよそ6.78倍の高速化を示した。
+15-puzzleを用いた堀江らの研究\cite{HA17}では、BPIDA*探索はCPU上でのIDA*探索のおよそ6.78倍の高速化を示した。
 
 それに対し、24-puzzleを用いた今回の実験では、CPU上の直列IDA*探索がBPIDA*探索では1.25倍の高速化であり、十分な高速化を行うことができなかった。
 
@@ -406,10 +499,7 @@ N-puzzle問題は、Nが増えるにつれてその探索空間は大きくな�
 
 共有メモリはそのメモリ空間をL1キャッシュと共有する。L1キャッシュはグローバルメモリやレジスタへのアクセスをキャッシュし、アクセスの遅延を隠蔽する。BPIDA*探索では、カーネル実行の際、現在のノードから次の遷移状態を作成し、それらが遷移可能かどうかの判定、ヒューリスティック関数によるf値の計算などを行うために、多くの自動変数を使用する。これらはレジスタに登録され、レジスタが足りなくなった場合、L1キャッシュに保存される。共有メモリが大きすぎると、使用できるL1キャッシュの領域が減り、これが探索に悪影響を与えているのではと予想した。
 
-次章では、スタックを共有メモリではなく、グローバルメモリにおいたBPIDA*GLOBALを同じ問題集で解いてみることで、
-
-
-24-puzzle問題を解く上で、共有メモリに置くスタックの深さを大きくしたことが原因ではと考えた。
+次章では、スタックを共有メモリではなく、グローバルメモリにおいたBPIDA*GLOBALを提案すると同時に、共有メモリとL1キャッシュの割合が探索にどのような影響を与えるか、検証を行う。
 
 
 % \subsection{比較対象となる実装}
@@ -417,15 +507,15 @@ N-puzzle問題は、Nが増えるにつれてその探索空間は大きくな�
 
 % またHorieらの研究で実装されたBPIDA*探索のソルバをソルバBPIDA*(origin)とする。
 
-% 自身の研究のベースラインとして、直列実行のIDA*探索のソルバ、Horieらの研究\cite{HA17}で提案されたPsimpleおよび、BPIDA*探索のソルバを作成した。Psimpleは並列IDA*探索の素朴な実装であり、プログラム開始時に根集合を一度だけ作成し、各スレッドに根集合から一つずつ根を割り当ててf値制限深さ優先探索を行う。このとき静的なロードバーランスや動的なロードバランスを何も行わないといったものである。
+% 自身の研究のベースラインとして、IDA*CPU探索のソルバ、Horieらの研究\cite{HA17}で提案されたPsimpleおよび、BPIDA*探索のソルバを作成した。Psimpleは並列IDA*探索の素朴な実装であり、プログラム開始時に根集合を一度だけ作成し、各スレッドに根集合から一つずつ根を割り当ててf値制限深さ優先探索を行う。このとき静的なロードバーランスや動的なロードバランスを何も行わないといったものである。
 
 
-\chapter{Globalメモリを使用したBPIDA*探索と共有メモリの評価}
+\chapter{Globalメモリを使用した並列IDA*探索と共有メモリ}
 
-\section{BPIDA*GLOBAL}
+\section{BPIDA*GLOBAL探索}
 従来のBPIDA*探索\cite{HA17}では、各ブロックごとにf値制限深さ優先探索を行う際、使用するスタックを共有メモリにおいた。本研究では、BPIDA*探索で使用するスタックを共有メモリではなく、グローバルメモリにおいた手法を提案する。共有メモリに比べ、グローバルメモリではメモリアクセスの遅延が大きいものの、そのメモリ容量は共有メモリよりはるかに大きな領域を確保できる。また前章でより探索空間の大きな問題においてBPIDA*探索で十分な高速化を行うことができなかった。
 
-% 本章では、前章までで提案したBPIDA*GLOBAL、およびBPIDA*、直列実行のIDA*であるソルバCに、pattern data baseを使用し、速度の比較を行った。
+% 本章では、前章までで提案したBPIDA*GLOBAL、およびBPIDA*、IDA*CPUであるソルバCに、pattern data baseを使用し、速度の比較を行った。
 % pattern data base はmanhattane距離より精度が高い一方、より大きなメモリを必要とする。mahattan距離のテーブルは共有メモリに乗せることが容易だが、pdb
 
 -スタックが足りなくなるような最適解までの深さ、状態表現の大きい問題も解くことが可能になる。
@@ -474,8 +564,13 @@ N-puzzle問題は、Nが増えるにつれてその探索空間は大きくな�
 \end{algorithm}
 \newpage
 
+\section{実験2: 24-puzzleを用いたBPIDA*GLOBAL探索の性能評価}
+\subsection{実験の設定}
+本実験では実験1と同じ24-puzzleの自作した50問の問題集をベンチマークとして使用し、BPIDA*GLOBAL探索における実行時間の計測を行った。また実験に使用したGPUインスタンスの環境は実験1と同じものを使用した。
+
+
 \subsection{評価}
-図4.1は3章の実験の結果に50問の問題集を順に解いた際の、ソルアBPIDA*GLOBALの実行時間の結果を追加したものである。縦軸は秒単位の実行時間、横軸は問題の番号である。
+図4.1は実験1の結果にランダムに自作した50問の問題集を順に解いた際の、ソルバBPIDA*GLOBALの実行時間の結果を追加したものである。縦軸は秒単位の実行時間、横軸は問題の番号である。
 
 % ソルバIDA*(CPU)とソルバBPIDA*の実行時間を表したものである。
 50問の問題集を全て解くのにソルバBPIDA*GLOBALでは1321.75秒ほどかかった。これはソルバIDA*(CPU)の4.58倍、ソルバBPIDA*の1.25倍ほど高速である。
@@ -486,24 +581,103 @@ N-puzzle問題は、Nが増えるにつれてその探索空間は大きくな�
 \begin{figure}[hbtp]
 \begin{center}
 \includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, clip, scale=0.5]{result2.png}
-\caption{直列実行のIDA*、BPIDA*、BPIDA*GLOBALの実行時間の比較}
+\caption{IDA*CPU、BPIDA*、BPIDA*GLOBALの実行時間の比較}
 \end{center}
 \end{figure}
 
+\begin{table}[hbtp]
+\centering
+\caption{Total Runtimes for 50 24-Puzzle Instances}
+\label{my-label}
+\begin{tabular}{|l|c|}
+\hline
+configuration & \multicolumn{1}{l|}{total runtime(seconds)} \\ \hline
+\multicolumn{2}{|l|}{CPU-based sequential algorithms} \\ \hline
+IDA*(CPU) & 6050.81 \\ \hline
+\multicolumn{2}{|l|}{GPU-based parallel algorithms} \\ \hline
+BPIDA* & 4854.75 \\
+BPIDA* & 1321.75 \\  \hline
+\end{tabular}
+\end{table}
+
+
 \subsection{考察}
-図4.1は3章の実験の結果にBPIDA*
+BPIDA*で17636byteあった共有メモリの領域がBPIDA*GLOBALでは、4byteに減った。これは、共有メモリが減ったことで、共有メモリと64Kbyteの領域を共有するL1キャッシュの領域が増えたことを意味する。L1キャッシュは、グローバルメモリやレジスタへのアクセスを隠蔽できる。そのため、共有メモリの領域が減ったことはBPIDA*GLOBALの探索性能の向上に寄与できると考えられる。
+
+次に、ソルバBPIDA*では共有メモリに存在してスタックをソルバBPIDA*GLOBALでは、グローバルメモリへ移動させた。グローバルメモリへのアクセスは400～600クロックサイクルほどの遅延を含み、共有メモリと比べて低速である。当然スタックを共有メモリからグローバルメモリへ移動させれば、スタックへの読み書きの遅延は大きくなる。これはBPIDA*GLOBALの探索性能の低下に寄与すると考えられる。
+
+ソルバBPIDA*GLOBALがソルバBPIDA*の1.25倍ほど高速であったことを考えると、共有メモリの占有領域を減らしL1キャッシュの領域を増やしたことによる探索性能向上の効果が、グローバルメモリにアクセスすることへの性能劣化より大きかったと言える。
 
 
-\section{共有メモリの領域と、探索効率}
+
+% また今回の問題では、17636byteのメモリ容量のスタックで全ての問題を解くことができたが、
+
+
+% 堀江らの研究\cite{HA17}では、24-puzzleより少ないメモリのスタックで探索が可能な、15-puzzleにおいて、BPIDA*探索はCPU上でのIDA*探索のおよそ6.78倍の高速化を示した。グローバルメモリへのアクセスによる遅延がある分、メモリ容量の少ない
+
+% より状態表現の大きい問題、最適解への距離が深い問題、す
+\section{実験3: 共有メモリの領域がBPIDA*GLOBAL探索の探索効率に及ぼす性能評価}
+
+
+\subsection{実験の設定}
+本実験では実験1と同じ24-puzzleの自作した50問の問題集をベンチマークとして使用し、BPIDA*GLOBAL探索において異なる領域のメモリを共有メモリに配置した時の実行時間を計測した。これにより、共有メモリの占有領域がGPU上での並列IDA*探索の探索効率にどのような影響を与えるのか、より詳細な知見を得ることを目指す。
+
+また実験に使用したGPUインスタンスの環境は実験1と同じものを使用した。
+
+
 \subsection{評価}
+図4.2は、前回までの実験で使用したものと同様の50問の問題集に対して、異なる大きさの領域を共有メモリに確保した際のBPIDA*GLOBALの実行時間である。縦軸は秒単位の実行時間、横軸は問題の番号である。前節で作成したソルバBPIDA*GLOBALに、4412byte、8820byte、13228byte、17636byte、35268byteの大きさの配列を共有メモリに配置したものであり、それぞれをソルバBPIDA*GLOBAL(4Kbyte)、ソルバBPIDA*GLOBAL(9Kbyte)、ソルバBPIDA*GLOBAL(13Kbyte)、ソルバBPIDA*GLOBAL(18Kbyte)、ソルバBPIDA*GLOBAL(35Kbyte)とよぶ。またこれらの配置した配列は、領域を確保しただけであり、アルゴリズムの実行において無関係である。
+50問の問題集を全て解くのにソルバBPIDA*GLOBAL(4Kbyte)で1822.08秒、ソルバBPIDA*GLOBAL(9Kbyte)で3345.17秒、ソルバBPIDA*GLOBAL(13Kbyte)で5401.92秒、ソルバBPIDA*GLOBAL(18Kbyte)で8066.62秒、ソルバBPIDA*GLOBAL(35Kbyte)で16104.5秒であった。
+共有メモリに確保した領域が大きくなるにつれて探索に必要な時間は大きくなっていることがわかる。
+
+またソルバBPIDA*GLOBAL(18Kbyte)の使用した共有メモリの大きさ17636byteは前章の実験で使用したソルバBPIDA*における共有メモリのサイズと同じである。ソルバBPIDA*GLOBAL(18Kbyte)はソルバBPIDA*の1.66倍ほど低速である。
+
+
+ソルバBPIDA*GLOBAL(4Kbyte)、ソルバBPIDA*GLOBAL(9Kbyte)はソルバBPIDA*が50問の問題集をすべて解くのに必要とした4854.75秒より高速であり、ソルバBPIDA*GLOBAL(13Kbyte)、ソルバBPIDA*GLOBAL(18Kbyte)、ソルバBPIDA*GLOBAL(35Kbyte)はそれより低速である。
+
+\subsection{考察}
+同じ領域の共有メモリが使用された前回までの実験におけるソルバBPIDA*とソルバBPIDA*GLOBAL(18Kbyte)を比較すると、1.66倍ほどソルバBPIDA*の方が高速であった。これらの遅延には2つの要因があると推測できる。
+
+一つは、BPIDA*GLOBALではスタックを共有メモリから、グローバルメモリにおいたことで、スタックそのものへのメモリアクセスが遅くなったことである。
+
+二つ目は、スタックがグローバルメモリへ置かれたことで、より多くのL１キャッシュを必要としたことである。L１キャッシュはグローバルメモリへのアクセスの遅延の隠蔽を行う。BPIDA*GLOBALでは当然グローバルメモリへのアクセスが、BPIDA*よりスタックへのアクセスによって多くなる。これによってレジスタピルの隠蔽や、スタック以外のグローバルメモリのアクセスも遅延したことが考えられる。
+
+これらが、同じ領域の共有メモリを使用したソルバBPIDA*GLOBAL(18Kbyte)がソルバBPIDA*より遅延したことへの理由として言える。
+
+ソルバBPIDA*GLOBAL(4Kbyte)、ソルバBPIDA*GLOBAL(9Kbyte)、ソルバBPIDA*GLOBAL(13Kbyte)、ソルバBPIDA*GLOBAL(18Kbyte)、ソルバBPIDA*GLOBAL(35Kbyte)を比較すると、L1キャッシュの領域が減ることで探索効率が著しく劣化することが確認できる。
+
+ソルバBPIDA*と同程度の共有メモリを使用するソルバBPIDA*GLOBAL(18Kbyte)が、ソルバBPIDA*GLOBALより6.10倍遅くなっていることを見ると、3章においてBPIDA*が十分な高速化を示すことができなかったことの原因として共有メモリに置くスタックが増えたことが大きな原因であると言える。
+
+そのため、状態表現の大きな問題、最適解までの深さが大きく、共有メモリに大きなスタックを必要とする問題において、グローバルメモリにスタックを置くBPIDA*GLOBAL探索が有効な手法であることが示せた。
+またBPIDA*GLOBAL探索では、共有メモリに収まりきらないほど大きなスタックもグロバールメモリにのせることができるため、BPIDA*探索では解くことのできなかった問題も解くことが可能になると考えられる。
+
+
+
+
 \begin{figure}[hbtp]
 \begin{center}
 \includegraphics[keepaspectratio, width=7cm, bb=0 0 624 466, scale=0.5]{result3.png}
-\caption{直列実行のIDA*、BPIDA*、BPIDA*GLOBALの実行時間の比較}
+\caption{共有メモリに異なるサイズの領域を確保した際のBPIDA*GLOBALの実行時間の比較}
 \end{center}
 \end{figure}
 
-\subsection{考察}
+\begin{table}[hbtp]
+\centering
+\caption{Total Runtimes for 50 24-Puzzle Instances}
+\label{my-label}
+\begin{tabular}{|l|c|}
+\hline
+configuration & \multicolumn{1}{l|}{total runtime(seconds)} \\ \hline
+\multicolumn{2}{|l|}{GPU-based parallel algorithms} \\ \hline
+BPIDA*GLOBAL    & 1321.75  \\
+BPIDA*GLOBAL (4412byte) & 1822.08  \\
+BPIDA*GLOBAL (8820byte) &  3345.17 \\
+BPIDA*GLOBAL (13228byte) & 5401.92 \\
+BPIDA*GLOBAL (17636byte) & 8066.62 \\
+BPIDA*GLOBAL (35268byte) & 16104.5 \\ \hline
+\end{tabular}
+\end{table}
+
 
 
 
@@ -533,34 +707,107 @@ Korfらの研究\cite{KF02}では図5.1の2種類の分割方法が提案され�
 
 
 
+\section{実験4: PDBを使用した並列IDA*探索の評価}
+\subsection{実験の設定}
+実験1と同じ問題集、同じGPU環境を使用し、ヒューリスティック関数としてPDBを使用した際のBPIDA*探索、BPIDA*Global、CPU上でのIDA*探索の性能評価を行った。
+またそれぞれのソルバをソルバBPIDA*(PDB)、ソルバBPIDA*GLOBAL(PDB)、ソルバIDA*CPU(PDB)と呼ぶ。
+これらのソルバは最適解を全て探索するため、同じヒューリスティック関数を使用し同じ問題を解いた場合、展開順序にかかわらず、その時の展開ノードの数は等しくなる。
 
-\section{PDBを使用した並列IDA*探索について}
-\subsection{評価}
+\subsection{実行時間の評価}
+
+図5.2はソルバBPIDA*(PDB)、ソルバBPIDA*GLOBAL(PDB)、ソルバIDA*CPU(PDB)の3つのソルバにおける問題ごとの実行時間のグラフである。縦軸は秒単位の実行時間、横軸は問題の番号を表す。
+
+50問の問題集を全て解くのにソルバIDA*CPU(PDB)では34.1312秒、ソルバBPIDA*(PDB)では16.2875秒、ソルバBPIDA*GLOBAL(PDB)では6.45871秒かかった。
+
+直列な実装であるソルバIDA*CPU(PDB)とそれぞれの並列アルゴリズムを比較すると、ソルバBPIDA*(PDB)がおよそ2.10倍、
+ソルバBPIDA*GLOBAL(PDB)がおよそ5.28倍高速である。
+
+\subsection{ヒューリスティック関数として、マンハッタン距離使用時とPDB使用時の実行時間の比較}
+
+
+% 図5.2はソルバBPIDA*(PDB)、ソルバBPIDA*GLOBAL(PDB)、ソルバIDA*CPU(PDB)の3つのソルバにおける問題ごとの実行時間のグラフである。縦軸は秒単位の実行時間、横軸は問題の番号を表す。
+
+% 50問の問題集を全て解くのにソルバIDA*CPU(PDB)では34.1312秒、ソルバBPIDA*(PDB)では16.2875秒、ソルバBPIDA*GLOBAL(PDB)では6.45871秒かかった。
+
+% 直列な実装であるソルバIDA*CPU(PDB)とそれぞれの並列アルゴリズムを比較すると、ソルバBPIDA*(PDB)がおよそ2.10倍、
+% ソルバBPIDA*GLOBAL(PDB)がおよそ5.28倍高速である。
+
+
+またマンハッタン距離を使用したソルバIDA*CPU
+図5.3、図5.4、図5.5はそれぞれ前章までの実験で測定したマンハッタン距離を使用したソルバIDA*CPU、ソルバBPIDA*GLOBAL、ソルバIDA*CPUの問題単位の実行時間を、PDBを用いたソルバIDA*CPU(PDB)、ソルバBPIDA*GLOBAL(PDB)、ソルバIDA*CPU(PDB)の問題単位の実行時間で割った割合を示している。
+これらをそれぞれcpuPDBspeedup、bpida*PDBspeedup、bpida*globalPDBspeedupと定義する。
+この三つは、マンハッタン距離使用時と比べ、PDBがどれほどそれぞれのアルゴリズムにおいて高速化を実現できるかを示す指標となる。
+
+図5.3のcpuPDBspeedupに注目すると、最も高速化した45番の問題では3997倍の高速化に成功してる。また概ね問題集の難易度が高くなる後半の問題ほど、高速化の割合は大きくなっている。
+
+図5.4のbpida*PDBspeedupに注目すると、最も高速化した問題は45番であり、4432倍の高速化である。直列実行時のcpuPDBspeedupと同様に、後半の難易度の高い問題で高速化の割合が大きくなっている。
+
+図5.5のbpida*globalPDBspeedupに注目すると、他のソルバと同様に最も高速化した問題は45番であり、2797倍である。前半の0~30番の問題では10~100倍ほどの高速化であるが、後半の40~49番の問題では、500~2800倍ほどの高速化に成功している。
+
+
+図5.6は各問題ごとに、bpida*PDBspeedupをcpuPDBspeedupで割った割合である。
+
+図5.7は各問題ごとに、bpida*globalPDBspeedupをcpuPDBspeedupで割った割合である。
+
+
+
+
+\subsection{考察}
+
+
+またBPIDA*GLOBALでの共有メモリの使用量は4byteほどであった。これはグローバルメモリにおいたスタックにアクセスする際に、スタックのインデックスを共有メモリにおいたためである。
+これに対して、BPIDA*では固定長の配列をスタックとして共有メモリに置き、その用量は17636byteであった。
+
+
 本実験では、前回の実験で用いたものと同じ、50問の24-puzzleの問題集を使用し、PDBをヒューリスティック値に用いたBPIDA*探索、BPIDA*Global、CPU上でのIDA*探索の実行時間の計測を行った。
 
 これを評価の対象として使用した。
 従来のBPIDA*探索では、共有メモリにおいていたスタック
 
-問題はおおむね難易度順に並んでいる。問題集については本論文の付録に追加する。マンハッタン距離をヒューリスティック関数に使用した、IDA*探索、およびBPIDA*探索\cite{HA17}のアルゴリズムを使用し、15-puzzleより探索空間の広い問題集を解くのに必要な実行時間がどれほどであるかを検証する。
-また実験ではAWSのGPUインスタンスであるg2.2xlargeインスタンスを使用した。CPUはIntel Xeon E5-2670であり、GPU
-は NVIDIA GRID K520を搭載している。GPU環境の要約は以下のとおりである。
-\begin{itemize}
- \item global RAM: 4GiB
- \item shared RAM/block: 48KiB
- \item CUDA cores: 1536
- \item warp size: 32
- \item GPU clock rate: 0.80GHz
-\end{itemize}
 
-\subsection{実験の結果}
+\begin{figure}[hbtp]
+\begin{center}
+\includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, clip, scale=0.5]{result4.png}
+\caption{ヒューリスティック関数にPDBを使用したIDA*CPU、BPIDA*、BPIDA*GLOBALの問題ごとの実行時}
+\end{center}
+\end{figure}
 
-\section{}
+\begin{figure}[hbtp]
+\begin{center}
+\includegraphics[keepaspectratio, width=5cm, bb=0 0 610 445, clip, scale=0.2]{cpuPDBspeedup.png}
+\caption{cpuPDBspeedup}
+\end{center}
+\end{figure}
+
+\begin{figure}[hbtp]
+\begin{center}
+\includegraphics[keepaspectratio, width=5cm, bb=0 0 610 445, clip, scale=0.2]{bpidaPDBspeedup.png}
+\caption{bpida*PDBspeedup}
+\end{center}
+\end{figure}
+
+\begin{figure}[hbtp]
+\begin{center}
+\includegraphics[keepaspectratio, width=5cm, bb=0 0 610 445, clip, scale=0.2]{bpidaglobalPDBspeedup.png}
+\caption{bpida*globalPDBspeedup}
+\end{center}
+\end{figure}
 
 
-
-
-
-
+\begin{figure}[hbtp]
+\begin{minipage}{0.5\hsize}
+\begin{center}
+\includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, clip, scale=0.5]{ratio1.png}
+\caption{ヒューリスティック関数にPDBを使用したIDA*CPU、BPIDA*、BPIDA*GLOBALの実行時間の比較}
+\end{center}
+\end{minipage}
+\begin{minipage}{0.5\hsize}
+\begin{center}
+\includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, clip, scale=0.5]{ratio2.png}
+\caption{ヒューリスティック関数にPDBを使用したIDA*CPU、BPIDA*、BPIDA*GLOBALの実行時間の比較}
+\end{center}
+\end{minipage}
+\end{figure}
 
 
 
@@ -604,7 +851,7 @@ BPIDA*GLOBAL (PDB) & 0.401973 \\ \hline
 
 \begin{table}[]
 \centering
-\caption{Table 1: Total Runtimes for 50 24-Puzzle Instances}
+\caption{Total Runtimes for 50 24-Puzzle Instances}
 \label{my-label}
 \begin{tabular}{|l|c|}
 \hline
@@ -625,14 +872,37 @@ BPIDA*GLOBAL (PDB) & 0.401973 \\ \hline
 
 
 \chapter{終わりに}
-\section{まとめ}
+\section{本研究の成果のまとめ}
+本研究では、GPU上のIDA*探索の並列化手法の一つBPIDA*探索において、先行研究\cite{HA17}より探索空間の大きい24-puzzle問題においてその性能の評価を3章で行った。
+共有メモリに大きなスタックを必要とするような問題において十分な探索性能をBPIDA*探索が示せないことを示した。
 
+4章では、そのような問題への対策案としてBPIDA*GLOBALを提示した。これによってより最適解までの距離が深い問題、状態表現の大きな問題において、従来のBPIDA*探索より効率よく探索を行うことが示せた。またその探索向上に共有メモリの領域が大きく寄与することを、BPIDA*GLOBAL探索において共有メモリに異なる領域の配列を配置することによって確認を行った。これによってL1キャッシュが減ることによってGPU上での並列IDA*探索が性能を劣化させることを示した。
+
+5章では、マンハッタン距離より精度は高いが、より多くのメモリを必要とするPDBをヒューリスティック関数に用いたBPIDA*探索の評価を行った。PDBは255MByteほどの大きな領域をグローバルメモリに必要とするが、マンハッタン距離を使用した時より高速な探索がCPUを用いた並列化手法であるBPIDA*探索、およびBPIDA*GLOBAL探索で可能であることを示せた。
+
+\section{今後の課題}
+今後の課題としては、以下のようなことが挙げられる。
+
+\subsection{N-puzzle以外の状態空間の問題への応用}
+堀江らの先行研究\cite{HA17}では、15-puzzleをbenchmarkとして使用していた。
+本研究では、24-puzzleをbenchamarkとして扱った。15-puzzleと比べて、24-puzzleの方が、探索空間ははるかに大きい一方、両者とも可能な遷移の数は同じ$2~4$である。BPIDA*探索は一つのブロックの中のスレッドの数を遷移の数で割った数だけ、オープンリストからノードを取り出す。そのため、遷移の数が異なる状態空間においては異なる性質や困難を持つかもしれない。
+
+
+\subsection{マルチGPUによる大規模並列化}
+本研究では一つのGPUにおけるBPIDA*探索のメモリの配置や、より大きなメモリを要するヒューリスティック関数を使用した際の探索性能についての調査を行った。現在このBPIDA*探索を複数のGPUをまたいだ上での手法は提案されていない。
+マルチGPUによる探索が可能になれば、より多くのブロック、より多くのスレッドを使用することができる。
+一方、マルチGPUでは、BPIDA*探索で行っていた根集合の分配など、GPUをまたいだ情報の共有によるオーバーヘッドが想定される。
+マルチGPUの強みを生かしつつ、情報共有のオーバーヘッドの少ないアルゴリズムを提案できればさらなる高速化を目指すことが可能ではと考えられる。
+
+\subsection{グローバルメモリを使用した並列IDA*における重複検出}
+本研究では、共有メモリにのせることの不可能なPDBをヒューリスティック関数をグローバルメモリにのせることで、探索性能を向上させることができた。
+また同様に、15-puzzleよりも大きな領域を必要とする24-puzzleにおいて、共有メモリにおいたスタックをグローバル領域に移すことで、探索性能の向上が可能であった。これらは、より良いヒューリスティック関数の使用や、l1キャッシュの領域を大きくすることによる高速化が、共有メモリではなく、グローバルメモリにアクセスすることによる遅延を隠蔽できることを示した。
+これらの知見をもとにすると、グローバルメモリを利用した重複検出による高速化が、グローバルメモリへのアクセスによる遅延を隠蔽し、さらなる高速化を行えるかもしれない。
 
 
 %-----------------------------参考文献記述エリア---------------------------%
 \begin{thebibliography}{10}
-  \bibitem{HA17} Satoru Horie and Alex Fukunaga. Block-Parallel IDA* for GPUs. In SOCS, 2017 
-  \bibitem{Burns et al. 2012} Burns, E. A.; Hatem, M.; Leighton,  M. J.; and Ruml, W. 2012. Implementing fast heuristic search code. In SOCS.
+  \bibitem{HA17} Satoru Horie and Alex Fukunaga. 2017. Block-Parallel IDA* for GPUs. In SOCS.
   \bibitem{BHLR12}Ethan Andrew Burns, Matthew Hatem, Michael J Leighton, and Wheeler Ruml. Implementing fast heuristic search code. In SOCS, 2012.
   \bibitem{Kor85}Korf, R. E. 1985. Depth-first iterativedeepening: An optimal admissible tree search. Artificial intelligence 27(1):97-109.
   \bibitem{KF02}Korf, R. E., and Felner, A. 2002. Disjoint pattern database heuristics. Artificial intelligence 134(1):9-22.
@@ -640,6 +910,10 @@ BPIDA*GLOBAL (PDB) & 0.401973 \\ \hline
   \bibitem{Rus92}Russell, S. 1992. Efficient memory-bounded search methods. In Neumann, B. Proceedings of the 10th European Conference on Artificial intelligence. Vienna, Austria: John Wiley \& Sons, New York, NY. pp. 1–5.
   \bibitem{CS98}Joseph C Culberson and Jonathan Schaeffer. Pattern databases. Computational Intelligence, Vol. 14, No. 3, pp. 318-334, 1998.
   \bibitem{PDB}Ariel Felner1 and Amir Adler Solving the 24 Puzzle with Instance Dependent Pattern Databases, International Symposium on Abstraction, Reformulation, and Approximation SARA 2005: Abstraction, Reformulation and Approximation pp 248-260
+  \bibitem{Powley, Ferguson and Korf 1993]} Powley, C.; Ferguson, C.; and Korf, R. E. 1993. Depth-First heuristic search on a SIMD machine. Artificial Intelligence 60(2):199-242.
+  \bibitem{RS09}Rocki, K., and Suda, R. 2009. Parallel minimax tree searching on GPU. In International Conference on Parallel Processing and Applied Mathematics, 449-456. Springer.
+
+
 
 \end{thebibliography}
 
@@ -899,5 +1173,66 @@ BPIDA*GLOBAL (PDB) & 0.401973 \\ \hline
 }
 \end{table}
 
+\begin{table}[]
+\centering
+\caption{ヒューリスティック関数をマンハッタン距離から、PDBに変更した際の各種アルゴリズムの高速化の割合}
+\label{my-label}
+\scalebox{0.7}{
+\begin{tabular}{|c|c|c|c|}
+\hline
+問題ID &cpuPDBspeedup&bpida*PDBspeedup&bpida*globalPDBspeedup\\ \hline
+0 & 5.25919 & 31.012 & 21.5028 \\
+1 & 2.25424 & 15.5842 & 11.043 \\
+2 & 2.33321 & 2.35484 & 2.42623 \\
+3 & 1.02436 & 1.35185 & 1.32727 \\
+4 & 2.48343 & 21.5351 & 13.9392 \\
+5 & 5.75455 & 3.32705 & 2.1561 \\
+6 & 1.94525 & 1.28765 & 1.12318 \\
+7 & 30.2841 & 113.375 & 40.6346 \\
+8 & 4.22483 & 21.0257 & 13.7606 \\
+9 & 15.8045 & 4.94032 & 3.18216 \\
+10 & 59.4441 & 18.5437 & 10.5349 \\
+11 & 6.05904 & 5.10881 & 3.36789 \\
+12 & 16.7657 & 9.9417 & 5.65997 \\
+13 & 517.045 & 453.766 & 136.528 \\
+14 & 29.6494 & 14.4742 & 7.97793 \\
+15 & 77.4404 & 35.5063 & 15.3634 \\
+16 & 22.0064 & 12.6501 & 8.38708 \\
+17 & 260.372 & 47.1268 & 22.6978 \\
+18 & 18.9947 & 11.949 & 7.40638 \\
+19 & 39.321 & 19.1308 & 11.314 \\
+20 & 111.852 & 45.2703 & 25.1965 \\
+21 & 31.5038 & 21.6951 & 12.3122 \\
+22 & 25.3495 & 15.1966 & 9.91618 \\
+23 & 32.0945 & 22.1912 & 13.0037 \\
+24 & 525.698 & 106.548 & 46.5125 \\
+25 & 6.52009 & 6.62383 & 4.65586 \\
+26 & 62.9666 & 34.1243 & 20.55 \\
+27 & 149.808 & 76.0786 & 43.3118 \\
+28 & 37.5143 & 43.587 & 27.0958 \\
+29 & 394.248 & 222.933 & 116.21 \\
+30 & 33.875 & 37.8732 & 26.1732 \\
+31 & 19.2577 & 32.7645 & 22.6671 \\
+32 & 116.972 & 107.56 & 69.1585 \\
+33 & 564.141 & 384.136 & 231.856 \\
+34 & 74.4059 & 94.7423 & 60.0936 \\
+35 & 1973.75 & 1334.51 & 821.508 \\
+36 & 306.461 & 378.58 & 251.666 \\
+37 & 30.0226 & 51.7878 & 35.0025 \\
+38 & 98.2121 & 156.961 & 108.273 \\
+39 & 130.938 & 208.119 & 138.755 \\
+40 & 910.317 & 1142.11 & 780.628 \\
+41 & 2753.34 & 2637.76 & 1718.2 \\
+42 & 871.855 & 1155.05 & 648.771 \\
+43 & 309.313 & 497.609 & 333.165 \\
+44 & 89.1285 & 150.646 & 105.145 \\
+45 & 3966.89 & 4432.16 & 2797.55 \\
+46 & 146.354 & 267.141 & 186.046 \\
+47 & 640.826 & 1095.31 & 738.955 \\
+48 & 1118.88 & 1786.13 & 1162.22 \\
+49 & 90.7063 & 163.144 & 116.033 \\ \hline
+\end{tabular}
+}
+\end{table}
 
 \end{document}
