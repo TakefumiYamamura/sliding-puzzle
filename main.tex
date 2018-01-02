@@ -604,7 +604,7 @@ BPIDA* & 4854.75 \\ \hline
 
 \begin{figure}[H]
 \begin{center}
-\includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, clip, scale=0.5]{result2.png}
+\includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, scale=0.5]{result2.png}
 \caption{IDA*CPU、BPIDA*、BPIDA*GLOBALの実行時間の比較}
 \end{center}
 \end{figure}
@@ -663,25 +663,6 @@ BPIDA*で17636byteあった共有メモリの領域がBPIDA*GLOBALでは、4byte
 
 ソルバBPIDA*GLOBAL(4KB)、ソルバBPIDA*GLOBAL(9KB)はソルバBPIDA*が50問の問題集をすべて解くのに必要とした4854.75秒より高速であり、ソルバBPIDA*GLOBAL(13KB)、ソルバBPIDA*GLOBAL(18KB)、ソルバBPIDA*GLOBAL(35KB)はそれより低速である。
 
-\subsection{考察}
-同じ領域の共有メモリが使用された前回までの実験におけるソルバBPIDA*とソルバBPIDA*GLOBAL(18Kbyte)を比較すると、1.66倍ほどソルバBPIDA*の方が高速であった。これらの遅延には2つの要因があると推測できる。
-
-一つは、BPIDA*GLOBALではスタックを共有メモリから、グローバルメモリにおいたことで、スタックそのものへのメモリアクセスが遅くなったことである。
-
-二つ目は、スタックがグローバルメモリへ置かれたことで、より多くのL１キャッシュを必要としたことである。L１キャッシュはグローバルメモリへのアクセスの遅延の隠蔽を行う。BPIDA*GLOBALでは当然グローバルメモリへのアクセスが、BPIDA*よりスタックへのアクセスによって多くなる。このためより多くのL１キャッシュが必要になったと思われる。
-
-これらが、遅延の理由として考えられる。また同時にこの二つの遅延の効果が今回の実験において、1.66倍程度であるということも言える。そのため、それよりも大きな高速化が得られる場合、これらの遅延を隠蔽できると推測できる。
-
-ソルバBPIDA*GLOBAL(4Kbyte)、ソルバBPIDA*GLOBAL(9Kbyte)、ソルバBPIDA*GLOBAL(13Kbyte)、ソルバBPIDA*GLOBAL(18Kbyte)、ソルバBPIDA*GLOBAL(35Kbyte)を比較すると、L1キャッシュの領域が減ることで探索効率が著しく劣化することが確かに確認できる。
-
-ソルバBPIDA*と同程度の共有メモリを使用するソルバBPIDA*GLOBAL(18Kbyte)が、ソルバBPIDA*GLOBALより6.10倍遅くなっていることを見ると、3章においてBPIDA*が十分な高速化を示すことができなかったことの原因として共有メモリに置くスタックが増えたことが大きな原因であると言える。
-
-そのため、状態表現が大きい、最適解までの深さが大きく、共有メモリに大きなスタックを必要とするような問題集の一つで、グローバルメモリにスタックを置くBPIDA*GLOBAL探索が有効な手法であったことを示せた。
-
-
-
-
-
 \begin{figure}[H]
 \begin{center}
 \includegraphics[keepaspectratio, width=7cm, bb=0 0 624 466, scale=0.5]{result3.png}
@@ -705,6 +686,22 @@ BPIDA*GLOBAL (17636byte) & 8066.62 \\
 BPIDA*GLOBAL (35268byte) & 16104.5 \\ \hline
 \end{tabular}
 \end{table}
+
+\subsection{考察}
+同じ領域の共有メモリが使用された前回までの実験におけるソルバBPIDA*とソルバBPIDA*GLOBAL(18Kbyte)を比較すると、1.66倍ほどソルバBPIDA*の方が高速であった。これらの遅延には2つの要因があると推測できる。
+
+一つは、BPIDA*GLOBALではスタックを共有メモリから、グローバルメモリにおいたことで、スタックそのものへのメモリアクセスが遅くなったことである。
+
+二つ目は、スタックがグローバルメモリへ置かれたことで、より多くのL１キャッシュを必要としたことである。L１キャッシュはグローバルメモリへのアクセスの遅延の隠蔽を行う。BPIDA*GLOBALでは当然グローバルメモリへのアクセスが、BPIDA*よりスタックへのアクセスによって多くなる。このためより多くのL１キャッシュが必要になったと思われる。
+
+これらが、遅延の理由として考えられる。また同時にこの二つの遅延の効果が今回の実験において、1.66倍程度であるということも言える。そのため、それよりも大きな高速化が得られる場合、これらの遅延を隠蔽できると推測できる。
+
+ソルバBPIDA*GLOBAL(4Kbyte)、ソルバBPIDA*GLOBAL(9Kbyte)、ソルバBPIDA*GLOBAL(13Kbyte)、ソルバBPIDA*GLOBAL(18Kbyte)、ソルバBPIDA*GLOBAL(35Kbyte)を比較すると、L1キャッシュの領域が減ることで探索効率が著しく劣化することが確かに確認できる。
+
+ソルバBPIDA*と同程度の共有メモリを使用するソルバBPIDA*GLOBAL(18Kbyte)が、ソルバBPIDA*GLOBALより6.10倍遅くなっていることを見ると、3章においてBPIDA*が十分な高速化を示すことができなかったことの原因として共有メモリに置くスタックが増えたことが大きな原因であると言える。
+
+そのため、状態表現が大きい、最適解までの深さが大きく、共有メモリに大きなスタックを必要とするような問題集の一つで、グローバルメモリにスタックを置くBPIDA*GLOBAL探索が有効な手法であったことを示せた。
+
 
 
 
@@ -742,7 +739,6 @@ Korfらの研究\cite{KF02}では図5.1の2種類の分割方法が提案され�
 これらのソルバは最適解を全て探索するため、同じヒューリスティック関数を使用し同じ問題を解いた場合、展開順序にかかわらず、その時の展開ノードの数は等しくなる。
 
 \subsection{評価}
-
 図5.2はソルバBPIDA*(PDB)、ソルバBPIDA*GLOBAL(PDB)、ソルバIDA*CPU(PDB)の3つのソルバにおける問題ごとの実行時間のグラフである。縦軸は秒単位の実行時間、横軸は問題の番号を表す。
 
 50問の問題集を全て解くのにソルバIDA*CPU(PDB)では34.1312秒、ソルバBPIDA*(PDB)では16.2875秒、ソルバBPIDA*GLOBAL(PDB)では6.45871秒かかった。
@@ -750,87 +746,12 @@ Korfらの研究\cite{KF02}では図5.1の2種類の分割方法が提案され�
 直列な実装であるソルバIDA*CPU(PDB)とそれぞれの並列アルゴリズムを比較すると、ソルバBPIDA*(PDB)がおよそ2.10倍、
 ソルバBPIDA*GLOBAL(PDB)がおよそ5.28倍高速である。
 
-% \subsection{ヒューリスティック関数として、マンハッタン距離使用時とPDB使用時の実行時間の比較}
-
-
-% 図5.2はソルバBPIDA*(PDB)、ソルバBPIDA*GLOBAL(PDB)、ソルバIDA*CPU(PDB)の3つのソルバにおける問題ごとの実行時間のグラフである。縦軸は秒単位の実行時間、横軸は問題の番号を表す。
-
-% 50問の問題集を全て解くのにソルバIDA*CPU(PDB)では34.1312秒、ソルバBPIDA*(PDB)では16.2875秒、ソルバBPIDA*GLOBAL(PDB)では6.45871秒かかった。
-
-% 直列な実装であるソルバIDA*CPU(PDB)とそれぞれの並列アルゴリズムを比較すると、ソルバBPIDA*(PDB)がおよそ2.10倍、
-% ソルバBPIDA*GLOBAL(PDB)がおよそ5.28倍高速である。
-
-図5.3、図5.4、図5.5はそれぞれ前章までの実験で測定したマンハッタン距離を使用したソルバIDA*CPU、ソルバBPIDA*GLOBAL、ソルバIDA*CPUの問題単位の実行時間を、PDBを用いたソルバIDA*CPU(PDB)、ソルバBPIDA*GLOBAL(PDB)、ソルバIDA*CPU(PDB)の問題単位の実行時間で割った割合を示している。
-これらをそれぞれcpuPDBspeedup、bpida*PDBspeedup、bpida*globalPDBspeedupと定義する。
-この三つは、マンハッタン距離使用時と比べ、PDBがどれほど、それぞれのアルゴリズムにおいて高速化に貢献したかを示す指標となる。
-
-図5.3のcpuPDBspeedupに注目すると、最も高速化した45番の問題では3997倍の高速化に成功している。また概ね問題集の難易度が高くなる後半の問題ほど、高速化の割合は大きくなっている。
-
-図5.4のbpida*PDBspeedupに注目すると、最も高速化した問題は45番であり、4432倍の高速化である。直列実行時のcpuPDBspeedupと同様に、後半の難易度の高い問題で高速化の割合が大きくなっている。
-
-図5.5のbpida*globalPDBspeedupに注目すると、他のソルバと同様に最も高速化した問題は45番であり、2797倍である。前半の$0\sim30$番の問題では$10\sim100$倍ほどの高速化であるが、後半の$40\sim49$番の問題では、$500\sim2800$倍ほどの高速化に成功している。
-
-
-図5.6は各問題ごとに、bpida*PDBspeedupをcpuPDBspeedupで割った割合である。
-
-図5.7は各問題ごとに、bpida*globalPDBspeedupをcpuPDBspeedupで割った割合である。
-
-
-
-
-\subsection{考察}
-すべてのソルバにおいて、マンハッタン距離をヒューリスティック関数に使用していたときよりもPDBの使用によって、大幅な高速化に成功した。これはPDBによってより精度の高い枝刈りを行えるようになったことで、最適解を全て見つけるまでに展開すべきノードの数が大幅に減少したことが原因と考えられる。後半の難易度の高い問題ほど、高速化の割合が大きくなったのは、枝刈りを行うことのできるノードの数が、最適解までの距離に比例し、大きくなったためと思われる。
-
-GPUを用いた並列IDA*探索では、マンハッタン距離の計算結果のテーブルを、共有メモリにおき、ヒューリスティック関数として使用していた。
-PDBを使用する際、255Mbyteの領域を確保する必要があるので、これは64Kbyteしかメモリ容量をもたない共有メモリに置くことは不可能である。そこでより大きな容量を持つグローバルメモリにPDBを置く。これによって共有メモリではなく、グローバルメモリにアクセスする分の遅延がGPUを用いた並列IDA*探索では生じると推測できる。この遅延はCPU上のソルバにはない遅延である。従って、bpida*PDBspeedupとcpuPDBspeedup、bpida*globalPDBspeedupとcpuPDBspeedupを比較すればこの遅延がどれほどの効果があるのか確かめられると考えた。しかし、結果を見てみると、難易度の低い前半の問題では、$2\sim10$倍ほどcpu上での高速化の方が大きい結果が得られたが、30番以降の難易度の高い問題では、ほぼ$0.5\sim2$倍ほどの範囲に収まった。
-
-これらのことからGPUを使用した並列IDA*探索において、メモリを多く必要とするようなヒューリスティック関数をグローバルメモリにおいて使用した場合であっても、
-少なくともPDBを使用した場合、高速化を行うことが可能であることが本論文で示せたと言える。
-
 \begin{figure}[H]
 \begin{center}
-\includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, clip, scale=0.5]{result4.png}
+\includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, scale=0.5]{result4.png}
 \caption{ヒューリスティック関数にPDBを使用したIDA*CPU、BPIDA*、BPIDA*GLOBALの問題ごとの実行時間}
 \end{center}
 \end{figure}
-
-\begin{figure}[H]
-\begin{center}
-\includegraphics[keepaspectratio, width=5cm, bb=0 0 610 445, clip, scale=0.2]{cpuPDBspeedup.png}
-\caption{cpuPDBspeedup}
-\end{center}
-\end{figure}
-
-\begin{figure}[H]
-\begin{center}
-\includegraphics[keepaspectratio, width=5cm, bb=0 0 610 445, clip, scale=0.2]{bpidaPDBspeedup.png}
-\caption{bpida*PDBspeedup}
-\end{center}
-\end{figure}
-
-\begin{figure}[H]
-\begin{center}
-\includegraphics[keepaspectratio, width=5cm, bb=0 0 610 445, clip, scale=0.2]{bpidaglobalPDBspeedup.png}
-\caption{bpida*globalPDBspeedup}
-\end{center}
-\end{figure}
-
-
-\begin{figure}[H]
-\begin{minipage}{0.5\hsize}
-\begin{center}
-\includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, clip, scale=0.5]{ratio1.png}
-\caption{cpuPDBspeedupとbpida*PDBspeedupの比較}
-\end{center}
-\end{minipage}
-\begin{minipage}{0.5\hsize}
-\begin{center}
-\includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, clip, scale=0.5]{ratio2.png}
-\caption{cpuPDBspeedupとbpida*globalPDBspeedupの比較}
-\end{center}
-\end{minipage}
-\end{figure}
-
 
 \begin{table}[H]
 \centering
@@ -849,6 +770,144 @@ BPIDA* (PDB)& 16.2875 \\
 BPIDA*GLOBAL (PDB) & 6.45871 \\ \hline
 \end{tabular}
 \end{table}
+
+
+% \subsection{ヒューリスティック関数として、マンハッタン距離使用時とPDB使用時の実行時間の比較}
+
+
+% 図5.2はソルバBPIDA*(PDB)、ソルバBPIDA*GLOBAL(PDB)、ソルバIDA*CPU(PDB)の3つのソルバにおける問題ごとの実行時間のグラフである。縦軸は秒単位の実行時間、横軸は問題の番号を表す。
+
+% 50問の問題集を全て解くのにソルバIDA*CPU(PDB)では34.1312秒、ソルバBPIDA*(PDB)では16.2875秒、ソルバBPIDA*GLOBAL(PDB)では6.45871秒かかった。
+
+% 直列な実装であるソルバIDA*CPU(PDB)とそれぞれの並列アルゴリズムを比較すると、ソルバBPIDA*(PDB)がおよそ2.10倍、
+% ソルバBPIDA*GLOBAL(PDB)がおよそ5.28倍高速である。
+
+
+図5.3、図5.4、図5.5はそれぞれ前章までの実験で測定したマンハッタン距離を使用したソルバIDA*CPU、ソルバBPIDA*GLOBAL、ソルバIDA*CPUの問題単位の実行時間を、PDBを用いたソルバIDA*CPU(PDB)、ソルバBPIDA*GLOBAL(PDB)、ソルバIDA*CPU(PDB)の問題単位の実行時間で割った割合を示している。
+これらをそれぞれcpuPDBspeedup、bpida*PDBspeedup、bpida*globalPDBspeedupと定義する。
+この三つは、マンハッタン距離使用時と比べ、PDBがどれほど、それぞれのアルゴリズムにおいて高速化に貢献したかを示す指標となる。
+
+図5.3のcpuPDBspeedupに注目すると、最も高速化した45番の問題では3997倍の高速化に成功している。また概ね問題集の難易度が高くなる後半の問題ほど、高速化の割合は大きくなっている。
+
+図5.4のbpida*PDBspeedupに注目すると、最も高速化した問題は45番であり、4432倍の高速化である。直列実行時のcpuPDBspeedupと同様に、後半の難易度の高い問題で高速化の割合が大きくなっている。
+
+図5.5のbpida*globalPDBspeedupに注目すると、他のソルバと同様に最も高速化した問題は45番であり、2797倍である。前半の$0\sim30$番の問題では$10\sim100$倍ほどの高速化であるが、後半の$40\sim49$番の問題では、$500\sim2800$倍ほどの高速化に成功している。
+
+
+図5.6は各問題ごとに、bpida*PDBspeedupをcpuPDBspeedupで割った割合である。
+
+図5.7は各問題ごとに、bpida*globalPDBspeedupをcpuPDBspeedupで割った割合である。
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[keepaspectratio, width=5cm, bb=0 0 610 445, scale=0.2]{cpuPDBspeedup.png}
+\caption{cpuPDBspeedup}
+\end{center}
+\end{figure}
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[keepaspectratio, width=5cm, bb=0 0 610 445, scale=0.2]{bpidaPDBspeedup.png}
+\caption{bpida*PDBspeedup}
+\end{center}
+\end{figure}
+
+\begin{figure}[H]
+\begin{center}
+\includegraphics[keepaspectratio, width=5cm, bb=0 0 610 445, scale=0.2]{bpidaglobalPDBspeedup.png}
+\caption{bpida*globalPDBspeedup}
+\end{center}
+\end{figure}
+
+
+\begin{figure}[H]
+\begin{minipage}{0.5\hsize}
+\begin{center}
+\includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, scale=0.5]{ratio1.png}
+\caption{cpuPDBspeedup/bpida*PDBspeedup}
+\end{center}
+\end{minipage}
+\begin{minipage}{0.5\hsize}
+\begin{center}
+\includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, scale=0.5]{ratio2.png}
+\caption{cpuPDBspeedup/bpida*globalPDBspeedup}
+\end{center}
+\end{minipage}
+\end{figure}
+
+
+
+\subsection{考察}
+すべてのソルバにおいて、マンハッタン距離をヒューリスティック関数に使用していたときよりもPDBの使用によって、大幅な高速化に成功した。これはPDBによってより精度の高い枝刈りを行えるようになったことで、最適解を全て見つけるまでに展開すべきノードの数が大幅に減少したことが原因と考えられる。後半の難易度の高い問題ほど、高速化の割合が大きくなったのは、枝刈りを行うことのできるノードの数が、最適解までの距離に比例し、大きくなったためと思われる。
+
+GPUを用いた並列IDA*探索では、マンハッタン距離の計算結果のテーブルを、共有メモリにおき、ヒューリスティック関数として使用していた。
+PDBを使用する際、255Mbyteの領域を確保する必要があるので、これは64Kbyteしかメモリ容量をもたない共有メモリに置くことは不可能である。そこでより大きな容量を持つグローバルメモリにPDBを置く。これによって共有メモリではなく、グローバルメモリにアクセスする分の遅延がGPUを用いた並列IDA*探索では生じると推測できる。この遅延はCPU上のソルバにはない遅延である。従って、bpida*PDBspeedupとcpuPDBspeedup、bpida*globalPDBspeedupとcpuPDBspeedupを比較すればこの遅延がどれほどの効果があるのか確かめられると考えた。しかし、結果を見てみると、難易度の低い前半の問題では、$2\sim10$倍ほどcpu上での高速化の方が大きい結果が得られたが、30番以降の難易度の高い問題では、ほぼ$0.5\sim2$倍ほどの範囲に収まった。
+
+これらのことからGPUを使用した並列IDA*探索において、メモリを多く必要とするようなヒューリスティック関数をグローバルメモリにおいて使用した場合であっても、
+少なくともPDBを使用した場合、高速化を行うことが可能であることが本論文で示せたと言える。
+
+% \begin{figure}[H]
+% \begin{center}
+% \includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, scale=0.5]{result4.png}
+% \caption{ヒューリスティック関数にPDBを使用したIDA*CPU、BPIDA*、BPIDA*GLOBALの問題ごとの実行時間}
+% \end{center}
+% \end{figure}
+
+% \begin{figure}[H]
+% \begin{center}
+% \includegraphics[keepaspectratio, width=5cm, bb=0 0 610 445, scale=0.2]{cpuPDBspeedup.png}
+% \caption{cpuPDBspeedup}
+% \end{center}
+% \end{figure}
+
+% \begin{figure}[H]
+% \begin{center}
+% \includegraphics[keepaspectratio, width=5cm, bb=0 0 610 445, scale=0.2]{bpidaPDBspeedup.png}
+% \caption{bpida*PDBspeedup}
+% \end{center}
+% \end{figure}
+
+% \begin{figure}[H]
+% \begin{center}
+% \includegraphics[keepaspectratio, width=5cm, bb=0 0 610 445, scale=0.2]{bpidaglobalPDBspeedup.png}
+% \caption{bpida*globalPDBspeedup}
+% \end{center}
+% \end{figure}
+
+
+% \begin{figure}[H]
+% \begin{minipage}{0.5\hsize}
+% \begin{center}
+% \includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, scale=0.5]{ratio1.png}
+% \caption{cpuPDBspeedup/bpida*PDBspeedup}
+% \end{center}
+% \end{minipage}
+% \begin{minipage}{0.5\hsize}
+% \begin{center}
+% \includegraphics[keepaspectratio, width=7cm, bb=0 0 610 445, scale=0.5]{ratio2.png}
+% \caption{cpuPDBspeedup/bpida*globalPDBspeedup}
+% \end{center}
+% \end{minipage}
+% \end{figure}
+
+
+% \begin{table}[H]
+% \centering
+% \caption{Total Runtimes for 50 24-Puzzle Instances}
+% \label{my-label}
+% \begin{tabular}{|l|c|}
+% \hline
+% configuration & \multicolumn{1}{l|}{total runtime(seconds)} \\ \hline
+% \multicolumn{2}{|l|}{CPU-based sequential algorithms} \\ \hline
+% IDA*CPU (manhattan distance) & 6050.81 \\ 
+% IDA*CPU (PDB) & 34.1312 \\ \hline
+% \multicolumn{2}{|l|}{GPU-based parallel algorithms} \\ \hline
+% BPIDA* (manhattan distance)& 4854.75 \\
+% BPIDA*GLOBAL (manhattan distance) & 1321.75 \\
+% BPIDA* (PDB)& 16.2875 \\
+% BPIDA*GLOBAL (PDB) & 6.45871 \\ \hline
+% \end{tabular}
+% \end{table}
 
 
 
@@ -1101,56 +1160,56 @@ BPIDA*GLOBAL (PDB) & 6.45871 \\ \hline
 \begin{tabular}{|c|c|c|c|}
 \hline
 問題ID &IDA*CPU&BPIDA*&BPIDA*GLOBAL\\ \hline
-0 & 0.000207838 & 0.000162 & 0.000181 \\
-1 & 0.000367824 & 0.000288 & 0.000256 \\
-2 & 4.9032e-05 & 0.000060 & 0.000061 \\
-3 & 4.467e-05 & 0.000070 & 0.000055 \\
-4 & 0.000191406 & 0.000192 & 0.000181 \\
-5 & 0.00486043 & 0.018885 & 0.007495 \\
-6 & 0.000932242 & 0.009067 & 0.003637 \\
-7 & 0.000718589 & 0.000356 & 0.000312 \\
-8 & 0.000539906 & 0.000360 & 0.000355 \\
-9 & 0.00116524 & 0.009494 & 0.003722 \\
-10 & 0.00215643 & 0.011693 & 0.004143 \\
-11 & 0.0301163 & 0.064800 & 0.016940 \\
-12 & 0.00813574 & 0.024074 & 0.007520 \\
-13 & 0.000108296 & 0.000165 & 0.000159 \\
-14 & 0.00428758 & 0.015048 & 0.005119 \\
-15 & 0.00427699 & 0.014837 & 0.005859 \\
-16 & 0.0160564 & 0.047147 & 0.012181 \\
-17 & 0.000915544 & 0.007383 & 0.003147 \\
-18 & 0.0121607 & 0.032372 & 0.009122 \\
-19 & 0.00774828 & 0.025995 & 0.007627 \\
-20 & 0.00555399 & 0.021063 & 0.006309 \\
-21 & 0.0168652 & 0.038333 & 0.012136 \\
-22 & 0.0178428 & 0.048864 & 0.012611 \\
-23 & 0.016394 & 0.036712 & 0.010640 \\
-24 & 0.00112212 & 0.007383 & 0.003319 \\
-25 & 0.078412 & 0.130912 & 0.029674 \\
-26 & 0.0111169 & 0.032015 & 0.008857 \\
-27 & 0.0120896 & 0.036478 & 0.010186 \\
-28 & 0.144657 & 0.189407 & 0.044980 \\
-29 & 0.0142936 & 0.037371 & 0.011180 \\
-30 & 0.224169 & 0.300429 & 0.064582 \\
-31 & 2.96813 & 2.727141 & 0.552739 \\
-32 & 0.0559264 & 0.092013 & 0.021934 \\
-33 & 0.0375624 & 0.080244 & 0.020058 \\
-34 & 0.22336 & 0.264828 & 0.061796 \\
-35 & 0.0308752 & 0.066985 & 0.016691 \\
-36 & 0.203351 & 0.255182 & 0.057133 \\
-37 & 2.72553 & 2.436313 & 0.509866 \\
-38 & 1.06718 & 1.043727 & 0.216748 \\
-39 & 0.852431 & 0.802105 & 0.172028 \\
-40 & 0.308254 & 0.358719 & 0.076354 \\
-41 & 0.0755763 & 0.116415 & 0.026391 \\
-42 & 0.204659 & 0.233455 & 0.060152 \\
-43 & 0.910621 & 0.866948 & 0.182372 \\
-44 & 2.65879 & 2.459791 & 0.498528 \\
-45 & 0.144441 & 0.190619 & 0.044940 \\
-46 & 5.12469 & 4.420350 & 0.882368 \\
-47 & 1.01127 & 0.923265 & 0.194843 \\
-48 & 0.966463 & 0.930387 & 0.202156 \\
-49 & 13.9245 & 12.014125 & 2.359064 \\ \hline
+0 & 0.000207838 & 0.000162 & 0.000176 \\
+1 & 0.000367824 & 0.000290 & 0.000327 \\
+2 & 4.9032e-05 & 0.000057 & 0.000066 \\
+3 & 4.467e-05 & 0.000049 & 0.000048 \\
+4 & 0.000191406 & 0.000172 & 0.000204 \\
+5 & 0.00486043 & 0.011353 & 0.006868 \\
+6 & 0.000932242 & 0.005709 & 0.003521 \\
+7 & 0.000718589 & 0.000301 & 0.000321 \\
+8 & 0.000539906 & 0.000380 & 0.000398 \\
+9 & 0.00116524 & 0.005883 & 0.003577 \\
+10 & 0.00215643 & 0.007021 & 0.004071 \\
+11 & 0.0301163 & 0.035606 & 0.016215 \\
+12 & 0.00813574 & 0.013437 & 0.006953 \\
+13 & 0.000108296 & 0.000124 & 0.000129 \\
+14 & 0.00428758 & 0.008679 & 0.004853 \\
+15 & 0.00427699 & 0.008515 & 0.005527 \\
+16 & 0.0160564 & 0.026041 & 0.011555 \\
+17 & 0.000915544 & 0.004618 & 0.002854 \\
+18 & 0.0121607 & 0.018171 & 0.008540 \\
+19 & 0.00774828 & 0.014687 & 0.006842 \\
+20 & 0.00555399 & 0.012041 & 0.005781 \\
+21 & 0.0168652 & 0.021283 & 0.011546 \\
+22 & 0.0178428 & 0.027157 & 0.011830 \\
+23 & 0.016394 & 0.020262 & 0.009789 \\
+24 & 0.00112212 & 0.004664 & 0.003026 \\
+25 & 0.078412 & 0.070326 & 0.028499 \\
+26 & 0.0111169 & 0.017911 & 0.008242 \\
+27 & 0.0120896 & 0.020293 & 0.009419 \\
+28 & 0.144657 & 0.100431 & 0.043395 \\
+29 & 0.0142936 & 0.020651 & 0.010444 \\
+30 & 0.224169 & 0.159144 & 0.062378 \\
+31 & 2.96813 & 1.408887 & 0.546401 \\
+32 & 0.0559264 & 0.049767 & 0.021000 \\
+33 & 0.0375624 & 0.043436 & 0.018810 \\
+34 & 0.22336 & 0.141301 & 0.060174 \\
+35 & 0.0308752 & 0.036840 & 0.016075 \\
+36 & 0.203351 & 0.135135 & 0.056161 \\
+37 & 2.72553 & 1.262451 & 0.504489 \\
+38 & 1.06718 & 0.541771 & 0.213354 \\
+39 & 0.852431 & 0.418638 & 0.169901 \\
+40 & 0.308254 & 0.189456 & 0.075241 \\
+41 & 0.0755763 & 0.062189 & 0.025706 \\
+42 & 0.204659 & 0.123832 & 0.059423 \\
+43 & 0.910621 & 0.451724 & 0.179226 \\
+44 & 2.65879 & 1.269991 & 0.495308 \\
+45 & 0.144441 & 0.101844 & 0.044034 \\
+46 & 5.12469 & 2.251534 & 0.876291 \\
+47 & 1.01127 & 0.481867 & 0.192283 \\
+48 & 0.966463 & 0.482727 & 0.198767 \\
+49 & 13.9245 & 6.128629 & 2.348042 \\ \hline
 \end{tabular}
 }
 \end{table}
