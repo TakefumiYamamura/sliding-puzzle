@@ -36,7 +36,7 @@
 \begin{document}
 \thispagestyle{empty}
 %------------------------------標題紙作成エリア----------------------------%
-2017年度　修士学位論文%1
+2018年度　修士学位論文%1
 \bigskip%2
 \LARGE%3
 \begin{center}
@@ -54,11 +54,19 @@ Parallel IDA* search using PDB for GPUs
 \bigskip\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip\bigskip
 \Large %17
 \begin{center}
+2018年度
+\end{center}
+\Large %17
+\begin{center}
 広域システム科学系　広域科学専攻
 \end{center}
 \Large %17
 \begin{center}
 指導教員:　福永 アレックス
+\end{center}
+\Large %17
+\begin{center}
+学籍番号: 31166830 
 \end{center}
 \LARGE %21
 \begin{center}
@@ -459,7 +467,7 @@ N-puzzle問題は、Nが増えるにつれてその探索空間は大きくな�
 
 先行研究におけるBPIDA*探索\cite{HA17}では$N=15$の時における15-puzzle問題が評価の対象として使用されていた。
 本研究では、探索空間が15-puzzle問題のおよそ$10^{12}$倍大きく、より大きなスタックをメモリ領域に必要とする24-puzzleを性能評価に使用する。
-\begin{figure}[]
+\begin{figure}[H]
 \begin{center}
 \includegraphics[width=5cm, bb=0 0 300 400]{24puzzle.png}
 \caption{24-puzzle}
@@ -1049,9 +1057,9 @@ PDBを使用する際、255Mbyteの領域を確保する必要があるので、
 
 \appendix
 \chapter{実験の詳細}
-表A.1および表A.2はKorfの作成した100問の15puzzle\cite{Kor85}の問題集をを解いた各種アルゴリズムの実行時間(sec)である。
+表A.1および表A.2はKorfの作成した100問の15puzzleの問題集\cite{Kor85}を解いた各種アルゴリズムの実行時間(sec)である。
 表A.3は性能評価のために用いた自己生成した24-puzzleの問題集の詳細である。
-問題集については、パズルの初期状態、最短経路、マンハッタン距離もしくはPDBをヒューリスティック関数に使用した際にIDA*探索が、全ての最短経路を見つけるのに必要な、展開ノードの数について表記する。
+問題集についてはパズルの初期状態、最短経路、マンハッタン距離もしくはPDBをヒューリスティック関数に使用した際にIDA*探索が、全ての最短経路を見つけるのに必要な展開ノードの数について表記する。
 表A.4$\sim$7は自己生成した24-puzzleの問題集を解いた各種アルゴリズムの実行時間(sec)である。
 
 
