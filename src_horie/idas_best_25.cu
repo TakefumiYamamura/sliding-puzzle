@@ -5,6 +5,7 @@
 #undef PACKED
 #undef COLLECT_LOG
 
+#define MAX_BLOCK_SIZE 64535
 #define BLOCK_DIM (32) /* NOTE: broken when more than 32 */
 #define N_INIT_DISTRIBUTION (BLOCK_DIM * 64)
 #define STACK_BUF_LEN (48 * (BLOCK_DIM/DIR_N))
@@ -1417,7 +1418,7 @@ main(int argc, char *argv[])
                                        : (stat[i].loads - 1) / loads_av + 1;
 
             int buf_len_old = buf_len;
-            if (policy > 1 && stat[i].loads > 10　&& n_roots + increased < MAX_DISTRIBUTION)
+            if (policy > 1 && stat[i].loads > 10 && MAX_BLOCK_SIZE > increased + n_roots)
                 increased += input_devide(input, stat, i, policy,
                                           n_roots + increased, &buf_len);
 
